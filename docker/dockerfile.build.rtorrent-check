@@ -7,7 +7,7 @@ FROM "${REPOSITORY}/build/rtorrent-restage:${TAG_APPEND}" AS restage
 
 FROM "${REPOSITORY}/stage:${TAG_APPEND}" AS stage
 
-COPY --from=restage /deployment /deployment/
+COPY --from=restage /deploy /deploy/
 COPY data/rtorrent ./
 
 RUN \
@@ -21,12 +21,12 @@ rsync ${RSYNC_ARGS} \
 --include '*.sh' \
 --include '*/' \
 --exclude '*' \
-* /deployment
+* /deploy
 
 
 FROM "${REPOSITORY}/build/rtorrent-base:${TAG_APPEND}"
 
-COPY --from=stage /deployment ./
+COPY --from=stage /deploy ./
 
 RUN \
 echo -e "\033[0;32mrebuilding container build.recompile-rtorrent\033[0m"; \
@@ -34,4 +34,4 @@ set -xe; \
 \
 make -j12 check; \
 \
-cp -rf * /deployment/
+cp -rf * /deploy/

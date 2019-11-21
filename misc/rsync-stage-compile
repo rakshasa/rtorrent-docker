@@ -21,6 +21,9 @@ rsync -rlpgoD -m --update --delete-after --checksum -v \
 --include '/NEWS' \
 --include '/README' \
 \
+--include '*.cc' \
+--include '*.h' \
+\
 --include '*/' \
 --exclude '*' \
 ${arg_source} ${arg_target}

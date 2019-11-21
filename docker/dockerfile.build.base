@@ -16,7 +16,7 @@ RUN \
 echo -e "\033[0;32minstalling base build packages\033[0m"; \
 set -xe; \
 \
-mkdir -p /build /deployment /prefix /stage; \
+mkdir -p /build /deploy /prefix /stage; \
 \
 echo "export PKG_CONFIG_PATH=\"/prefix/lib/pkgconfig:\${PKG_CONFIG_PATH}\"" >> /env.configure; \
 \

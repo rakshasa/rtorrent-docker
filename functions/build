@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 set -e
+[[ -n "${included_rdo_build}" ]] && echo "rdo_build already included" && exit 1
 local included_rdo_build="yes"
-# print_normal "included rdo_build"
 
 rdo_build() {
   local build_args=("--tag-append" "default")
@@ -79,25 +79,23 @@ rdo_build_check() {
 rdo_build_compile() {
   rdo init verify
   rdo_build__libtorrent_compile "${@}"
-  rdo_build__rtorrent_compile "${@}"
+  # rdo_build__rtorrent_compile "${@}"
 }
 
 # Helper functions
 
 rdo_build__init() {
   rdo docker context build --context-type "ancestor" --context-name "ancestor" "${build_args[@]}" "ancestor"
-  rdo docker context build --context-type "apk" --context-name "apk/stage" "${build_args[@]}" "stage"
+  rdo docker build "${build_args[@]}" "stage"
   rdo docker context build --context-type "apk" --context-name "apk/base" "${build_args[@]}" "build/base"
 }
 
 rdo_build__libtorrent_compile() {
   rdo docker context build --context-type "apk" --context-name "apk/libtorrent" "${build_args[@]}" "build/libtorrent-base"
-
   rdo docker context build --context-type "configure" --context-name "libtorrent/configure" "${build_args[@]}" "build/libtorrent-configure"
   rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-configure" "build/libtorrent-stage"
-
-  # rdo docker context build --context-type "compile" --context-name "libtorrent" "${build_args[@]}" "build/libtorrent-compile"
-  # rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-compile" "build/libtorrent-stage"
+  rdo docker context build --context-type "compile" --context-name "libtorrent" "${build_args[@]}" "build/libtorrent-compile"
+  rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-compile" "build/libtorrent-stage"
 }
 
 rdo_build__libtorrent_check() {

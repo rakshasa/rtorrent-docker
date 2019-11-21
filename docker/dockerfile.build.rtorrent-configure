@@ -7,7 +7,7 @@ FROM "${REPOSITORY}/build/libtorrent-stage:${TAG_APPEND}" AS stage.libtorrent
 
 FROM "${REPOSITORY}/build/rtorrent-base:${TAG_APPEND}"
 
-COPY --from=stage.libtorrent /deployment/libtorrent.pc /prefix/lib/pkgconfig/
+COPY --from=stage.libtorrent /deploy/libtorrent.pc /prefix/lib/pkgconfig/
 COPY /configure.tar.bz2 /stage/
 
 RUN echo -e "\033[0;32mrtorrent unpack\033[0m"; set -xe; \
@@ -22,4 +22,4 @@ RUN echo -e "\033[0;32mrtorrent configure\033[0m"; set -xe; \
 \
 ./configure --prefix=/prefix; \
 \
-${TAR_C_CMD} -C /build -f /deployment/configure.tar.bz2 .
+${TAR_C_CMD} -C /build -f /deploy/configure.tar.bz2 .

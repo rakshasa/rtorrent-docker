@@ -9,7 +9,7 @@ FROM "${REPOSITORY}/build/rtorrent-stage:${TAG_APPEND}" AS stage
 
 COPY data/rtorrent /stage/
 
-RUN rsync-compile-source "/stage/*" "/deployment"
+RUN rsync-compile-source "/stage/*" "/deploy"
 
 COPY --from=stage.libtorrent /prefix /prefix-libtorrent/
 
@@ -27,7 +27,7 @@ rsync ${RSYNC_ARGS} \
 FROM "${REPOSITORY}/build/rtorrent-base:${TAG_APPEND}"
 
 COPY --from=stage /prefix /prefix/
-COPY --from=stage /deployment /build/
+COPY --from=stage /deploy /build/
 
 RUN \
 echo -e "\033[0;32mbuilding rtorrent\033[0m"; \
@@ -36,4 +36,4 @@ set -xe; \
 make -j12; \
 make -j12 install; \
 \
-cp -rf /build/* /deployment/
+cp -rf /build/* /deploy/

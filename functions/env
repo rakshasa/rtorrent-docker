@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 set -e
+[[ -n "${included_rdo_env}" ]] && echo "rdo_env already included" && exit 1
 local included_rdo_env="yes"
-print_normal "included rdo_env"
 
 rdo_env() {
   local cmd="${1}"; shift || :

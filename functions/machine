@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 set -e
+[[ -n "${included_rdo_machine}" ]] && echo "rdo_machine already included" && exit 1
 local included_rdo_machine="yes"
-print_normal "included rdo_machine"
 
 rdo_machine() {
   local cmd="${1}"; shift || :

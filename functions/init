@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 set -e
+[[ -n "${included_rdo_init}" ]] && echo "rdo_init already included" && exit 1
 local included_rdo_init="yes"
-print_normal "included rdo_init"
 
 rdo_init() {
   local cmd="${1}"; shift || :

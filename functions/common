@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -e
+[[ -n "${included_rdo_common}" ]] && echo "rdo_common already included" && exit 1
+local included_rdo_common="yes"
+
+rdo__compare_id__file_image() {
+  local file_name="${1:?Missing file argument.}"
+  local image_name="${2:?Missing image argument.}"
+
+  if ! [[ -f "${file_name}" ]]; then
+    return 1
+  fi
+
+  local file_id="$(cat "${file_name}")"
+  local image_id="$(rdo docker inspect --id "${image_name}")"
+
+  [[ -n "${file_id}" ]] && [[ "${file_id}" == "${image_id}" ]]
+}
+
+rdo__image_id() {
+  local image_name="${1:?Missing image argument.}"
+  echo "$(rdo docker inspect --id "${image_name}")"
+}

@@ -76,7 +76,7 @@ _rtorrent_docker__rdo_build() {
 
 _rtorrent_docker__rdo_docker() {
   if [[ "${word}" != -* ]]; then
-    commands=(args build children clean context images stage targets)
+    commands=(args build children clean context images inspect stage targets)
     arg_funcs+=(
       children##rdo_docker_images
     )
@@ -138,6 +138,10 @@ _rtorrent_docker__rdo_docker_context_build() {
       --context-type
     )
   fi
+}
+
+_rtorrent_docker__rdo_docker_inspect() {
+  flags=(--id --help)
 }
 
 _rtorrent_docker__rdo_docker_stage() {
