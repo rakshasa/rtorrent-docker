@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+set -e
+local included_rdo_init="yes"
+print_normal "included rdo_init"
+
+rdo_init() {
+  local cmd="${1}"; shift || :
+
+  case "${cmd}" in
+    default)
+      rdo_init_default "${@}"
+      ;;
+    machine)
+      rdo_init_machine "${@}"
+      ;;
+    verify)
+      rdo_init_verify "${@}"
+      ;;
+    --help|-h|'')
+      echo "Usage: rdo init COMMAND"
+      echo
+      echo "Initialize environment commands"
+      echo
+      echo "Commands"
+      echo "  default  Use default docker engine"
+      echo "  machine  Use docker machine"
+      echo
+      echo "Run 'rdo init COMMAND --help' for more information on a command."
+      exit 1
+      ;;
+    *)
+      print_error "rdo docker context: unknown command: ${@}"
+      return 1
+      ;;
+  esac
+}
+
+rdo_init_default() {
+  local env_args=()
+
+  env_args+=("--docker-engine")
+
+  rdo_init__init
+  rdo env create "${env_args[@]}"
+
+  print_progress "ready to start bash session"
+}
+
+rdo_init_machine() {
+  local env_args=()
+  local machine_args=()
+
+  env_args+=("--docker-machine" "rtorrent-machine")
+  machine_args+=("--docker-machine" "rtorrent-machine")
+
+  rdo_init__init
+  rdo env create "${env_args[@]}"
+  rdo machine create "${machine_args[@]}"
+
+  print_progress "ready to start bash session"
+}
+
+rdo_init_verify() {
+  if [[ "${RDO_BASH_SESSION}" != "yes" ]]; then
+    print_error "not in rdo bash session"
+    exit 1
+  fi
+
+  case "${RDO_DOCKER_TYPE}" in
+    engine)
+    ;;
+    machine)
+      if [[ -z "${RDO_DOCKER_MACHINE}" ]]; then
+        print_error "no docker machine selected"
+        exit 1
+      fi
+
+      if [[ "$(rdo machine status "${RDO_DOCKER_MACHINE}")" != "Running" ]]; then
+        print_error "docker machine '${RDO_DOCKER_MACHINE}' is not running"
+        exit 1
+      fi
+    ;;
+    '')
+      print_error "no docker type selected, incomplete env.bash files"
+      exit 1
+      ;;
+    *)
+      print_error "unknown docker type '${RDO_DOCKER_MACHINE}'"
+      exit 1
+      ;;
+  esac
+}
+
+# Helper functions
+
+rdo_init__init() {
+  mkdir -p "${DATA_PATH:?Missing data path variable.}"
+}

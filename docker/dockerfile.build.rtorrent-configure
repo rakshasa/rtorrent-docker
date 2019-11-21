@@ -1,0 +1,25 @@
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/build/libtorrent-stage:${TAG_APPEND}" AS stage.libtorrent
+
+
+FROM "${REPOSITORY}/build/rtorrent-base:${TAG_APPEND}"
+
+COPY --from=stage.libtorrent /deployment/libtorrent.pc /prefix/lib/pkgconfig/
+COPY /configure.tar.bz2 /stage/
+
+RUN echo -e "\033[0;32mrtorrent unpack\033[0m"; set -xe; \
+\
+${TAR_X_CMD} -C /build -f /stage/configure.tar.bz2
+
+RUN echo -e "\033[0;32mrtorrent autogen.sh\033[0m"; set -xe; \
+\
+./autogen.sh
+
+RUN echo -e "\033[0;32mrtorrent configure\033[0m"; set -xe; \
+\
+./configure --prefix=/prefix; \
+\
+${TAR_C_CMD} -C /build -f /deployment/configure.tar.bz2 .

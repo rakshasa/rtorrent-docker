@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+set -e
+
+do_tags() {
+  local cmd="${1}"; shift || :
+
+  case "${cmd}" in
+    docker)
+      tags_docker "${@}"
+      ;;
+    libtorrent)
+      tags_libtorrent "${@}"
+      ;;
+    rtorrent)
+      tags_rtorrent "${@}"
+      ;;
+    --help|-h|'')
+      echo "Usage: do tags COMMAND"
+      echo
+      echo "Create and manage tags"
+      echo
+      echo "Commands"
+      echo "  docker      Create tags for docker files"
+      echo "  libtorrent  Create tags for libtorrent"
+      echo "  rtorrent    Create tags for rtorrent"
+      echo
+      echo "Run 'do tags COMMAND --help' for more information on a command."
+      ;;
+    *)
+      print_error "unknown tags command: ${@}"
+      return 1
+      ;;
+  esac
+}
+
+tags_docker() {
+  cd "${PROJECT_PATH}/docker"
+  rm -f TAGS || :
+
+  if etags --version | grep Exuberant &> /dev/null; then
+    # find . -name 'dockerfile.*' -not -name '*~' | etags -L -
+    echo "ctags not supported"
+  else
+    find . -name 'dockerfile.*' -not -name '*~' | etags -
+  fi
+}
+
+tags_libtorrent() {
+  echo "not supported"
+}
+
+tags_rtorrent() {
+  echo "not supported"
+}

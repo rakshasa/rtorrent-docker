@@ -1,0 +1,20 @@
+# Stage build files in a separate container so as to ensure caches
+# work when no relevant files have been changed. This uses rsync to
+# only include files required for building any particular project.
+#
+# The docker cache works by matching that both build instructions and
+# volume content match at each step, while docker context is
+# ignored.
+#
+# Thus while this container is always rebuilt on changes in the
+# project directory, the container that pulls the content from
+# '/deployment' only invalidates its cache if the content of
+# '/deployment' changed.
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/ancestor:${TAG_APPEND}"
+
+WORKDIR /stage

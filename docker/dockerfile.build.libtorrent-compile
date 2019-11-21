@@ -1,0 +1,29 @@
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/build/libtorrent-stage:${TAG_APPEND}" AS stage
+
+
+FROM "${REPOSITORY}/build/libtorrent-base:${TAG_APPEND}"
+
+COPY ./compile.tar.bz2 /stage/
+COPY --from=stage /empty /deployment/full.tar.bz2 /stage/
+
+RUN echo -e "\033[0;32mextracting staging archive\033[0m"; set -xe; \
+\
+mkdir -p /stage/full; \
+${TAR_X_CMD} -C /stage/full -f /stage/full.tar.bz2; \
+${RSYNC_CMD} /stage/full/ /build/; \
+\
+mkdir -p /stage/compile; \
+${TAR_X_CMD} -C /build -f /stage/compile.tar.bz2; \
+${RSYNC_CMD} /stage/compile/ /build/
+
+RUN echo -e "\033[0;32mbuilding libtorrent\033[0m"; set -xe; \
+\
+make -j12; \
+make -j12 install; \
+\
+${TAR_C_CMD} -C /build -f /deployment/compile.tar.bz2 .; \
+${TAR_C_CMD} -C /prefix -f /deployment/prefix.tar.bz2 .

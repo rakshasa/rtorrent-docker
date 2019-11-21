@@ -1,0 +1,34 @@
+#!/bin/sh
+
+arg_source="${1:?Missing source argument.}"
+arg_target="${2:?Missing target argument.}"
+
+rsync ${RSYNC_ARGS} \
+--include '*.Po' \
+--include '*.Plo' \
+--include '*.in' \
+--include '*.la' \
+--include '*.lai' \
+--include '*.lo' \
+--include '*.o' \
+--include '*.so' \
+--include '*.so.*' \
+--include 'lib*.a' \
+--include 'Makefile' \
+--include '/AUTHORS' \
+--include '/ChangeLog' \
+--include '/COPYING' \
+--include '/INSTALL' \
+--include '/NEWS' \
+--include '/README' \
+--include '/autom4te.cache' \
+--include '/config.status' \
+--include '/compile' \
+--include '/config.*' \
+--include '/depcomp' \
+--include '/install-sh' \
+--include '/libtorrent.pc' \
+--include '/missing' \
+--include '*/' \
+--exclude '*' \
+${arg_source} ${arg_target}

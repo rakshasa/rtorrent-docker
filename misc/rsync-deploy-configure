@@ -1,0 +1,23 @@
+#!/bin/sh
+
+set -e
+
+arg_source="${1:?Missing source argument.}"
+arg_target="${2:?Missing target argument.}"
+
+mkdir -p "${arg_target}"
+
+rsync -rlpgoD -m --update --delete-after --checksum -v \
+--exclude '*.ac' \
+--exclude '*.am' \
+--exclude '*.in' \
+--exclude '*.m4' \
+--exclude '*.sh' \
+--exclude '*.pc.in' \
+--exclude '/AUTHORS' \
+--exclude '/ChangeLog' \
+--exclude '/COPYING' \
+--exclude '/INSTALL' \
+--exclude '/NEWS' \
+--exclude '/README' \
+${arg_source} ${arg_target}

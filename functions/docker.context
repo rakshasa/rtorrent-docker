@@ -1,0 +1,222 @@
+#!/usr/bin/env bash
+
+set -e
+
+local context_types=(
+  ancestor
+  apk
+  configure
+  compile
+  stage
+)
+
+rdo_docker_context() {
+  local cmd="${1}"; shift || :
+
+  case "${cmd}" in
+    build)
+      rdo_docker_context_build "${@}"
+      ;;
+    clean)
+      rdo_docker_context_clean "${@}"
+      ;;
+    types)
+      rdo_docker_context_types "${@}"
+      ;;
+    --help|-h|'')
+      echo "Usage: rdo docker context COMMAND"
+      echo
+      echo "Docker context commands"
+      echo
+      echo "Commands"
+      echo "  clean     Clean all context types"
+      echo "  build     Build image in context"
+      echo "  types   List all build types"
+      echo
+      echo "Run 'rdo docker context COMMAND --help' for more information on a command."
+      ;;
+    *)
+      print_error "rdo docker context: unknown command: ${cmd}"
+      return 1
+      ;;
+  esac
+}
+
+rdo_docker_context_build() {
+  local arg_context_args=
+  local arg_context_name=
+  local arg_context_type=
+
+  while [[ -n "${1}" ]]; do
+    case "${1}" in
+      --context-args)
+        arg_context_args="${2:?Missing context args argument.}"
+        shift 2 ;;
+      --context-name)
+        arg_context_name="${2:?Missing context name argument.}"
+        shift 2 ;;
+      --context-type)
+        arg_context_type="${2:?Missing context type argument.}"
+        shift 2 ;;
+      --help|-h)
+        echo "Usage: rdo docker context build [OPTIONS]"
+        echo
+        echo "Build docker container with a custom context"
+        echo
+        echo "Options:"
+        echo "      --context-args  Args of the context"
+        echo "      --context-name  Name of the context"
+        echo "      --context-type  Type of the context"
+        echo
+        echo "Run 'rdo env create --help' for more information on a command."
+        exit 1
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
+  if [[ -z "${arg_context_name}" ]]; then
+    print_error "rdo docker context build: missing context name argument"
+    exit 1
+  fi
+
+  if [[ -z "${arg_context_type}" ]]; then
+    print_error "rdo docker context build: missing context type argument"
+    exit 1
+  fi
+
+  if ! [[ " ${context_types[*]} " =~ " ${arg_context_type} " ]]; then
+    print_error "rdo docker context build: unknown context type: '${arg_context_type}'"
+    exit 1
+  fi
+
+  local args=(--context "${arg_context_name}")
+
+  if declare -f rdo_docker_context__pre_${arg_context_type} &> /dev/null; then
+    args+=("--pre-exec" "rdo_docker_context__pre_${arg_context_type} ${arg_context_name} ${arg_context_args}")
+  fi
+
+  if declare -f rdo_docker_context__post_${arg_context_type} &> /dev/null; then
+    args+=("--post-exec" "rdo_docker_context__post_${arg_context_type} ${arg_context_name} ${arg_context_args}")
+  fi
+
+  rdo_docker_build "${args[@]}" "${@}"
+}
+
+rdo_docker_context_clean() {
+  local project_path="$(get_project_path)"
+
+  if [[ -z "${project_path}" ]]; then
+    print_error "rdo docker context clean: could not get project path"
+    exit 1
+  fi
+
+  rm -rf "./context"
+}
+
+rdo_docker_context_types() {
+  printf "%s\n" "${context_types[@]}"
+}
+
+# Helper functions
+
+rdo_docker_context__pre_ancestor() {
+  local project_path="$(get_project_path)"
+  local context_name="${1:?Missing ancestor name argument.}"
+  local context_path="${project_path:?Missing project path.}/context/${context_name}/"
+
+  rm -r "${context_path}" || :
+  mkdir -p "${context_path}/bin"
+  mkdir -p "${context_path}/apk-cache"
+  cp "${project_path}"/misc/{stat,rsync}-*[!~] "${context_path}/bin/"
+}
+
+rdo_docker_context__post_ancestor() {
+  local project_path="$(get_project_path)"
+  local context_name="${1:?Missing ancestor name argument.}"
+  local context_path="${project_path:?Missing project path.}/context/ancestor/"
+  local tag_full="${2:?Missing tag argument.}"
+
+  rdo_docker_context__post_apk "${context_name}" "${tag_full}"
+}
+
+rdo_docker_context__pre_apk() {
+  local context_name="${1:?Missing stage name argument.}"
+  local project_path="$(get_project_path)"
+  local context_path="${project_path:?Missing project path.}/context/${context_name}/"
+
+  mkdir -p "${context_path}/apk-cache"
+  mkdir -p "${context_path}/misc"
+
+  cp "${project_path}"/misc/rsync-* "${context_path}/misc/"
+}
+
+rdo_docker_context__post_apk() {
+  local project_path="$(get_project_path)"
+  local context_name="${1:?Missing stage name argument.}"
+  local context_path="${project_path:?Missing project path.}/context/${context_name}/"
+  local tag_full="${2:?Missing tag argument.}"
+  local container_name="post-apk.${RANDOM}${RANDOM}"
+
+  docker run --detach --rm --name "${container_name}" "${tag_full}" sleep 100
+
+  local ls_container="$(docker exec "${container_name}" sh -c 'cd /apk-cache; \ls -s | tail -n +2')"
+  local ls_context="$(cd "${context_path}/apk-cache"; \ls -s | tail -n +2)"
+
+  if [[ -n "${ls_container// /}" ]] && [[ "${ls_container// /}" == "${ls_context// /}" ]]; then
+    print_normal "unchanged apk cache for '${context_name}'"
+    return 0
+  fi
+
+  (
+    print_normal "updating apk cache for '${context_name}'"
+
+    cd "${context_path}"
+    rm -rf ./apk-cache || :
+
+    docker cp ${container_name}:/apk-cache ./
+    docker rm -f "${container_name}" || :
+  )
+}
+
+rdo_docker_context__pre_configure() {
+  local project_path="$(get_project_path)"
+  local context_name="${1:?Missing stage name argument.}"
+  local context_path="${project_path:?Missing project path.}/context/${context_name}"
+
+  "${project_path}/misc/rsync-configure" "${project_path}/data/${context_name%/configure}/" "${context_path}/stage/"
+  #"${project_path}/misc/stat-list-mtime" "${context_path}/stage/" "${context_path}/stage.mtime"
+}
+
+rdo_docker_context__pre_compile() {
+  local project_path="$(get_project_path)"
+  local context_name="${1:?Missing stage name argument.}"
+  local context_path="${project_path:?Missing project path.}/context/${context_name}/"
+
+  mkdir -p "${context_path}/"
+  rm -rf "${context_path}/compile.tar.bz2" || :
+
+  (
+    cd "${project_path}/data/${context_name}"
+
+    find . \
+         -name '*.cc' -or \
+         -name '*.h' |
+      tar \
+        -cjv \
+        -C "${project_path}/data/${context_name}" \
+        -f "${context_path}/compile.tar.bz2" \
+        -T -
+  )
+}
+
+rdo_docker_context__pre_stage() {
+  local project_path="$(get_project_path)"
+  local context_name="${1:?Missing stage name argument.}"
+  local context_path="${project_path:?Missing project path.}/context/${context_name}/"
+
+  mkdir -p "${context_path}/bin"
+  cp "${project_path}"/misc/rsync-*[!~] "${context_path}/bin/"
+}

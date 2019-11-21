@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+#
+# - Add fallback to anonymouse git repositories.
+# - Store default remote and allow user to change it.
+
+set -e
+local included_rdo_git="yes"
+print_normal "included rdo_git"
+
+do_git() {
+  local cmd="${1}"; shift || :
+
+  case "${cmd}" in
+    clone)
+      git_clone "${@}"
+      ;;
+    --help|-h|'')
+      echo "Usage: do git COMMAND"
+      echo
+      echo "Git commands"
+      echo
+      echo "Commands"
+      echo "  clone   Clone all repositories"
+      echo
+      echo "Run 'do git COMMAND --help' for more information on a command."
+      ;;
+    *)
+      print_error "unknown git command: ${@}"
+      return 1
+      ;;
+  esac
+}
+
+git_clone_repository() {
+  local repository="${1:?Missing repository argument.}"
+
+  if ! [ -d "${repository}" ]; then
+    git clone "${repository}" || :
+  else
+    print_progress "repository '${repository}' already exists"
+  fi
+
+  if [ -d "${repository}" ]; then
+    print_error "cloning '${repository}' failed"
+  fi
+
+  if cd "${repository}" && git status &> /dev/null; then
+    print_progress "repository '${repository}' is not valid, git status failed"
+  fi
+}
+
+git_clone() {
+  if ! cd "${DATA_PATH}"; then
+    print_error "Could not enter '${DATA_PATH}', call './do init' first."
+    exit 1
+  fi
+
+  git_clone_repository "git@github.com:rakshasa/libtorrent.git"
+  git_clone_repository "git@github.com:rakshasa/rtorrent.git"
+}

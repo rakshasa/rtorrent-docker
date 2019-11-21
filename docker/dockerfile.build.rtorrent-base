@@ -1,0 +1,15 @@
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/build/base:${TAG_APPEND}"
+
+RUN rm -rf /apk-cache || :
+COPY apk-cache /apk-cache
+
+RUN \
+apk add \
+    cppunit \
+    cppunit-dev \
+    curl-dev \
+    ncurses-dev

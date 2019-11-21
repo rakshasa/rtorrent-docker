@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+source_directory="${1:?Missing source directory argument.}"
+target_file="${2:?Missing target file argument.}"
+
+cd "${source_directory}"
+find . | xargs stat -c '%Y %n' > "${target_file}"

@@ -1,0 +1,22 @@
+#!/bin/sh
+
+arg_source="${1:?Missing source argument.}"
+arg_target="${2:?Missing target argument.}"
+
+rsync ${RSYNC_ARGS} -v \
+--include '*.ac' \
+--include '*.am' \
+--include '*.in' \
+--include '*.m4' \
+--include '*.sh' \
+--include '/libtorrent.pc.in' \
+--include '*/' \
+--exclude '*' \
+${arg_source} ${arg_target}
+
+rsync ${RSYNC_ARGS} -v \
+--include '*.cc' \
+--include '*.h' \
+--include '*/' \
+--exclude '*' \
+${arg_source} ${arg_target}

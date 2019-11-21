@@ -1,0 +1,233 @@
+#!/usr/bin/env bash
+
+set -e
+local included_rdo_machine="yes"
+print_normal "included rdo_machine"
+
+rdo_machine() {
+  local cmd="${1}"; shift || :
+
+  case "${cmd}" in
+    create)
+      rdo_machine_create "${@}"
+      ;;
+    current)
+      rdo_machine_current_name "${@}"
+      ;;
+    destroy)
+      rdo_machine_destroy "${@}"
+      ;;
+    start)
+      rdo_machine_start "${@}"
+      ;;
+    status)
+      rdo_machine_status "${@}"
+      ;;
+    stop)
+      rdo_machine_stop "${@}"
+      ;;
+    --help|-h|'')
+      echo "Usage: rdo machine COMMAND"
+      echo
+      echo "Create and manage rtorrent-docker machines"
+      echo
+      echo "Commands"
+      echo "  create   Initalize the docker machine"
+      echo "  current  Print the current docker machine name"
+      echo "  destroy  Destroy the docker machine"
+      echo "  start    Start the docker machine"
+      echo "  status   Print the status of the docker machine"
+      echo "  stop     Stop the docker machine"
+      echo
+      echo "Run 'rdo machine COMMAND --help' for more information on a command."
+      ;;
+    *)
+      print_error "rdo machine: unknown command: ${@}"
+      return 1
+      ;;
+  esac
+}
+
+rdo_machine_create() {
+  local arg_docker_machine=
+
+  while [[ -n "${1}" ]]; do
+    case "${1}" in
+      --docker-machine)
+        arg_docker_machine="${2:?Missing docker machine name.}"
+        shift 2 ;;
+      --help|-h)
+        echo "Usage: rdo machine create [OPTIONS]"
+        echo
+        echo "Create and manage rtorrent-docker environment"
+        echo
+        echo "Options:"
+        echo "      --docker-machine  Use docker machine"
+        echo
+        echo "Run 'rdo machine create --help' for more information on a command."
+        exit 1
+        ;;
+      *)
+        if [[ -z "${1##-*}" ]]; then
+          echo "rdo machine create: unknown parameter: ${1}" 2> /dev/null
+          exit 1
+        fi
+        break
+        ;;
+    esac
+  done
+
+  print_progress "creating docker machine '${arg_docker_machine:?Missing machine name argument.}'"
+
+  if [[ -f "${DATA_PATH}/env.machine" ]] && [[ -z "$(rdo_machine__current_name)" ]]; then
+    print_error "removing invalid env.machine file"
+    rm -f "${DATA_PATH}/env.machine"
+  fi
+
+  if rdo_machine__is_error "${arg_docker_machine}"; then
+    print_normal "removing invalid docker machine"
+    docker-machine rm -f "${arg_docker_machine}"
+
+  elif rdo_machine__is_saved "${arg_docker_machine}"; then
+    print_normal "starting saved docker machine"
+    docker-machine start "${arg_docker_machine}"
+
+  elif rdo_machine__is_stopped "${arg_docker_machine}"; then
+    print_normal "docker machine '${arg_docker_machine}' is stopped, restarting"
+    docker-machine start "${arg_docker_machine}"
+  fi
+
+  if [[ -z "$(docker-machine inspect "${arg_docker_machine}")" ]]; then
+    print_normal "creating docker machine '${arg_docker_machine}'"
+    docker-machine create \
+                   --driver virtualbox \
+                   --virtualbox-cpu-count 6 \
+                   --virtualbox-disk-size 100000 \
+                   --virtualbox-memory 10000 \
+                   "${arg_docker_machine}"
+  else
+    print_normal "docker machine '${arg_docker_machine}' already exists, skipping creation"
+  fi
+
+  if rdo_machine__is_error "${arg_docker_machine}"; then
+    print_error "unable to create docker machine"
+    exit 1
+  fi
+
+  print_normal "updating env.machine with '${arg_docker_machine}'"
+  docker-machine env "${arg_docker_machine}" > "${DATA_PATH}/env.machine"
+}
+
+rdo_machine_destroy() {
+  local machine_name="$(rdo_machine__current_name)"
+
+  print_progress "destroying docker machine '${machine_name}'"
+
+  if [[ -z "${machine_name}" ]]; then
+    print_normal "docker machine not initialized, skipping"
+    return
+  fi
+
+  if [[ -n "$(docker-machine ls --quiet --filter "name=${machine_name}")" ]]; then
+    print_normal "killing docker machine '${machine_name}'"
+    docker-machine rm -y "${machine_name}"
+  else
+    print_normal "docker machine not found, skipping"
+  fi
+
+  rm "${DATA_PATH}/env.machine"
+}
+
+rdo_machine_start() {
+  local machine_name="$(rdo_machine__current_name)"
+
+  if [[ -z "${machine_name}" ]]; then
+    print_error "could not start docker machine, machine not defined"
+    return 1
+  fi
+
+  print_progress "starting docker machine '${machine_name}'"
+  docker-machine start "${machine_name}"
+}
+
+rdo_machine_status() {
+  local machine_name="${1:-$(rdo_machine__current_name)}"
+  docker-machine status "${machine_name}"
+}
+
+rdo_machine_stop() {
+  local machine_name="$(rdo_machine__current_name)"
+
+  if [[ -z "${machine_name}" ]]; then
+    print_warning "could not stop docker machine, machine not defined"
+    return 1
+  fi
+
+  print_progress "stopping docker machine '${machine_name}'"
+  docker-machine stop "${machine_name}"
+}
+
+# Helper functions
+
+rdo_machine__has_env() {
+  [[ -f "${DATA_PATH}/env.machine" ]] && grep 'DOCKER_MACHINE_NAME=' "${DATA_PATH}/env.machine" &> /dev/null
+}
+
+rdo_machine__current() {
+  local machine_name="$(rdo_machine__current_name)"
+  [[ -z "${machine_name}" ]] && (print_progress "docker machine not initialized"; return 1)
+  echo "${machine_name}"
+}
+
+rdo_machine__current_name() {
+  [[ -f "${DATA_PATH}/env.machine" ]] || return
+  sed -e '/DOCKER_MACHINE_NAME/!d; s/"//g; s/export DOCKER_MACHINE_NAME=//' "${DATA_PATH}/env.machine"
+}
+
+rdo_machine__status() {
+  local machine_name="${1:?Missing machine name argument.}"
+  docker-machine status "${machine_name}" 2> /dev/null
+}
+
+rdo_machine__is_active() {
+  local machine_name="${1:?Missing machine name argument.}"
+  [[ "${machine_name}" == "$(docker-machine active)" ]]
+}
+
+rdo_machine__is_created() {
+  [[ -n "$(rdo_machine__status "${@}")" ]]
+}
+
+rdo_machine__is_error() {
+  local machine_name="${1:?Missing machine name argument.}"
+  [[ "$(docker-machine ls --format '{{ .State }}' --filter "name=${machine_name}")" == "Error" ]]
+}
+
+rdo_machine__is_running() {
+  [[ "$(rdo_machine__status "${@}")" == "Running" ]]
+}
+
+rdo_machine__is_saved() {
+  [[ "$(rdo_machine__status "${@}")" == "Saved" ]]
+}
+
+rdo_machine__is_stopped() {
+  [[ "$(rdo_machine__status "${@}")" == "Stopped" ]]
+}
+
+rdo_machine__verify() {
+  local machine_name="$(rdo_machine__current_name)"
+
+  if ! docker-machine active &> /dev/null; then
+    print_error "docker machine command active failed"
+    exit 1
+  fi
+
+  local active_machine="$(docker-machine active)"
+
+  if [[ "${active_machine}" != "${machine_name}" ]]; then
+    print_error "docker machine mismatch, expected '${machine_name}' got '${active_machine}'"
+    print_error "use './do bash' to enter custom bash session"
+    exit 1
+  fi
+}

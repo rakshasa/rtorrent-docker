@@ -1,0 +1,16 @@
+# Stage recompile of rtorrent.
+
+ARG REPOSITORY
+ARG TAG_APPEND
+ARG STAGE_IMAGE
+
+
+FROM "${REPOSITORY}/${STAGE_IMAGE}:${TAG_APPEND}" AS stage
+
+
+FROM "${REPOSITORY}/stage:${TAG_APPEND}"
+
+COPY --from=stage /deployment /stage/
+COPY --from=stage /prefix /prefix/
+
+RUN rsync-compile-stage "/stage/*" "/deployment"

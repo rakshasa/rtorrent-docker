@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+set -e
+
+# docker images --all --filter 'label=ancestor=rtorrent-docker'
+
+rdo_docker_clean() {
+  local cmd="${1}"; shift || :
+
+  case "${cmd}" in
+    all)
+      rdo_docker_clean_all "${@}"
+      ;;
+    --help|-h|'')
+      echo "Usage: rdo docker clean COMMAND"
+      echo
+      echo "Docker clean commands"
+      echo
+      echo "Commands"
+      echo "  all   Clean all build targets"
+      echo
+      echo "Run 'rdo docker clean COMMAND --help' for more information on a command."
+      ;;
+    *)
+      print_error "rdo docker clean: unknown command: ${@}"
+      return 1
+      ;;
+  esac
+}
+
+rdo_docker_clean_all() {
+  local arg_ancestor_project="rtorrent-docker"
+
+  args=()
+
+  [[ -n "${arg_ancestor_project}" ]] && args+=("--filter" "label=ancestor_project=${arg_ancestor_project}")
+
+  local containers=($(docker ps --all --quiet "${args[@]}"))
+  if (( ${#containers[@]} > 0 )); then
+    docker rm --force "${containers[@]}"
+  fi
+
+  local images=($(docker images --all --quiet "${args[@]}"))
+  if (( ${#images[@]} > 0 )); then
+    docker rmi --force "${images[@]}" 2>&1 | grep -v 'Error: No such image:' >&2
+  fi
+}

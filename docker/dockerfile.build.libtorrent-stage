@@ -1,0 +1,29 @@
+# Stage recompile of libtorrent.
+
+ARG REPOSITORY
+ARG TAG_APPEND
+ARG STAGE_IMAGE
+
+
+FROM "${REPOSITORY}/${STAGE_IMAGE}:${TAG_APPEND}" AS stage
+
+
+FROM "${REPOSITORY}/stage:${TAG_APPEND}"
+
+COPY --from=stage /empty /deployment/configure.tar*bz2 /stage/
+
+RUN echo -e "\033[0;32mbuilding staging archive\033[0m"; set -xe; \
+\
+if [ -f /stage/configure.tar.bz2 ]; then \
+  mkdir -p /stage/configure; \
+  ${TAR_X_CMD} -C /stage/configure -f /stage/configure.tar.bz2; \
+  ${RSYNC_CMD} /stage/configure/ /build/; \
+fi; \
+\
+if [ -f /stage/compile.tar.bz2 ]; then \
+  mkdir -p /stage/compile; \
+  ${TAR_X_CMD} -C /stage/compile -f /stage/compile.tar.bz2; \
+  ${RSYNC_CMD} /stage/compile/ /build/; \
+fi; \
+\
+${TAR_C_CMD} -C /build/ -f /deployment/full.tar.bz2 .

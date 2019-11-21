@@ -1,0 +1,6 @@
+# Git itnore for rtorrent docker project.
+
+.dockerignore
+.git
+context/*
+data/*/.git
