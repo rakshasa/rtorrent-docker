@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-set -e
+rdo_header docker.context
 
-local context_types=(
+DOCKER_CONTEXT_TYPES=(
   ancestor
   apk
   configure
@@ -88,7 +88,7 @@ rdo_docker_context_build() {
     exit 1
   fi
 
-  if ! [[ " ${context_types[*]} " =~ " ${arg_context_type} " ]]; then
+  if ! [[ " ${DOCKER_CONTEXT_TYPES[*]} " =~ " ${arg_context_type} " ]]; then
     print_error "rdo docker context build: unknown context type: '${arg_context_type}'"
     exit 1
   fi
@@ -118,7 +118,7 @@ rdo_docker_context_clean() {
 }
 
 rdo_docker_context_types() {
-  printf "%s\n" "${context_types[@]}"
+  printf "%s\n" "${DOCKER_CONTEXT_TYPES[@]}"
 }
 
 # Helper functions

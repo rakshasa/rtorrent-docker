@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
-[[ -n "${included_rdo_build}" ]] && echo "rdo_build already included" && exit 1
-local included_rdo_build="yes"
+rdo_header build
 
 rdo_build() {
   local build_args=("--tag-append" "default")

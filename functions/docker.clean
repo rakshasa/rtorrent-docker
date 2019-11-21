@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
-
-# docker images --all --filter 'label=ancestor=rtorrent-docker'
+rdo_header docker.clean
 
 rdo_docker_clean() {
   local cmd="${1}"; shift || :
