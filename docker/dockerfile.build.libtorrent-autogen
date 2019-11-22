@@ -1,0 +1,13 @@
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/build/libtorrent-base:${TAG_APPEND}"
+
+RUN rm -rf /apk-cache || :
+
+COPY /stage/ /build/
+
+RUN echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; \
+./autogen.sh; \
+rsync-deploy-configure /build/ /deploy/build/

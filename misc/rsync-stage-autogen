@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+
+arg_source="${1:?Missing source argument.}"
+arg_target="${2:?Missing target argument.}"
+
+mkdir -p "${arg_target}"
+
+rsync -rlpgoD -m --update --delete-after --checksum -v \
+\
+--include 'configure.ac' \
+--include '/autogen.sh' \
+\
+--include '*/' \
+--exclude '*' \
+${arg_source} ${arg_target}
