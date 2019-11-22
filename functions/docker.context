@@ -150,8 +150,6 @@ rdo_docker_context__pre_apk() {
 
   mkdir -p "${context_path}/apk-cache"
   mkdir -p "${context_path}/misc"
-
-  cp "${project_path}"/misc/rsync-* "${context_path}/misc/"
 }
 
 rdo_docker_context__post_apk() {
@@ -172,9 +170,18 @@ rdo_docker_context__post_apk() {
     rm -rf ./apk-cache ./apk-cache.imageid || :
 
     local container_name="post-apk.${RANDOM}${RANDOM}"
-    docker run --detach --rm --name "${container_name}" "${tag_full}" sleep 100
+    local package_id="$(rdo__latest_image_id__label "package_tag=ready:${tag_full}")"
+
+    if [[ -z "${package_id}" ]]; then
+      echo "rdo_docker_context__post_apk: could not find package image" >&2
+      exit 1
+    fi
+
+    echo "apk package ready at ${package_id}"
+
+    docker run --detach --rm --name "${container_name}" "${package_id}" sleep 100 > /dev/null 
     docker cp ${container_name}:/apk-cache ./
-    docker rm -f "${container_name}" || :
+    docker rm -f "${container_name}"|| :
 
     echo "$(rdo__image_id "${tag_full}")" > ./apk-cache.imageid
   )
@@ -185,7 +192,8 @@ rdo_docker_context__pre_configure() {
   local context_name="${1:?Missing stage name argument.}"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
 
-  "${project_path}/misc/rsync-stage-configure" "${project_path}/data/${context_name%/configure}/" "${context_path}/stage/"
+  "${project_path}/misc/rsync-stage-autogen"   "${project_path}/data/${context_name%/configure}/" "${context_path}/autogen/"
+  "${project_path}/misc/rsync-stage-configure" "${project_path}/data/${context_name%/configure}/" "${context_path}/configure/"
 }
 
 rdo_docker_context__pre_compile() {

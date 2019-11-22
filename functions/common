@@ -20,3 +20,12 @@ rdo__image_id() {
   local image_name="${1:?Missing image argument.}"
   echo "$(rdo docker inspect --id "${image_name}")"
 }
+
+rdo__latest_image_id__label() {
+  local label="${1:?Missing label argument.}"
+  local image_id="$(docker images --all --quiet --filter label=${label} | head -n1)"
+
+  if [[ -n "${image_id}" ]]; then
+    rdo__image_id "${image_id}"
+  fi
+}

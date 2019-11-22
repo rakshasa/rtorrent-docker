@@ -15,15 +15,12 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/build/libtorrent-base:${TAG_APPEND}"
 
-RUN rm -rf /apk-cache || :
-
 COPY /autogen/ /build/
 
 RUN echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; \
 ./autogen.sh
 
 COPY /configure/ /stage/configure/
-
 
 # RUN echo -e "\033[0;32mlibtorrent configure\033[0m"; set -xe; \
 # . /env.configure; \

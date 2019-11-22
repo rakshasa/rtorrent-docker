@@ -11,3 +11,5 @@ RUN \
 apk add \
     cppunit \
     cppunit-dev
+
+RUN rm -rf /apk-cache || :

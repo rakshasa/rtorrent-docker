@@ -7,23 +7,39 @@
 # /empty  - empty file allowing docker copy of possibly missing files
 # /prefix - install resulting builds here
 
-ARG REPOSITORY
-ARG TAG_APPEND
 
+# Create separate packages image. (can't, make scripts instead)
 
-FROM "alpine"
+FROM "alpine" as packages
 
 LABEL ancestor_project="rtorrent-docker"
 
-RUN \
-mkdir -p /build /deploy /prefix /stage; \
-ln -s /apk-cache /etc/apk/cache; \
-touch /empty
-
 COPY apk-cache /apk-cache
+
+RUN \
+ln -s /apk-cache /etc/apk/cache; \
+apk add bash rsync tar
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+# Used by post_apk to copy the package cache.
+LABEL package_tag="ready:${REPOSITORY}/ancestor:${TAG_APPEND}"
+LABEL package_tag="empty:${REPOSITORY}/ancestor:${TAG_APPEND}"
+
+RUN rm -rf /apk-cache
+
+
+FROM "scratch"
+
+LABEL ancestor_project="rtorrent-docker"
+
+COPY --from=packages / /
 COPY bin/ /usr/bin/
 
-RUN apk add bash rsync tar
+RUN \
+mkdir -p /build /deploy /prefix /stage; \
+touch /empty
 
 # ARG RSYNC_CMD="rsync -acm --update -v"
 # ENV RSYNC_CMD="${RSYNC_CMD}"

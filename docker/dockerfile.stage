@@ -18,5 +18,3 @@ ARG TAG_APPEND
 FROM "${REPOSITORY}/ancestor:${TAG_APPEND}"
 
 WORKDIR /stage
-
-RUN rm -rf /apk-cache || :

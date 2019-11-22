@@ -9,7 +9,6 @@ FROM "${REPOSITORY}/ancestor:${TAG_APPEND}"
 
 WORKDIR /build
 
-RUN rm -rf /apk-cache || :
 COPY apk-cache /apk-cache
 
 RUN \
@@ -65,3 +64,5 @@ echo "export CXXFLAGS=\"\
 -std=${COMPILER_STANDARD} \
 -Wno-exceptions -Wno-pessimizing-move \
 \"" >> /env.configure
+
+RUN rm -rf /apk-cache || :
