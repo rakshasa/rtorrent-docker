@@ -9,7 +9,6 @@ mkdir -p "${arg_target}"
 
 rsync -rlpgoD -m --update --delete-after --checksum -v \
 \
---include '*.ac' \
 --include '*.am' \
 --include '*.m4' \
 --include '*.pc.in' \
@@ -20,6 +19,9 @@ rsync -rlpgoD -m --update --delete-after --checksum -v \
 --include '/INSTALL' \
 --include '/NEWS' \
 --include '/README' \
+\
+--include '*.ac' \
+--include '*.pc.in' \
 \
 --include '*.cc' \
 --include '*.h' \

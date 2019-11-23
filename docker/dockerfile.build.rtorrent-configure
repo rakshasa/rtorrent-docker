@@ -7,8 +7,6 @@ FROM "${REPOSITORY}/build/libtorrent-configure:${TAG_APPEND}" AS configure.libto
 
 FROM "${REPOSITORY}/build/rtorrent-base:${TAG_APPEND}"
 
-RUN rm -rf /apk-cache || :
-
 COPY --from=configure.libtorrent /deploy/build/libtorrent.pc /usr/lib/pkgconfig/
 
 COPY /stage/ /build/

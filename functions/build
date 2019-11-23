@@ -62,8 +62,7 @@ rdo_build() {
 rdo_build_all() {
   rdo init verify
   rdo_build__init
-  # rdo_build__libtorrent_init
-  # rdo_build__libtorrent_compile
+  rdo_build__libtorrent_compile
   # rdo_build__rtorrent_compile
   # rdo_build__libtorrent_check
   # rdo_build__rtorrent_check
@@ -85,15 +84,9 @@ rdo_build_compile() {
 
 rdo_build__init() {
   rdo docker context build --context-type "ancestor" --context-name "ancestor" "${build_args[@]}" "ancestor"
-  # rdo docker build "${build_args[@]}" "stage"
-  # rdo docker context build --context-type "apk" --context-name "apk/base" "${build_args[@]}" "build/base"
+  rdo docker build "${build_args[@]}" "stage"
+  rdo docker context build --context-type "apk" --context-name "apk/base" "${build_args[@]}" "build/base"
 }
-
-# rdo_build__libtorrent_init() {
-#   rdo docker context build --context-type "apk" --context-name "apk/libtorrent" "${build_args[@]}" "build/libtorrent-base"
-#   rdo docker context build --context-type "configure" --context-name "libtorrent/configure" "${build_args[@]}" "build/libtorrent-autogen"
-#   rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-autogen" "build/libtorrent-stage"
-# }
 
 rdo_build__libtorrent_compile() {
   rdo docker context build --context-type "apk" --context-name "apk/libtorrent" "${build_args[@]}" "build/libtorrent-base"

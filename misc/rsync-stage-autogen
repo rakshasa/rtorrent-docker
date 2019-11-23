@@ -9,8 +9,16 @@ mkdir -p "${arg_target}"
 
 rsync -rlpgoD -m --update --delete-after --checksum -v \
 \
+--include '*.am' \
+--include '*.m4' \
 --include 'configure.ac' \
+--include '/AUTHORS' \
 --include '/autogen.sh' \
+--include '/ChangeLog' \
+--include '/COPYING' \
+--include '/INSTALL' \
+--include '/NEWS' \
+--include '/README' \
 \
 --include '*/' \
 --exclude '*' \

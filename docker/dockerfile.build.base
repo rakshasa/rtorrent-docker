@@ -5,9 +5,7 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/ancestor:${TAG_APPEND}"
-
-WORKDIR /build
+FROM "${REPOSITORY}/ancestor:${TAG_APPEND}" as packages
 
 COPY apk-cache /apk-cache
 
@@ -53,6 +51,24 @@ else \
   exit 1; \
 fi
 
+ARG REPOSITORY
+ARG TAG_APPEND
+LABEL package_tag="ready:${REPOSITORY}/build/base:${TAG_APPEND}"
+LABEL package_tag="empty:${REPOSITORY}/build/base:${TAG_APPEND}"
+
+RUN rm -rf /apk-cache || :
+
+
+FROM "scratch"
+
+LABEL ancestor_project="rtorrent-docker"
+
+WORKDIR /build
+
+COPY --from=packages / /
+
+ARG COMPILER="clang"
+ENV COMPILER="${COMPILER}"
 ARG COMPILER_STANDARD="c++11"
 ENV COMPILER_STANDARD="${COMPILER_STANDARD}"
 
@@ -64,5 +80,3 @@ echo "export CXXFLAGS=\"\
 -std=${COMPILER_STANDARD} \
 -Wno-exceptions -Wno-pessimizing-move \
 \"" >> /env.configure
-
-RUN rm -rf /apk-cache || :

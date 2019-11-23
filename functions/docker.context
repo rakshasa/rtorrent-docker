@@ -158,7 +158,14 @@ rdo_docker_context__post_apk() {
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
   local tag_full="${2:?Missing tag argument.}"
 
-  if rdo__compare_id__file_image "${context_path}/apk-cache.imageid" "${tag_full}"; then
+  local package_id="$(rdo__latest_image_id__label "package_tag=ready:${tag_full}")"
+
+  if [[ -z "${package_id}" ]]; then
+    echo "rdo_docker_context__post_apk: could not find package image for ${tag_full}" >&2
+    exit 1
+  fi
+
+  if rdo__compare_id__file_image "${context_path}/apk-cache.imageid" "${package_id}"; then
     print_normal "unchanged apk cache for '${context_name}'"
     return 0
   fi
@@ -167,23 +174,19 @@ rdo_docker_context__post_apk() {
 
   (
     cd "${context_path}"
-    rm -rf ./apk-cache ./apk-cache.imageid || :
+    rm -rf ./apk-cache.new ./apk-cache.imageid || :
 
     local container_name="post-apk.${RANDOM}${RANDOM}"
-    local package_id="$(rdo__latest_image_id__label "package_tag=ready:${tag_full}")"
-
-    if [[ -z "${package_id}" ]]; then
-      echo "rdo_docker_context__post_apk: could not find package image" >&2
-      exit 1
-    fi
-
-    echo "apk package ready at ${package_id}"
 
     docker run --detach --rm --name "${container_name}" "${package_id}" sleep 100 > /dev/null 
-    docker cp ${container_name}:/apk-cache ./
+    docker cp "${container_name}:/apk-cache" ./apk-cache.new
     docker rm -f "${container_name}"|| :
 
-    echo "$(rdo__image_id "${tag_full}")" > ./apk-cache.imageid
+    rm -f ./apk-cache.new/APKINDEX.*.tar.gz || :
+    rsync -rlpgoD -m --update --delete-after --checksum -v ./apk-cache.new/ ./apk-cache/
+    rm -rf ./apk-cache.new || :
+    
+    echo "${package_id}" > ./apk-cache.imageid
   )
 }
 
