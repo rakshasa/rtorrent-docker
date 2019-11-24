@@ -60,7 +60,7 @@ _rtorrent_docker__rdo() {
 
 _rtorrent_docker__rdo_build() {
   if [[ "${word}" == -* ]]; then
-    flags=(--compiler#-f#-c#-b --dry-run --help)
+    flags=(--compiler#-c --dry-run --help)
     arg_funcs=(
       --compiler##rdo_compilers
     )
@@ -217,6 +217,7 @@ _rtorrent_docker_rdo() {
     local word=${words[iword]} rword=${words[iword]}
     local completion_func=_rtorrent_docker__${command_current}
 
+    # Matching commands move the interpreter down a command layer while flags are handled in the same layer.
     commands=() flags=() arg_funcs=()
 
     #echo -e "\n${command_current} i${iword} c${cword}"
@@ -226,24 +227,39 @@ _rtorrent_docker_rdo() {
       return 0
     fi
 
+    # Do not allow '#' in commands or flags.
+    if [[ "${word}" =~ '#' ]]; then
+      return 0
+    fi
+
     if (( ${iword} == ${cword} )); then
-      # Use only root commands/flags for completion. (todo: unless matching)
-      commands=(${commands[@]//#[^ ]*/})
-      flags=(${flags[@]//#[^ ]*/})
+      # If non-empty word and no root commands are matched, include all aliased commands.
+      if [[ -z "${word}" ]] || [[ " ${commands[*]} " =~ \ ${word}([^# ]*)(#| ) ]]; then
+        commands=(${commands[@]//#[^ ]*/})
+      else
+        commands=(${commands[@]//#/ })
+      fi
+
+      # If non-empty word and no root flags are matched, include all aliased flags.
+      if [[ -z "${word}" ]] || [[ " ${flags[*]} " =~ \ ${word}([^# ]*)(#| ) ]]; then
+        flags=(${flags[@]//#[^ ]*/})
+      else
+        flags=(${flags[@]//#/ })
+      fi
+
       break
     fi
 
     if [[ " ${commands[*]} " =~ " ${word} " ]]; then
-      # TODO: Allow aliases here too.
+      # TODO: Allow aliases for commands.
       command_current=${command_current}_${word//-/_}
       command_pos=${iword}
     elif [[ " ${flags[*]} " =~ \ ${word}(#| ) ]]; then
-      : # TODO: Use ( ,#) match.
+      : # Always make your : mean :, and your ! mean !.
     elif [[ " ${flags[*]} " =~ \ ([^ ]*)#${word}(#| ) ]] ; then
-      # Match current word or root flag word.
+      # Match current word or root flag.
       rword="${rword}|${BASH_REMATCH[1]%%#*}"
     else
-      echo -e "\nend"
       return 0
     fi
 
