@@ -3,8 +3,7 @@
 # argument helper functions
 
 _rtorrent_docker__rdo_compilers() {
-  commands=() flags=()
-  iword=$(( ${iword} + 1 ))
+  _rtorrent_docker__word_skip
 
   if (( ${iword} == ${cword} )); then
     commands=(clang gcc)
@@ -12,19 +11,19 @@ _rtorrent_docker__rdo_compilers() {
 }
 
 _rtorrent_docker__rdo_docker_args() {
-  commands=() flags=()
-  iword=$(( ${iword} + 1 ))
+  _rtorrent_docker__word_skip
 
   if (( ${iword} == ${cword} )); then
     COMPREPLY=($(compgen -W "$("${words[0]}" docker args)" -S= -- "${cur}"))
     _rtorrent_docker__nospace
     return 1
+  else
+    iword=$(( ${iword} + 2 ))
   fi
 }
 
 _rtorrent_docker__rdo_docker_context_types() {
-  commands=() flags=()
-  iword=$(( ${iword} + 1 ))
+  _rtorrent_docker__word_skip
 
   if (( ${iword} == ${cword} )); then
     commands=($("${words[0]}" docker context types))
@@ -32,8 +31,7 @@ _rtorrent_docker__rdo_docker_context_types() {
 }
 
 _rtorrent_docker__rdo_docker_images() {
-  commands=() flags=()
-  iword=$(( ${iword} + 1 ))
+  _rtorrent_docker__word_skip
 
   if (( ${iword} == ${cword} )); then
     commands=($("${words[0]}" docker images))
@@ -41,8 +39,7 @@ _rtorrent_docker__rdo_docker_images() {
 }
 
 _rtorrent_docker__rdo_docker_targets() {
-  commands=() flags=()
-  iword=$(( ${iword} + 1 ))
+  _rtorrent_docker__word_skip
 
   if (( ${iword} == ${cword} )); then
     commands=($("${words[0]}" docker targets))
@@ -53,7 +50,7 @@ _rtorrent_docker__rdo_docker_targets() {
 
 _rtorrent_docker__rdo() {
   if [[ "${word}" == -* ]]; then
-    flags=(--debug --help)
+    flags=(--debug#-d --help)
   else
     commands=(bash build destroy docker env git init machine tags)
   fi
@@ -63,8 +60,8 @@ _rtorrent_docker__rdo() {
 
 _rtorrent_docker__rdo_build() {
   if [[ "${word}" == -* ]]; then
-    flags=(--compiler --dry-run --help)
-    arg_funcs+=(
+    flags=(--compiler#-f#-c#-b --dry-run --help)
+    arg_funcs=(
       --compiler##rdo_compilers
     )
   else
@@ -77,7 +74,7 @@ _rtorrent_docker__rdo_build() {
 _rtorrent_docker__rdo_docker() {
   if [[ "${word}" != -* ]]; then
     commands=(args build children clean context images inspect stage targets)
-    arg_funcs+=(
+    arg_funcs=(
       children##rdo_docker_images
     )
   fi
@@ -98,7 +95,7 @@ _rtorrent_docker__rdo_docker_build__flags() {
     --tag
     --tag-append
   )
-  arg_funcs+=(
+  arg_funcs=(
     --base-image##rdo_docker_targets
     --build-arg##rdo_docker_args
     --stage-image##rdo_docker_targets
@@ -120,7 +117,7 @@ _rtorrent_docker__rdo_docker_clean() {
 _rtorrent_docker__rdo_docker_context() {
   if [[ "${word}" != -* ]]; then
     commands=(build clean types)
-    arg_funcs+=(
+    arg_funcs=(
       init##rdo_docker_context_types
     )
   fi
@@ -215,21 +212,38 @@ _rtorrent_docker_rdo() {
   local command_current=rdo command_pos=0 iword=0 cskip=0
 
   for (( iword=1; iword <= ${cword}; ++iword)); do
-    local word=${words[iword]}
+    # Word is the current word being completed.
+    # Rword is the regexp pattern used when looking up arg_func.
+    local word=${words[iword]} rword=${words[iword]}
     local completion_func=_rtorrent_docker__${command_current}
 
     commands=() flags=() arg_funcs=()
 
+    #echo -e "\n${command_current} i${iword} c${cword}"
+
     if ! declare -F "${completion_func}" > /dev/null || ! ${completion_func}; then
+      # No conversion of '#' is done, the completion_func is responsible for cleaning up commands/flags.
       return 0
     fi
 
     if (( ${iword} == ${cword} )); then
+      # Use only root commands/flags for completion. (todo: unless matching)
+      commands=(${commands[@]//#[^ ]*/})
+      flags=(${flags[@]//#[^ ]*/})
       break
-    elif [[ " ${commands[*]} " =~ " ${word} " ]]; then
+    fi
+
+    if [[ " ${commands[*]} " =~ " ${word} " ]]; then
+      # TODO: Allow aliases here too.
       command_current=${command_current}_${word//-/_}
       command_pos=${iword}
-    elif ! [[ " ${flags[*]} " =~ " ${word} " ]]; then
+    elif [[ " ${flags[*]} " =~ \ ${word}(#| ) ]]; then
+      : # TODO: Use ( ,#) match.
+    elif [[ " ${flags[*]} " =~ \ ([^ ]*)#${word}(#| ) ]] ; then
+      # Match current word or root flag word.
+      rword="${rword}|${BASH_REMATCH[1]%%#*}"
+    else
+      echo -e "\nend"
       return 0
     fi
 
@@ -237,10 +251,10 @@ _rtorrent_docker_rdo() {
     local iarg=
 
     for (( iarg=0; iarg < ${#arg_funcs[@]}; ++iarg )); do
-      if [[ "${arg_funcs[iarg]}" =~ ^${word}##([^$]*)$ ]]; then
-        arg_func="_rtorrent_docker__${BASH_REMATCH[1]//#/ }"
-      elif [[ "${arg_funcs[iarg]}" =~ ^${word}#([^$]*)$ ]]; then
-        arg_func="${BASH_REMATCH[1]//#/ }"
+      if [[ "${arg_funcs[iarg]}" =~ ^(${rword})##([^$]*)$ ]]; then
+        arg_func="_rtorrent_docker__${BASH_REMATCH[2]//#/ }"
+      elif [[ "${arg_funcs[iarg]}" =~ ^(${rword})#([^$]*)$ ]]; then
+        arg_func="${BASH_REMATCH[2]//#/ }"
       fi
     done
 
@@ -249,7 +263,7 @@ _rtorrent_docker_rdo() {
     fi
   done
 
-  local compreply=("${flags[*]}" "${commands[*]}")
+  local compreply=("${commands[*]}" "${flags[*]}")
   COMPREPLY=($(compgen -W "${compreply[*]}" -- "${cur}"))
 
   return 0

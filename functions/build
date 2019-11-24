@@ -10,7 +10,7 @@ rdo_build() {
       --dry-run)
         build_args+=("--dry-run")
         shift ;;
-      --compiler)
+      --compiler|-c)
         build_args+=("--build-arg" "COMPILER=${2:?Missing compiler argument.}")
         shift 2 ;;
       --help|-h|'')
@@ -19,6 +19,7 @@ rdo_build() {
         echo "Build commands"
         echo
         echo "Options:"
+        echo "  -c, --compiler  Select the compiler to use"
         echo "      --dry-run   Do not actually build the container"
         echo
         echo "Commands"

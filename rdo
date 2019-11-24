@@ -18,7 +18,7 @@ rdo() {
 
   while true; do
     case "${1}" in
-      --debug)
+      --debug|-d)
         set -x
         shift
         ;;
@@ -28,7 +28,7 @@ rdo() {
         echo "Create and manage rtorrent-docker environment"
         echo
         echo "Options:"
-        echo "      --debug   Verbose rsync output"
+        echo "  -d, --debug   Verbose rsync output"
         echo
         echo "Commands:"
         echo "  bash          Start custom bash session"
