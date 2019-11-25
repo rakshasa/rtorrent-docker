@@ -177,20 +177,18 @@ rdo_docker_context__post_apk() {
     local container_name="post-apk.${RANDOM}${RANDOM}"
 
     docker run --detach --rm --name "${container_name}" "${package_id}" sleep 100 > /dev/null 
-    docker cp "${container_name}:/apk-cache" ./apk-cache.new
-    docker rm -f "${container_name}"|| :
 
-    if rdo__compare_hash__dir_dir "./apk-cache.new" "./apk-cache"; then
+    if rdo__compare_hash__dir_dir "${container_name}:/apk-cache" "./apk-cache"; then
       print_normal "unchanged apk directory cache for '${context_name}'"
+      docker rm -f "${container_name}" || :
       return 0
     fi
 
+    docker cp "${container_name}:/apk-cache" ./apk-cache.new
+    docker rm -f "${container_name}" || :
+
     print_normal "updating apk cache for '${context_name}'"
 
-    # rm -rf ./apk-cache.imageid || :
-
-    # rm -f ./apk-cache.new/installed || :
-    #rm -f ./apk-cache.new/installed ./apk-cache.new/APKINDEX.*.tar.gz || :
     "${project_path}/misc/rsync-replace" ./apk-cache.new/ ./apk-cache/
     rm -rf ./apk-cache.new || :
     

@@ -2,7 +2,7 @@
 
 set -e
 
-arg_packages="${1:?Missing packages argument.}"
+arg_packages="${@}"
 
 apk add --no-network ${arg_packages} || apk add ${arg_packages}
 

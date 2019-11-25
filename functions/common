@@ -34,8 +34,19 @@ rdo__compare_hash__dir_dir() {
   local path_lhs="${1:?Missing lhs path argument.}"
   local path_rhs="${2:?Missing rhs path argument.}"
 
-  local hash_lhs="$(cd "${path_lhs}"; \ls -s | tail -n +2)"
-  local hash_rhs="$(cd "${path_rhs}"; \ls -s | tail -n +2)"
+  # Sort by size to detect if any files are empty or incomplete.
+
+  if [[ "${path_lhs}" =~ : ]]; then
+    local hash_lhs="$(docker exec "${path_lhs%%:*}" sh -c "cd '${path_lhs##*:}'; \ls -S | tail -n +2")"
+  else
+    local hash_lhs="$(cd "${path_lhs}"; \ls -S | tail -n +2)"
+  fi
+
+  if [[ "${path_rhs}" =~ : ]]; then
+    local hash_rhs="$(docker exec "${path_rhs%%:*}" sh -c "cd '${path_rhs##*:}'; \ls -S | tail -n +2")"
+  else
+    local hash_rhs="$(cd "${path_rhs}"; \ls -S | tail -n +2)"
+  fi
 
   [[ "${hash_lhs}" == "${hash_rhs}" ]]
 }

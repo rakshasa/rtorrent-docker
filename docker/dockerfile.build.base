@@ -13,22 +13,20 @@ RUN \
 echo -e "\033[0;32minstalling base build packages\033[0m"; \
 set -xe; \
 \
-mkdir -p /build /deploy /prefix /stage; \
-\
 echo "export PKG_CONFIG_PATH=\"/prefix/lib/pkgconfig:\${PKG_CONFIG_PATH}\"" >> /env.configure; \
 \
-apk add \
-    autoconf \
-    automake \
-    binutils \
-    file \
-    libc-dev \
-    libtool \
-    linux-headers \
-    make \
-    musl-dev \
-    openssl-dev \
-    zlib-dev
+pkg-add \
+  autoconf \
+  automake \
+  binutils \
+  file \
+  libc-dev \
+  libtool \
+  linux-headers \
+  make \
+  musl-dev \
+  openssl-dev \
+  zlib-dev
 
 ARG COMPILER="clang"
 ENV COMPILER="${COMPILER}"
@@ -40,11 +38,11 @@ set -xe; \
 if [ "${COMPILER}" = "clang" ]; then \
   # clang requires crtbeginS.o from gcc and std headers from g++
   echo "export CC=clang CXX=clang++" >> /env.configure; \
-  apk add gcc g++ clang clang-dev; \
+  pkg-add gcc g++ clang clang-dev; \
 \
 elif [ "${COMPILER}" = "gcc" ]; then \
   echo "export CC=gcc CXX=g++" >> /env.configure; \
-  apk add gcc g++; \
+  pkg-add add gcc g++; \
 \
 else \
   echo -e "\033[0;31munknown compiler family: ${COMPILER}\033[0m"; \
