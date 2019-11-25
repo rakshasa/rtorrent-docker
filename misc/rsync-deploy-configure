@@ -9,9 +9,8 @@ mkdir -p "${arg_target}"
 
 rsync -rlpgoD -m --update --delete-after --checksum -v \
 \
---exclude '*.am' \
-\
 --exclude '*.ac' \
+--exclude '*.am' \
 --exclude '*.m4' \
 --exclude '*.pc.in' \
 --exclude '/AUTHORS' \

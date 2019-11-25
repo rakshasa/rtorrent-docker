@@ -14,11 +14,12 @@ FROM "alpine" as packages
 
 LABEL ancestor_project="rtorrent-docker"
 
+RUN ln -s /apk-cache /etc/apk/cache
+
+COPY bin/ /usr/bin/
 COPY apk-cache /apk-cache
 
-RUN \
-ln -s /apk-cache /etc/apk/cache; \
-apk add bash rsync tar
+RUN pkg-add bash rsync tar
 
 ARG REPOSITORY
 ARG TAG_APPEND

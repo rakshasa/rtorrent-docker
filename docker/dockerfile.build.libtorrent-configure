@@ -2,27 +2,15 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-# Stage (and the rest of the files in rsync):
-# configure.ac:10: installing './compile'
-# configure.ac:10: installing './config.guess'
-# configure.ac:10: installing './config.sub'
-# configure.ac:5: installing './install-sh'
-# configure.ac:5: installing './missing'
-# src/Makefile.am: installing './depcomp'
-# parallel-tests: installing './test-driver'
-
-# Use stage build to import also
-
 FROM "${REPOSITORY}/build/libtorrent-base:${TAG_APPEND}"
 
-COPY /autogen/ /build/
+COPY /configure/ /build/
 
 RUN echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; \
 ./autogen.sh
 
-COPY /configure/ /stage/configure/
+RUN echo -e "\033[0;32mlibtorrent configure\033[0m"; set -xe; \
+. /env.configure; \
+./configure --prefix=/prefix
 
-# RUN echo -e "\033[0;32mlibtorrent configure\033[0m"; set -xe; \
-# . /env.configure; \
-# ./configure --prefix=/prefix; \
-# rsync-deploy-configure /build/ /deploy/build/
+RUN rsync-deploy-configure /build/ /deploy/build

@@ -29,3 +29,13 @@ rdo__latest_image_id__label() {
     rdo__image_id "${image_id}"
   fi
 }
+
+rdo__compare_hash__dir_dir() {
+  local path_lhs="${1:?Missing lhs path argument.}"
+  local path_rhs="${2:?Missing rhs path argument.}"
+
+  local hash_lhs="$(cd "${path_lhs}"; \ls -s | tail -n +2)"
+  local hash_rhs="$(cd "${path_rhs}"; \ls -s | tail -n +2)"
+
+  [[ "${hash_lhs}" == "${hash_rhs}" ]]
+}

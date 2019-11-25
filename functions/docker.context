@@ -129,9 +129,9 @@ rdo_docker_context__pre_ancestor() {
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
   local tag_full="${2:?Missing tag argument.}"
 
-  rm -r "${context_path}/bin" || :
+  rm -r "${context_path}/bin" 2> /dev/null || :
   mkdir -p "${context_path}/bin"
-  cp "${project_path}"/misc/{stat,rsync}-*[!~] "${context_path}/bin/"
+  cp "${project_path}"/misc/{pkg,rsync,stat}-*[!~] "${context_path}/bin/"
 
   rdo_docker_context__pre_apk "${context_name}" "${tag_full}"
 }
@@ -166,15 +166,13 @@ rdo_docker_context__post_apk() {
   fi
 
   if rdo__compare_id__file_image "${context_path}/apk-cache.imageid" "${package_id}"; then
-    print_normal "unchanged apk cache for '${context_name}'"
+    print_normal "unchanged apk image id for '${context_name}'"
     return 0
   fi
 
-  print_normal "updating apk cache for '${context_name}'"
-
   (
     cd "${context_path}"
-    rm -rf ./apk-cache.new ./apk-cache.imageid || :
+    rm -rf ./apk-cache.new
 
     local container_name="post-apk.${RANDOM}${RANDOM}"
 
@@ -182,8 +180,18 @@ rdo_docker_context__post_apk() {
     docker cp "${container_name}:/apk-cache" ./apk-cache.new
     docker rm -f "${container_name}"|| :
 
-    rm -f ./apk-cache.new/APKINDEX.*.tar.gz || :
-    rsync -rlpgoD -m --update --delete-after --checksum -v ./apk-cache.new/ ./apk-cache/
+    if rdo__compare_hash__dir_dir "./apk-cache.new" "./apk-cache"; then
+      print_normal "unchanged apk directory cache for '${context_name}'"
+      return 0
+    fi
+
+    print_normal "updating apk cache for '${context_name}'"
+
+    # rm -rf ./apk-cache.imageid || :
+
+    # rm -f ./apk-cache.new/installed || :
+    #rm -f ./apk-cache.new/installed ./apk-cache.new/APKINDEX.*.tar.gz || :
+    "${project_path}/misc/rsync-replace" ./apk-cache.new/ ./apk-cache/
     rm -rf ./apk-cache.new || :
     
     echo "${package_id}" > ./apk-cache.imageid
@@ -195,7 +203,6 @@ rdo_docker_context__pre_configure() {
   local context_name="${1:?Missing stage name argument.}"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
 
-  "${project_path}/misc/rsync-stage-autogen"   "${project_path}/data/${context_name%/configure}/" "${context_path}/autogen/"
   "${project_path}/misc/rsync-stage-configure" "${project_path}/data/${context_name%/configure}/" "${context_path}/configure/"
 }
 
@@ -204,7 +211,7 @@ rdo_docker_context__pre_compile() {
   local context_name="${1:?Missing stage name argument.}"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
 
-  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name%/compile}/" "${context_path}/stage/"
+  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name%/compile}/" "${context_path}/compile/"
 }
 
 rdo_docker_context__pre_empty() {
