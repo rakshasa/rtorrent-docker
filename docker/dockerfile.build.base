@@ -63,12 +63,13 @@ LABEL ancestor_project="rtorrent-docker"
 
 WORKDIR /build
 
-COPY --from=packages / /
-
+ENV PKG_CONFIG_PATH="/prefix/lib/pkgconfig/"
 ARG COMPILER="clang"
 ENV COMPILER="${COMPILER}"
 ARG COMPILER_STANDARD="c++11"
 ENV COMPILER_STANDARD="${COMPILER_STANDARD}"
+
+COPY --from=packages / /
 
 RUN \
 echo -e "\033[0;32msetting configure flags\033[0m"; \

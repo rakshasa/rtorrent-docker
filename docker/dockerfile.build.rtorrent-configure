@@ -2,19 +2,21 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/build/libtorrent-configure:${TAG_APPEND}" AS configure.libtorrent
+FROM "${REPOSITORY}/build/libtorrent-stage:${TAG_APPEND}" AS stage.libtorrent
 
 
 FROM "${REPOSITORY}/build/rtorrent-base:${TAG_APPEND}"
 
-COPY --from=configure.libtorrent /deploy/build/libtorrent.pc /usr/lib/pkgconfig/
+# Use prefix
+COPY --from=stage.libtorrent /deploy/prefix/lib/pkgconfig/ /prefix/lib/pkgconfig/
 
-COPY /stage/ /build/
+COPY /configure/ /build/
 
 RUN echo -e "\033[0;32mrtorrent autogen.sh\033[0m"; set -xe; \
 ./autogen.sh
 
 RUN echo -e "\033[0;32mrtorrent configure\033[0m"; set -xe; \
 . /env.configure; \
-./configure --prefix=/prefix; \
-rsync-deploy-configure /build/ /deploy/build/
+./configure --prefix=/prefix
+
+RUN rsync-deploy-configure /build/ /deploy/build/

@@ -7,33 +7,20 @@ FROM "${REPOSITORY}/build/libtorrent-stage:${TAG_APPEND}" AS stage.libtorrent
 
 FROM "${REPOSITORY}/build/rtorrent-stage:${TAG_APPEND}" AS stage
 
-COPY data/rtorrent /stage/
-
-RUN rsync-compile-source "/stage/*" "/deploy"
-
-COPY --from=stage.libtorrent /prefix /prefix-libtorrent/
-
-RUN \
-mv /prefix /prefix-rtorrent; \
-\
-rsync ${RSYNC_ARGS} \
---exclude '/prefix/bin/rtorrent' \
-/prefix-rtorrent/* /prefix; \
-\
-rsync ${RSYNC_ARGS} \
-/prefix-libtorrent/* /prefix
-
 
 FROM "${REPOSITORY}/build/rtorrent-base:${TAG_APPEND}"
 
-COPY --from=stage /prefix /prefix/
-COPY --from=stage /deploy /build/
+COPY --from=stage.libtorrent /deploy/prefix/ /prefix/
+COPY --from=stage /deploy/build/ /build/
+
+COPY compile/ /stage/
+RUN rsync-update /stage/ /build/
 
 RUN \
-echo -e "\033[0;32mbuilding rtorrent\033[0m"; \
-set -xe; \
-\
+echo -e "\033[0;32mbuilding rtorrent\033[0m"; set -xe; \
 make -j12; \
-make -j12 install; \
-\
-cp -rf /build/* /deploy/
+make -j12 install
+
+RUN \
+rsync-deploy-compile /build/ /deploy/build/; \
+cp -rp /prefix /deploy/

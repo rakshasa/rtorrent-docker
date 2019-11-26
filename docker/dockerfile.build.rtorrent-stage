@@ -7,10 +7,10 @@ ARG STAGE_IMAGE
 
 FROM "${REPOSITORY}/${STAGE_IMAGE}:${TAG_APPEND}" AS stage
 
+RUN mkdir -p /deploy/build /deploy/prefix
+
 
 FROM "${REPOSITORY}/stage:${TAG_APPEND}"
 
-COPY --from=stage /deploy /stage/
-COPY --from=stage /prefix /prefix/
-
-RUN rsync-compile-stage "/stage/*" "/deploy"
+COPY --from=stage /deploy/build/ /deploy/build/
+COPY --from=stage /deploy/prefix/ /deploy/prefix/

@@ -8,10 +8,10 @@ COPY apk-cache /apk-cache
 
 RUN \
 apk add \
-    cppunit \
-    cppunit-dev \
-    curl-dev \
-    ncurses-dev
+  cppunit \
+  cppunit-dev \
+  curl-dev \
+  ncurses-dev
 
 ARG REPOSITORY
 ARG TAG_APPEND
