@@ -13,5 +13,6 @@ RUN echo -e "\033[0;32mlibtorrent configure\033[0m"; set -xe; \
 . /env.configure; \
 ./configure --prefix=/prefix
 
+# TODO: Prefix here invalidates stage.
 RUN rsync-deploy-configure /build/ /deploy/build; \
 cp -rp /prefix /deploy/
