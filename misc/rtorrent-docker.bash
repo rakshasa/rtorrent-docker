@@ -65,7 +65,15 @@ _rtorrent_docker__rdo_build() {
       --compiler##rdo_compilers
     )
   else
-    commands=(all check compile recompile)
+    commands=(
+      all
+      check
+      compile
+      libtorrent-check
+      libtorrent-compile
+      rtorrent-check
+      rtorrent-compile
+    )
   fi
 }
 

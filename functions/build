@@ -53,6 +53,18 @@ rdo_build() {
     compile)
       rdo_build_compile "${@}"
       ;;
+    libtorrent-check)
+      rdo_build__libtorrent_check "${@}"
+      ;;
+    libtorrent-compile)
+      rdo_build__libtorrent_check "${@}"
+      ;;
+    rtorrent-check)
+      rdo_build__rtorrent_check "${@}"
+      ;;
+    rtorrent-compile)
+      rdo_build__rtorrent_check "${@}"
+      ;;
     *)
       print_error "rdo build: unknown command: ${cmd}"
       return 1
@@ -66,7 +78,7 @@ rdo_build_all() {
   rdo_build__libtorrent_compile
   rdo_build__libtorrent_check
   rdo_build__rtorrent_compile
-  # rdo_build__rtorrent_check
+  rdo_build__rtorrent_check
 }
 
 rdo_build_check() {
