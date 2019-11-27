@@ -7,8 +7,11 @@ FROM "${REPOSITORY}/build/libtorrent-stage:${TAG_APPEND}" AS stage
 
 FROM "${REPOSITORY}/build/libtorrent-base:${TAG_APPEND}"
 
+# TODO: Need to move along prefix.
+
 COPY --from=stage /deploy/build/ /build/
 
+# TODO: Do the update in separate stage.
 COPY compile/ /stage/
 RUN rsync-update /stage/ /build/
 

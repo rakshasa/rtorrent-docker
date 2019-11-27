@@ -21,6 +21,7 @@ pkg-add \
   binutils \
   file \
   libc-dev \
+  libexecinfo-dev \
   libtool \
   linux-headers \
   make \

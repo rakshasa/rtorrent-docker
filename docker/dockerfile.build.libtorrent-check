@@ -4,19 +4,17 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/build/libtorrent-stage:${TAG_APPEND}" AS stage
 
-COPY data/libtorrent /stage/
-
-RUN rsync-compile-check "/stage/*" "/deploy"
-
 
 FROM "${REPOSITORY}/build/libtorrent-base:${TAG_APPEND}"
 
-COPY --from=stage /deploy /build/
+COPY --from=stage /deploy/build/ /build/
+
+COPY compile/ /stage/
+RUN rsync-update /stage/ /build/
+
+RUN echo -e "\033[0;32mcheck libtorrent\033[0m"; set -xe; \
+make -j12 check
 
 RUN \
-echo -e "\033[0;32mcheck libtorrent\033[0m"; \
-set -xe; \
-\
-make -j12 check; \
-\
-cp -rf /build/* /deploy/
+rsync-deploy-compile /build/ /deploy/build/; \
+cp -rp /prefix /deploy/

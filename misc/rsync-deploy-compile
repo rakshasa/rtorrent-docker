@@ -7,7 +7,9 @@ arg_target="${2:?Missing target argument.}"
 
 mkdir -p "${arg_target}"
 
-rsync -rlpgoD -m --update --delete-after --checksum -v \
+rsync -rlpgoD -muc --delete-after -v \
+\
+--include '/config.h' \
 \
 --exclude '*.ac' \
 --exclude '*.am' \
