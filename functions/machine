@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
-local included_rdo_machine="yes"
-print_normal "included rdo_machine"
+rdo_header machine
 
 rdo_machine() {
   local cmd="${1}"; shift || :

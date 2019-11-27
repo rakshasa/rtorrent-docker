@@ -3,9 +3,7 @@
 # - Add fallback to anonymouse git repositories.
 # - Store default remote and allow user to change it.
 
-set -e
-local included_rdo_git="yes"
-print_normal "included rdo_git"
+rdo_header git
 
 do_git() {
   local cmd="${1}"; shift || :

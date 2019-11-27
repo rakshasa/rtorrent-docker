@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
-local included_rdo_init="yes"
-print_normal "included rdo_init"
+rdo_header init
 
 rdo_init() {
   local cmd="${1}"; shift || :

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
-local included_rdo_docker="yes"
-# print_normal "included rdo_docker"
+rdo_header docker
 
 rdo_docker() {
   local cmd="${1}"; shift || :
@@ -18,15 +16,18 @@ rdo_docker() {
       rdo_docker_children "${@}"
       ;;
     clean)
-      source "${PROJECT_PATH}/functions/docker.clean"
+      rdo_included docker.clean || source "${PROJECT_PATH}/functions/docker.clean"
       rdo_docker_clean "${@}"
       ;;
     context)
-      source "${PROJECT_PATH}/functions/docker.context"
+      rdo_included docker.context || source "${PROJECT_PATH}/functions/docker.context"
       rdo_docker_context "${@}"
       ;;
     images)
       rdo_docker_images "${@}"
+      ;;
+    inspect)
+      rdo_docker_inspect "${@}"
       ;;
     stage)
       rdo_docker_stage "${@}"
@@ -235,6 +236,46 @@ rdo_docker_children() {
 
 rdo_docker_images() {
   :
+}
+
+rdo_docker_inspect() {
+  local arg_format=()
+
+  while [[ -n "${1}" ]]; do
+    case "${1}" in
+      --id)
+        arg_format+=("{{ .Id }}")
+        shift ;;
+      --parent)
+        arg_format+=("{{ .Parent }}")
+        shift ;;
+      --help|-h)
+        echo "Usage: rdo docker inspect COMMAND"
+        echo
+        echo "Inspect docker container"
+        echo
+        echo "Options:"
+        echo "      --id      Print full hash id"
+        echo "      --parent  Print full hash parent id"
+        echo
+        echo "Run 'do inspect COMMAND --help' for more information on a command."
+      ;;
+      *)
+        if [[ -z "${1##-*}" ]]; then
+          echo "do docker inspect: invalid parameters: ${@}" 2> /dev/null
+          exit 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} == 0 )); then
+    return 0
+  fi
+
+  docker inspect --format "${arg_format[@]}" "${@}"
 }
 
 rdo_docker_stage() {

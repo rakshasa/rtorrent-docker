@@ -2,36 +2,20 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/build/rtorrent-restage:${TAG_APPEND}" AS restage
-
-
-FROM "${REPOSITORY}/stage:${TAG_APPEND}" AS stage
-
-COPY --from=restage /deployment /deployment/
-COPY data/rtorrent ./
-
-RUN \
-rsync ${RSYNC_ARGS} \
---include '*.ac' \
---include '*.am' \
---include '*.cc' \
---include '*.h' \
---include '*.in' \
---include '*.m4' \
---include '*.sh' \
---include '*/' \
---exclude '*' \
-* /deployment
+FROM "${REPOSITORY}/build/rtorrent-stage:${TAG_APPEND}" AS stage
 
 
 FROM "${REPOSITORY}/build/rtorrent-base:${TAG_APPEND}"
 
-COPY --from=stage /deployment ./
+COPY --from=stage /deploy/build/ /build/
+COPY --from=stage /deploy/prefix/ /prefix/
+
+COPY compile/ /stage/
+RUN rsync-update /stage/ /build/
+
+RUN echo -e "\033[0;32mcheck rtorrent\033[0m"; set -xe; \
+make -j12 check
 
 RUN \
-echo -e "\033[0;32mrebuilding container build.recompile-rtorrent\033[0m"; \
-set -xe; \
-\
-make -j12 check; \
-\
-cp -rf * /deployment/
+rsync-deploy-compile /build/ /deploy/build/; \
+cp -rp /prefix /deploy/

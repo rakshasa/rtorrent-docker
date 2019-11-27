@@ -21,6 +21,10 @@ rsync -rlpgoD -muc --delete-after -v \
 --include '/NEWS' \
 --include '/README' \
 \
+--include '*.cc' \
+--include '*.h' \
+\
 --include '*/' \
+--exclude '/test/' \
 --exclude '*' \
 ${arg_source} ${arg_target}

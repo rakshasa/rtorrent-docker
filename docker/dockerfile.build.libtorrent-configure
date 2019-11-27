@@ -4,18 +4,14 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/build/libtorrent-base:${TAG_APPEND}"
 
-COPY /stage/ /stage/
-
-RUN cp -rp /stage/* /build/
-
-RUN ls -l /stage/
-RUN ls -l /build/
+COPY /configure/ /build/
 
 RUN echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; \
 ./autogen.sh
 
 RUN echo -e "\033[0;32mlibtorrent configure\033[0m"; set -xe; \
-./configure --prefix=/prefix; \
-rsync-deploy-configure /build/ /deployment/
+. /env.configure; \
+./configure --prefix=/prefix
 
-#cp -rp /build/* /deployment/build/
+RUN rsync-deploy-configure /build/ /deploy/build; \
+cp -rp /prefix /deploy/

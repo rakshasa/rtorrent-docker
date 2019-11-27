@@ -9,6 +9,8 @@ mkdir -p "${arg_target}"
 
 rsync -rlpgoD -muc --delete-after -v \
 \
+--include '/config.h' \
+\
 --exclude '*.ac' \
 --exclude '*.am' \
 --exclude '*.m4' \
@@ -20,5 +22,8 @@ rsync -rlpgoD -muc --delete-after -v \
 --exclude '/INSTALL' \
 --exclude '/NEWS' \
 --exclude '/README' \
+\
+--exclude '*.cc' \
+--exclude '*.h' \
 \
 ${arg_source} ${arg_target}

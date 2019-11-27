@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+rdo_header tags
 
 do_tags() {
   local cmd="${1}"; shift || :

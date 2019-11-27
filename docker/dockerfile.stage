@@ -8,8 +8,8 @@
 #
 # Thus while this container is always rebuilt on changes in the
 # project directory, the container that pulls the content from
-# '/deployment' only invalidates its cache if the content of
-# '/deployment' changed.
+# '/deploy' only invalidates its cache if the content of
+# '/deploy' changed.
 
 ARG REPOSITORY
 ARG TAG_APPEND
