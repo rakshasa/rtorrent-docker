@@ -10,10 +10,13 @@ FROM "${REPOSITORY}/build/rtorrent-base:${TAG_APPEND}"
 COPY --from=stage /deploy/build/ /build/
 COPY --from=stage /deploy/prefix/ /prefix/
 
-COPY compile/ /stage/
+COPY /check/ /stage/
 RUN rsync-update /stage/ /build/
 
-RUN echo -e "\033[0;32mcheck rtorrent\033[0m"; set -xe; \
+RUN echo -e "\033[0;32mcompiling rtorrent tests\033[0m"; set -xe; \
+make -j12 check TESTS=
+
+RUN echo -e "\033[0;32mrunning rtorrent tests\033[0m"; set -xe; \
 make -j12 check
 
 RUN \

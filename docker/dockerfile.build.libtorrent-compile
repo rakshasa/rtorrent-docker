@@ -11,7 +11,7 @@ COPY --from=stage /deploy/build/ /build/
 COPY --from=stage /deploy/prefix/ /prefix/
 
 # TODO: Do the update in separate stage.
-COPY compile/ /stage/
+COPY /compile/ /stage/
 RUN rsync-update /stage/ /build/
 
 RUN echo -e "\033[0;32mbuilding libtorrent\033[0m"; set -xe; \

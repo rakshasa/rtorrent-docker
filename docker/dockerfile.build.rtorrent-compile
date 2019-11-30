@@ -13,7 +13,7 @@ FROM "${REPOSITORY}/build/rtorrent-base:${TAG_APPEND}"
 COPY --from=stage.libtorrent /deploy/prefix/ /prefix/
 COPY --from=stage /deploy/build/ /build/
 
-COPY compile/ /stage/
+COPY /compile/ /stage/
 RUN rsync-update /stage/ /build/
 
 RUN \
