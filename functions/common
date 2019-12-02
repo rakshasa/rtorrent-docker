@@ -16,7 +16,13 @@ rdo__compare_id__file_image() {
   [[ -n "${file_id}" ]] && [[ "${file_id}" == "${image_id}" ]]
 }
 
+# TODO: Add lookup that only take tags or id's
 rdo__image_id() {
+  local image_name="${1:?Missing image argument.}"
+  echo "$(rdo docker inspect --id "${image_name}")"
+}
+
+rdo__image_id__tag() {
   local image_name="${1:?Missing image argument.}"
   echo "$(rdo docker inspect --id "${image_name}")"
 }

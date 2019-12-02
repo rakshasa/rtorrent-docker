@@ -204,7 +204,7 @@ rdo_docker_children() {
       exit 1
     fi
 
-    local image_list=($(docker inspect --format '{{ .ID }}_{{ .Parent }}' $(docker images --all --no-trunc --quiet --filter "since=${parent_id}")))
+    local image_list=($(docker inspect --format '{{ .ID }}_{{ .Parent }}' $(docker images --all --no-trunc --quiet --filter label=ancestor_project=rtorrent-docker)))
     local parent_list=()
 
     local iidx
@@ -235,7 +235,8 @@ rdo_docker_children() {
 }
 
 rdo_docker_images() {
-  :
+  local image_list=($(docker images --all --no-trunc --quiet --filter label=ancestor_project=rtorrent-docker))
+  printf "%s\n" "${image_list[@]}"
 }
 
 rdo_docker_inspect() {
@@ -274,6 +275,17 @@ rdo_docker_inspect() {
   if (( ${#} == 0 )); then
     return 0
   fi
+
+  local image_list="$(printf " %s " $(rdo_docker images))"
+  local matched_images=()
+
+  for image_tag in "${@}"; do
+    local image_id="$(docker inspect --format '{{ .Id }}' "${image_tag}")"
+
+    if [[ -n "${image_id}" ]] && [[ "${image_list}" =~ " ${image_id} " ]]; then
+      matched_images+=("${image_id}")
+    fi
+  done
 
   docker inspect --format "${arg_format[@]}" "${@}"
 }

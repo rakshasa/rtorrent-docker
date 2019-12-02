@@ -4,6 +4,7 @@ rdo_header build
 
 rdo_build() {
   local build_args=("--tag-append" "default")
+  local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
 
   while true; do
     case "${1}" in
@@ -53,6 +54,9 @@ rdo_build() {
     compile)
       rdo_build_compile "${@}"
       ;;
+    dev-libtorrent)
+      rdo_build_dev_libtorrent "${@}"
+      ;;
     libtorrent-check)
       rdo_build__libtorrent_check "${@}"
       ;;
@@ -91,6 +95,17 @@ rdo_build_compile() {
   rdo init verify
   rdo_build__libtorrent_compile "${@}"
   rdo_build__rtorrent_compile "${@}"
+}
+
+rdo_build_dev_libtorrent() {
+  rdo init verify
+
+  local image_tag="$(rdo__image_id__tag "${arg_repository}/built-libtorrent")"
+
+  if [[ -z "${image_tag}" ]]; then
+    docker run --detach --name "foo" "${image_tag}" sleep?
+    :
+  fi
 }
 
 # Helper functions
