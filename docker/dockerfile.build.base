@@ -21,7 +21,6 @@ pkg-add \
   binutils \
   file \
   libc-dev \
-  libexecinfo-dev \
   libtool \
   linux-headers \
   make \
@@ -39,11 +38,11 @@ set -xe; \
 if [ "${COMPILER}" = "clang" ]; then \
   # clang requires crtbeginS.o from gcc and std headers from g++
   echo "export CC=clang CXX=clang++" >> /env.configure; \
-  pkg-add gcc g++ clang clang-dev; \
+  pkg-add gcc g++ gdb clang clang-dev; \
 \
 elif [ "${COMPILER}" = "gcc" ]; then \
   echo "export CC=gcc CXX=g++" >> /env.configure; \
-  pkg-add add gcc g++; \
+  pkg-add add gcc g++ gdb; \
 \
 else \
   echo -e "\033[0;31munknown compiler family: ${COMPILER}\033[0m"; \

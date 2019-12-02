@@ -1,11 +1,11 @@
 # A common ancestor image that allows for easy deletion of all images
 # created by this project.
 #
-# /stage  - initially copy docker context here
 # /build  - use this for any intermediate processing
 # /deploy - use rsync to copy only relevant files here
 # /empty  - empty file allowing docker copy of possibly missing files
 # /prefix - install resulting builds here
+# /stage  - initially copy docker context here
 
 
 FROM "alpine" as packages

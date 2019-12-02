@@ -2,15 +2,22 @@
 
 set -xe
 
+rsync-update /data/libtorrent/ /build/source/
+
+cd /build/source
+
 if ! [[ -f "./configure" ]]; then
   echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"
   ./autogen.sh
 fi
 
+mkdir -p /build/output
+cd /build/output
+
 if ! [[ -f "./config.h" ]]; then
   echo -e "\033[0;32mlibtorrent configure\033[0m"
   . /env.configure
-  ./configure --prefix=/prefix
+  /build/source/configure --prefix=/prefix --disable-backtrace
 fi
 
 make

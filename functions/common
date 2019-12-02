@@ -16,6 +16,12 @@ rdo__compare_id__file_image() {
   [[ -n "${file_id}" ]] && [[ "${file_id}" == "${image_id}" ]]
 }
 
+# TODO: Restrict to label.
+rdo__container_id__name() {
+  local container_name="${1:?Missing container name argument.}"
+  echo "$(docker container inspect --format '{{ .Id }}' "${container_name}")"
+}
+
 # TODO: Add lookup that only take tags or id's
 rdo__image_id() {
   local image_name="${1:?Missing image argument.}"

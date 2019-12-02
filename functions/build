@@ -54,14 +54,14 @@ rdo_build() {
     compile)
       rdo_build_compile "${@}"
       ;;
-    dev-libtorrent)
-      rdo_build_dev_libtorrent "${@}"
-      ;;
     libtorrent-check)
       rdo_build__libtorrent_check "${@}"
       ;;
     libtorrent-compile)
       rdo_build__libtorrent_check "${@}"
+      ;;
+    libtorrent-dev)
+      rdo_build_libtorrent_dev "${@}"
       ;;
     rtorrent-check)
       rdo_build__rtorrent_check "${@}"
@@ -97,15 +97,29 @@ rdo_build_compile() {
   rdo_build__rtorrent_compile "${@}"
 }
 
-rdo_build_dev_libtorrent() {
+rdo_build_libtorrent_dev() {
   rdo init verify
 
-  local image_tag="$(rdo__image_id__tag "${arg_repository}/built-libtorrent")"
+  local image_tag="${arg_repository}/build/libtorrent-base:default"
+  local image_id="$(rdo__image_id__tag "${image_tag}")"
 
-  if [[ -z "${image_tag}" ]]; then
-    docker run --detach --name "foo" "${image_tag}" sleep?
-    :
+  if [[ -z "${image_id}" ]]; then
+    print_error "no such image: ${image_tag}"
+    exit 1
   fi
+
+  local container_name="rdo-build-libtorrent"
+  local container_id="$(rdo__container_id__name "${container_name}")"
+
+  if [[ -z "${container_id}" ]]; then
+    print_normal "starting build container ${container_name}"
+    docker run --detach --name "${container_name}" \
+           --mount "type=bind,src=${PROJECT_PATH}/data,dst=/data,ro" \
+           "${image_id}" sleep 100000
+  fi
+
+  docker exec \
+         "${container_name}" build-all
 }
 
 # Helper functions
