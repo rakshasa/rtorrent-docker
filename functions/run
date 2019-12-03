@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+rdo_header run
+
+rdo_run() {
+  local cmd="${1}"; shift || :
+
+  case "${cmd}" in
+    exec)
+      rdo_run_args "${@}"
+      ;;
+    --help|-h|'')
+      echo "Usage: do run COMMAND"
+      echo
+      echo "Run commands in containers"
+      echo
+      echo "Commands"
+      echo "  args      List all args in build targets"
+      echo
+      echo "Run 'do run COMMAND --help' for more information on a command."
+      ;;
+    *)
+      print_error "unknown run command: ${@}"
+      return 1
+      ;;
+  esac
+}

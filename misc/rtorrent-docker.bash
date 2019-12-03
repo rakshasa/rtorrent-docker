@@ -60,7 +60,12 @@ _rtorrent_docker__rdo() {
 
 _rtorrent_docker__rdo_build() {
   if [[ "${word}" == -* ]]; then
-    flags=(--compiler#-c --dry-run --help)
+    flags=(
+      --compiler#-c
+      --dry-run
+      --rebuild
+      --help
+    )
     arg_funcs=(
       --compiler##rdo_compilers
     )

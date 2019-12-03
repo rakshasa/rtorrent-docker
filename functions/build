@@ -5,15 +5,19 @@ rdo_header build
 rdo_build() {
   local build_args=("--tag-append" "default")
   local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
+  local arg_rebuild=
 
   while true; do
     case "${1}" in
-      --dry-run)
-        build_args+=("--dry-run")
-        shift ;;
       --compiler|-c)
         build_args+=("--build-arg" "COMPILER=${2:?Missing compiler argument.}")
         shift 2 ;;
+      --dry-run)
+        build_args+=("--dry-run")
+        shift ;;
+      --rebuild)
+        arg_rebuild="yes"
+        shift ;;
       --help|-h|'')
         echo "Usage: rdo build COMMAND"
         echo
@@ -110,6 +114,12 @@ rdo_build_libtorrent_dev() {
 
   local container_name="rdo-build-libtorrent"
   local container_id="$(rdo__container_id__name "${container_name}")"
+
+  if [[ -n "${container_id}" ]] && [[ "${arg_rebuild}" == "yes" ]]; then
+    print_normal "removing old container ${container_name}"
+    docker rm -f "${container_id}"
+    container_id=
+  fi
 
   if [[ -z "${container_id}" ]]; then
     print_normal "starting build container ${container_name}"
