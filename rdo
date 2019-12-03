@@ -6,15 +6,17 @@
 
 set -e
 
-PROJECT_PATH="${BASH_SOURCE[0]%/*}"
-DATA_PATH="${PROJECT_PATH}/data"
-
 COLOR_NC='\033[0m'
 COLOR_RED='\033[0;31m'
 COLOR_GREEN='\033[0;32m'
 
+PROJECT_PATH="${BASH_SOURCE[0]%/*}"
+PROJECT_ABSOLUTE_PATH=
+DATA_PATH="${PROJECT_PATH}/data"
+
 rdo() {
   rdo_included common || source "${PROJECT_PATH}/functions/common"
+  rdo_included common.args || source "${PROJECT_PATH}/functions/common.args"
 
   while true; do
     case "${1}" in
@@ -82,9 +84,13 @@ rdo() {
       rdo_included machine || source "${PROJECT_PATH}/functions/machine"
       rdo_machine "${@}"
       ;;
+    run)
+      rdo_included run || source "${PROJECT_PATH}/functions/run"
+      rdo_run "${@}"
+      ;;
     tags)
       source "${PROJECT_PATH}/functions/tags"
-      do_tags "${@}"
+      rdo_tags "${@}"
       ;;
 
 

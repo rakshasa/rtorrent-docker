@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+rdo_header common.args
+
+# - rdo_foo "${@}" && break || exit 1
+rdo__args__check_unknown_flag() {
+  local arg_namespace="${1:?Missing namespace argument.}"; shift
+
+  if [[ -z "${1##-*}" ]]; then
+    echo "${arg_namespace//_/ }: unknown flag: ${1}" 2> /dev/null
+    return 1
+  fi
+}
