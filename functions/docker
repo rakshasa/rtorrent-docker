@@ -123,7 +123,7 @@ rdo_docker_build() {
         arg_tag_append="${2:?Missing tag argument.}"
         shift 2 ;;
       --help|-h)
-        echo "Usage: rdo docker build COMMAND"
+        echo "Usage: rdo docker build "
         echo
         echo "Build docker container"
         echo
@@ -137,7 +137,8 @@ rdo_docker_build() {
         echo "      --tag             Set the image tag"
         echo "      --tag-append      Append to the image tag"
         echo
-        echo "Run 'do build COMMAND --help' for more information on a command."
+        echo "Run 'do docker build --help' for more information on a command."
+        return
       ;;
       *)
         if [[ -z "${1##-*}" ]] || (( ${#} != 1 )); then

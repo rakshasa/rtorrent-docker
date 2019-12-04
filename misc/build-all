@@ -2,6 +2,13 @@
 
 set -xe
 
+if ! [[ -d /build/source ]]; then
+  rm -rf /build /prefix || :
+  cp -rp /deploy/build /
+  cp -rp /deploy/prefix /
+  cd /build
+fi
+
 rsync-update /data/libtorrent/ /build/source/
 
 cd /build/source
@@ -11,7 +18,6 @@ if ! [[ -f "./configure" ]]; then
   ./autogen.sh
 fi
 
-mkdir -p /build/output
 cd /build/output
 
 if ! [[ -f "./config.h" ]]; then

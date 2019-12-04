@@ -68,6 +68,9 @@ rdo_build() {
     rtorrent-compile)
       rdo_build__rtorrent_check "${@}"
       ;;
+    rtorrent-dev)
+      rdo_build_rtorrent_dev "${@}"
+      ;;
     *)
       print_error "rdo build: unknown command: ${cmd}"
       return 1
@@ -97,14 +100,20 @@ rdo_build_compile() {
 }
 
 rdo_build_libtorrent_dev() {
-  local image_tag="${arg_repository}/build/libtorrent-base:default"
+  rdo init verify
+
+  local image_tag="${arg_repository}/build/libtorrent-stage:default"
   local container_name="rdo-build-libtorrent"
 
-  rdo init verify
-  rdo run init "${image_tag}" "${container_name}"
+  if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__container_id__name "${container_name}")" ]]; then
+    rdo_build__init
+    rdo_build__libtorrent_configure
+    rdo run init --rebuild "${image_tag}" "${container_name}"
+  fi
 
   docker exec "${container_name}" build-all
 }
+
 
 # Helper functions
 
@@ -114,18 +123,26 @@ rdo_build__init() {
   rdo docker context build --context-type "apk" --context-name "apk/base" "${build_args[@]}" "build/base"
 }
 
-rdo_build__libtorrent_compile() {
+rdo_build__libtorrent_configure() {
   rdo docker context build --context-type "apk"       --context-name "apk/libtorrent" "${build_args[@]}" "build/libtorrent-base"
   rdo docker context build --context-type "configure" --context-name "libtorrent/configure" "${build_args[@]}" "build/libtorrent-configure"
   rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-configure" "build/libtorrent-stage"
+}
+
+rdo_build__libtorrent_compile() {
+  rdo_build__libtorrent_configure
   rdo docker context build --context-type "compile"   --context-name "libtorrent" "${build_args[@]}" "build/libtorrent-compile"
   rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-compile" "build/libtorrent-stage"
 }
 
-rdo_build__rtorrent_compile() {
+rdo_build__rtorrent_configure() {
   rdo docker context build --context-type "apk"       --context-name "apk/rtorrent" "${build_args[@]}" "build/rtorrent-base"
   rdo docker context build --context-type "configure" --context-name "rtorrent/configure" "${build_args[@]}" "build/rtorrent-configure"
   rdo docker stage "${build_args[@]}" --stage-image "build/rtorrent-configure" "build/rtorrent-stage"
+}
+
+rdo_build__rtorrent_compile() {
+  rdo_build__rtorrent_configure
   rdo docker context build --context-type "compile"   --context-name "rtorrent" "${build_args[@]}" "build/rtorrent-compile"
   rdo docker stage "${build_args[@]}" --stage-image "build/rtorrent-compile" "build/rtorrent-stage"
 }

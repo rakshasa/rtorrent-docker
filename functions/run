@@ -31,7 +31,25 @@ rdo_run() {
 rdo_run_init() {
   local arg_rebuild=
 
-  #
+  while true; do
+    case "${1}" in
+      --rebuild)
+        arg_rebuild="yes"
+        shift ;;
+      --help|-h|'')
+        echo "Initialize container"
+        echo
+        echo "Options:"
+        echo "      --rebuild  Create new container"
+        echo
+        echo "Run 'rdo run init --help' for more information on a command."
+        return
+        ;;
+      *)
+        rdo__args__check_unknown_flag rdo_run_init "${@}" && break || exit 1
+        ;;
+    esac
+  done
 
   local image_tag="${1:?Missing image tag argument.}"
   local image_id="$(rdo__image_id__tag "${image_tag}")"
