@@ -7,7 +7,22 @@ rdo__args__check_unknown_flag() {
   local arg_namespace="${1:?Missing namespace argument.}"; shift
 
   if [[ -z "${1##-*}" ]]; then
-    echo "${arg_namespace//_/ }: unknown flag: ${1}" 2> /dev/null
+    print_error "${arg_namespace//_/ }: unknown flag: ${1}"
+    return 1
+  fi
+}
+
+# - rdo_foo "${@}" && break || exit 1
+rdo__args__check_empty() {
+  local arg_namespace="${1:?Missing namespace argument.}"; shift
+
+  if [[ -z "${1##-*}" ]]; then
+    print_error "${arg_namespace//_/ }: unknown flag: ${1}"
+    return 1
+  fi
+
+  if [[ -n "${@}" ]]; then
+    print_error "${arg_namespace//_/ }: junk at end of input: ${@}"
     return 1
   fi
 }

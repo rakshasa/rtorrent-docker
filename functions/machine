@@ -47,7 +47,12 @@ rdo_machine() {
 }
 
 rdo_machine_create() {
+  local arg_cpu_count=6
+  local arg_disk_size=100000
   local arg_docker_machine=
+  local arg_memory=10000
+
+  local create_args=()
 
   while [[ -n "${1}" ]]; do
     case "${1}" in
@@ -60,22 +65,28 @@ rdo_machine_create() {
         echo "Create and manage rtorrent-docker environment"
         echo
         echo "Options:"
-        echo "      --docker-machine  Use docker machine"
+        echo "      --docker-machine NAME  Set docker machine name"
         echo
         echo "Run 'rdo machine create --help' for more information on a command."
         exit 1
         ;;
       *)
-        if [[ -z "${1##-*}" ]]; then
-          echo "rdo machine create: unknown parameter: ${1}" 2> /dev/null
-          exit 1
-        fi
-        break
+        rdo__args__check_empty rdo_machine_create "${@}" && break || exit 1
         ;;
     esac
   done
 
-  print_progress "creating docker machine '${arg_docker_machine:?Missing machine name argument.}'"
+  if [[ "${OSTYPE}" == "cygwin" ]]; then
+    # create_args+=("--virtualbox-share-folder" "$(rdo__project_absolute_path)")
+     create_args+=("--virtualbox-share-folder" 'c:\cygwin64:cygwin64')
+    :
+  fi
+
+  create_args+=("--virtualbox-cpu-count" "${arg_cpu_count}")
+  create_args+=("--virtualbox-disk-size" "${arg_disk_size}")
+  create_args+=("--virtualbox-memory" "${arg_memory}")
+
+  print_progress "creating docker machine '${arg_docker_machine:?Missing machine name argument.}'"  
 
   if [[ -f "${DATA_PATH}/env.machine" ]] && [[ -z "$(rdo_machine__current_name)" ]]; then
     print_error "removing invalid env.machine file"
@@ -97,12 +108,7 @@ rdo_machine_create() {
 
   if [[ -z "$(docker-machine inspect "${arg_docker_machine}")" ]]; then
     print_normal "creating docker machine '${arg_docker_machine}'"
-    docker-machine create \
-                   --driver virtualbox \
-                   --virtualbox-cpu-count 6 \
-                   --virtualbox-disk-size 100000 \
-                   --virtualbox-memory 10000 \
-                   "${arg_docker_machine}"
+    docker-machine create "${create_args[@]}" --driver virtualbox "${arg_docker_machine}"
   else
     print_normal "docker machine '${arg_docker_machine}' already exists, skipping creation"
   fi
