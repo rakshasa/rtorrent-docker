@@ -114,6 +114,23 @@ rdo_build_libtorrent_dev() {
   docker exec "${container_name}" build-all
 }
 
+rdo_build_rtorrent_dev() {
+  rdo init verify
+
+  local image_tag="${arg_repository}/build/rtorrent-stage:default"
+  local container_name="rdo-build-rtorrent"
+
+  if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__container_id__name "${container_name}")" ]]; then
+    rdo_build__init
+    rdo_build__libtorrent_configure
+    rdo_build__libtorrent_compile
+    rdo_build__rtorrent_configure
+    rdo run init --rebuild "${image_tag}" "${container_name}"
+  fi
+
+  docker exec "${container_name}" build-all
+}
+
 
 # Helper functions
 

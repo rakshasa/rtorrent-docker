@@ -7,10 +7,8 @@ ARG STAGE_IMAGE
 
 FROM "${REPOSITORY}/${STAGE_IMAGE}:${TAG_APPEND}" AS stage
 
-RUN mkdir -p /deploy/build /deploy/prefix
 
-
-FROM "${REPOSITORY}/stage:${TAG_APPEND}"
+FROM "${REPOSITORY}/build/rtorrent-base:${TAG_APPEND}"
 
 COPY --from=stage /deploy/build/ /deploy/build/
 COPY --from=stage /deploy/prefix/ /deploy/prefix/
