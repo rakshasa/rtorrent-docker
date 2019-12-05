@@ -65,23 +65,15 @@ rdo__compare_hash__dir_dir() {
 
 # Move:
 
-rdo__project_absolute_path() {
-  if [[ -z "${PROJECT_ABSOLUTE_PATH}" ]]; then
+rdo__project_absolute_unix_path() {
+  if [[ -z "${PROJECT_ABSOLUTE_UNIX_PATH}" ]]; then
     if [[ "${OSTYPE}" == "cygwin" ]]; then
-      local pab="$(cd "${PROJECT_PATH}" && cygpath -am .)"
-
-      print_error "xxx${pab}xxx"
-
-      if ! [[ "${pab}" =~ ^([A-Z]):/([^$]*)$ ]]; then
-        print_error "could not parse absolute cygwin path"
-        exit 1
-      fi
-
-      PROJECT_ABSOLUTE_PATH="/${BASH_REMATCH[1],}/${BASH_REMATCH[2]}"
+      PROJECT_ABSOLUTE_UNIX_PATH="$(cd "${PROJECT_PATH}" && cygpath -au .)"
+      PROJECT_ABSOLUTE_UNIX_PATH="/cygwin64${PROJECT_ABSOLUTE_UNIX_PATH%/}"
     else
-      PROJECT_ABSOLUTE_PATH="$(cd "${PROJECT_PATH}" && pwd)"
+      PROJECT_ABSOLUTE_UNIX_PATH="$(cd "${PROJECT_PATH}" && pwd)"
     fi
   fi
 
-  echo "${PROJECT_ABSOLUTE_PATH}"
+  echo "${PROJECT_ABSOLUTE_UNIX_PATH}"
 }

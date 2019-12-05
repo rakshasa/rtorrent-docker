@@ -108,10 +108,12 @@ rdo_build_libtorrent_dev() {
   if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__container_id__name "${container_name}")" ]]; then
     rdo_build__init
     rdo_build__libtorrent_configure
+    print_space
     rdo run init --rebuild "${image_tag}" "${container_name}"
+    print_space
   fi
 
-  docker exec "${container_name}" build-all
+  docker exec "${container_name}" build-all libtorrent
 }
 
 rdo_build_rtorrent_dev() {
@@ -125,10 +127,12 @@ rdo_build_rtorrent_dev() {
     rdo_build__libtorrent_configure
     rdo_build__libtorrent_compile
     rdo_build__rtorrent_configure
+    print_space
     rdo run init --rebuild "${image_tag}" "${container_name}"
+    print_space
   fi
 
-  docker exec "${container_name}" build-all
+  docker exec "${container_name}" build-all rtorrent
 }
 
 

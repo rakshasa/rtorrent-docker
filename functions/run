@@ -75,19 +75,11 @@ rdo_run_init() {
     return
   fi
 
-  local project_data_path="$(rdo__project_absolute_path)/data"
+  local project_data_path="$(rdo__project_absolute_unix_path)/data"
 
   print_normal "starting build container ${container_name} with data path ${project_data_path}"
 
-  # docker run --detach --name "${container_name}" \
-  #        --mount "type=bind,src=/c/cygwin64/home/sunde/rtorrent-data/data/,dst=/data,ro" \
-  #        "${image_id}" sleep 100000
-
-  # docker run --detach --name "${container_name}" \
-  #        --volume "${project_absolute_path}:/data" \
-  #        "${image_id}" sleep 100000
-
   docker run --detach --name "${container_name}" \
-         --volume "/cygwin64/home/sunde/rtorrent-docker/data/:/data" \
+         --volume "${project_data_path}:/data" \
          "${image_id}" sleep 100000
 }

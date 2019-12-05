@@ -150,6 +150,10 @@ print_warning() {
   echo -e "${COLOR_RED}${@}${COLOR_NC}" >&2
 }
 
+print_space() {
+  echo >&2
+}
+
 prune_containers() {
   docker container prune --force --filter 'ancestor=rtorrent.ancestor'
 }
