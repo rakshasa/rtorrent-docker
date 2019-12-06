@@ -7,8 +7,7 @@ FROM "${REPOSITORY}/build/libtorrent-stage:${TAG_APPEND}" AS stage.libtorrent
 
 FROM "${REPOSITORY}/build/rtorrent-base:${TAG_APPEND}"
 
-# COPY --from=stage.libtorrent /deploy/prefix/lib/pkgconfig/ /prefix/lib/pkgconfig/
-COPY --from=stage.libtorrent /deploy/prefix/ /prefix/
+COPY --from=stage.libtorrent /deploy/prefix/lib/pkgconfig/ /prefix/lib/pkgconfig/
 COPY /configure/ /build/source
 
 RUN echo -e "\033[0;32mrtorrent autogen.sh\033[0m"; set -xe; cd /build/source; \
@@ -19,5 +18,6 @@ RUN echo -e "\033[0;32mrtorrent configure\033[0m"; set -xe; cd /build/output; \
 . /env.configure; \
 /build/source/configure --prefix=/prefix --disable-backtrace
 
-RUN rsync-deploy-configure /build/ /deploy/build; \
-cp -rp /prefix /deploy/
+RUN rsync-deploy-configure /build/ /deploy/build
+
+COPY --from=stage.libtorrent /deploy/prefix/ /deploy/prefix/

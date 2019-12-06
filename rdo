@@ -17,6 +17,7 @@ DATA_PATH="${PROJECT_PATH}/data"
 rdo() {
   rdo_included common || source "${PROJECT_PATH}/functions/common"
   rdo_included common.args || source "${PROJECT_PATH}/functions/common.args"
+  rdo_included common.container || source "${PROJECT_PATH}/functions/common.container"
 
   while true; do
     case "${1}" in

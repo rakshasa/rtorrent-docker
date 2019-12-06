@@ -63,7 +63,10 @@ rdo_run_init() {
   local container_name="${2:?Missing container name argument.}"
   local container_id="$(rdo__container_id__name "${container_name}")"
 
-  if [[ -n "${container_id}" ]] && [[ "${arg_rebuild}" == "yes" ]]; then
+  echo xxx"$(rdo__running_container_id__name "${container_name}")"xxx
+
+  if [[ -n "${container_id}" ]] &&
+       ([[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__running_container_id__name "${container_name}")" ]]); then
     print_normal "removing old container ${container_name}"
     docker rm -f "${container_id}"
     container_id=

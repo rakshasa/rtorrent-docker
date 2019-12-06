@@ -105,7 +105,7 @@ rdo_build_libtorrent_dev() {
   local image_tag="${arg_repository}/build/libtorrent-stage:default"
   local container_name="rdo-build-libtorrent"
 
-  if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__container_id__name "${container_name}")" ]]; then
+  if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__running_container_id__name "${container_name}")" ]]; then
     rdo_build__init
     rdo_build__libtorrent_configure
     print_space

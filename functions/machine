@@ -93,18 +93,7 @@ rdo_machine_create() {
     rm -f "${DATA_PATH}/env.machine"
   fi
 
-  if rdo_machine__is_error "${arg_docker_machine}"; then
-    print_normal "removing invalid docker machine"
-    docker-machine rm -f "${arg_docker_machine}"
-
-  elif rdo_machine__is_saved "${arg_docker_machine}"; then
-    print_normal "starting saved docker machine"
-    docker-machine start "${arg_docker_machine}"
-
-  elif rdo_machine__is_stopped "${arg_docker_machine}"; then
-    print_normal "docker machine '${arg_docker_machine}' is stopped, restarting"
-    docker-machine start "${arg_docker_machine}"
-  fi
+  rdo_machine__attempt_start "${arg_docker_machine}"
 
   if [[ -z "$(docker-machine inspect "${arg_docker_machine}")" ]]; then
     print_normal "creating docker machine '${arg_docker_machine}'"
@@ -217,6 +206,25 @@ rdo_machine__is_saved() {
 
 rdo_machine__is_stopped() {
   [[ "$(rdo_machine__status "${@}")" == "Stopped" ]]
+}
+
+rdo_machine__attempt_start() {
+  local machine_name="${1:?Missing machine name argument.}"
+
+  if rdo_machine__is_saved "${docker_machine}"; then
+    print_normal "starting saved docker machine"
+    docker-machine start "${docker_machine}"
+  fi
+
+  if rdo_machine__is_stopped "${docker_machine}"; then
+    print_normal "docker machine '${docker_machine}' is stopped, restarting"
+    docker-machine start "${docker_machine}"
+  fi
+
+  if rdo_machine__is_error "${docker_machine}"; then
+    print_normal "removing invalid docker machine"
+    docker-machine rm -f "${docker_machine}"
+  fi
 }
 
 rdo_machine__verify() {
