@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+rdo_header common.system
+
+rdo__machine_cpu_count() {
+  nproc --ignore 2
+}
+
+rdo__machine_memory() {
+  local memory_size="$(free -m | awk '/^Mem:/{print $2}')"
+  echo "$(( ${memory_size} * 2 / 4 ))"
+}

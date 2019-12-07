@@ -38,5 +38,6 @@ make_args=(-j $(( ${arg_cpu_count} * 2 )) )
 
 make "${make_args[@]}"
 make "${make_args[@]}" install
+make "${make_args[@]}" install install
 make "${make_args[@]}" check TESTS=
 make "${make_args[@]}" check

@@ -135,7 +135,6 @@ rdo_build_rtorrent_dev() {
   docker exec "${container_name}" build-all rtorrent
 }
 
-
 # Helper functions
 
 rdo_build__init() {

@@ -47,10 +47,10 @@ rdo_machine() {
 }
 
 rdo_machine_create() {
-  local arg_cpu_count=6
+  local arg_cpu_count="$(rdo__machine_cpu_count)"
   local arg_disk_size=100000
   local arg_docker_machine=
-  local arg_memory=10000
+  local arg_memory="$(rdo__machine_memory)"
 
   local create_args=()
 
@@ -76,6 +76,10 @@ rdo_machine_create() {
     esac
   done
 
+  rdo__args__check_valid_arg arg_cpu_count || exit 1
+  rdo__args__check_valid_arg arg_docker_machine || exit 1
+  rdo__args__check_valid_arg arg_memory || exit 1
+
   if [[ "${OSTYPE}" == "cygwin" ]]; then
     # create_args+=("--virtualbox-share-folder" "$(rdo__project_absolute_path)")
      create_args+=("--virtualbox-share-folder" 'c:\cygwin64:cygwin64')
@@ -86,7 +90,7 @@ rdo_machine_create() {
   create_args+=("--virtualbox-disk-size" "${arg_disk_size}")
   create_args+=("--virtualbox-memory" "${arg_memory}")
 
-  print_progress "creating docker machine '${arg_docker_machine:?Missing machine name argument.}'"
+  print_progress "creating docker machine '${arg_docker_machine}' with cpu:${arg_cpu_count} memory:${arg_memory}"
 
   if [[ -f "${DATA_PATH}/env.machine" ]] && [[ -z "$(rdo_machine__current_name)" ]]; then
     print_error "removing invalid env.machine file"
@@ -211,19 +215,19 @@ rdo_machine__is_stopped() {
 rdo_machine__attempt_start() {
   local machine_name="${1:?Missing machine name argument.}"
 
-  if rdo_machine__is_saved "${docker_machine}"; then
+  if rdo_machine__is_saved "${machine_name}"; then
     print_normal "starting saved docker machine"
-    docker-machine start "${docker_machine}"
+    docker-machine start "${machine_name}"
   fi
 
-  if rdo_machine__is_stopped "${docker_machine}"; then
-    print_normal "docker machine '${docker_machine}' is stopped, restarting"
-    docker-machine start "${docker_machine}"
+  if rdo_machine__is_stopped "${machine_name}"; then
+    print_normal "docker machine '${machine_name}' is stopped, restarting"
+    docker-machine start "${machine_name}"
   fi
 
-  if rdo_machine__is_error "${docker_machine}"; then
+  if rdo_machine__is_error "${machine_name}"; then
     print_normal "removing invalid docker machine"
-    docker-machine rm -f "${docker_machine}"
+    docker-machine rm -f "${machine_name}"
   fi
 }
 

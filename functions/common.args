@@ -26,3 +26,12 @@ rdo__args__check_empty() {
     return 1
   fi
 }
+
+rdo__args__check_valid_arg() {
+  local arg_name="${1:?Missing name argument.}"
+
+  if [[ -z "${!arg_name}" ]]; then
+    print_error "Missing ${arg_name} argument."
+    exit 1
+  fi
+}
