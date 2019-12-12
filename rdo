@@ -24,8 +24,7 @@ rdo() {
     case "${1}" in
       --debug|-d)
         set -x
-        shift
-        ;;
+        shift ;;
       --help|-h|'help'|'')
         echo "Usage: rdo [OPTIONS] COMMAND"
         echo
@@ -46,12 +45,7 @@ rdo() {
         exit 0
         ;;
       *)
-        if [[ -z "${1##-*}" ]]; then
-          echo "rdo: unknown parameter: ${1}" 2> /dev/null
-          exit 1
-        fi
-        break
-        ;;
+        rdo__args__check_unknown_flag rdo "${@}" && break || exit 1 ;;
     esac
   done
 

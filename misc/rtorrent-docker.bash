@@ -77,6 +77,7 @@ _rtorrent_docker__rdo_build() {
       libtorrent-dev
       libtorrent-check
       libtorrent-compile
+      libtorrent-complete
       rtorrent-check
       rtorrent-compile
       rtorrent-dev

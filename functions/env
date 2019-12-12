@@ -74,8 +74,6 @@ rdo_env_create() {
     exit 1
   fi
 
-  rdo_env__verify
-
   cat > "${DATA_PATH}/env.bash" <<EOF
 source ~/.bash_profile
 
@@ -117,14 +115,4 @@ update
 EOF
 
   print_normal "created env.bash"
-}
-
-# Helper functions
-
-rdo_env__verify() {
-  if [[ "${PATH}" =~ :\.: ]] || [[ "${PATH}" =~ ^\.: ]] || [[ "${PATH}" =~ :\.$ ]] ||
-       [[ "${PATH}" =~ :\./: ]] || [[ "${PATH}" =~ ^\./: ]] || [[ "${PATH}" =~ :\./$ ]]; then
-    print_error "PATH should not contain '.' or './' as it causes name collision with the builtin 'do' (deprecated warning, still fix your PATH)"
-    exit 1
-  fi
 }

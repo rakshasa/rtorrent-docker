@@ -90,7 +90,7 @@ rdo_machine_create() {
   create_args+=("--virtualbox-disk-size" "${arg_disk_size}")
   create_args+=("--virtualbox-memory" "${arg_memory}")
 
-  print_progress "creating docker machine '${arg_docker_machine}' with cpu:${arg_cpu_count} memory:${arg_memory}"
+  print_progress "creating docker machine '${arg_docker_machine}' (cpu:${arg_cpu_count} memory:${arg_memory} disk_size:${arg_disk_size})"
 
   if [[ -f "${DATA_PATH}/env.machine" ]] && [[ -z "$(rdo_machine__current_name)" ]]; then
     print_error "removing invalid env.machine file"

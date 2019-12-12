@@ -8,6 +8,7 @@ DOCKER_CONTEXT_TYPES=(
   check
   configure
   compile
+  complete
   empty
   stage
 )
@@ -219,6 +220,15 @@ rdo_docker_context__pre_compile() {
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
 
   "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name%/compile}/" "${context_path}/compile/"
+}
+
+rdo_docker_context__pre_complete() {
+  local project_path="$(get_project_path)"
+  local context_name="${1:?Missing stage name argument.}"
+  local context_path="${project_path:?Missing project path.}/context/${context_name}"
+
+  "${project_path}/misc/rsync-stage-configure" "${project_path}/data/${context_name}/" "${context_path}/configure/"
+  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name}/" "${context_path}/compile/"
 }
 
 rdo_docker_context__pre_empty() {

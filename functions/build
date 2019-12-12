@@ -36,8 +36,7 @@ rdo_build() {
         return
         ;;
       *)
-        rdo__args__check_unknown_flag rdo_build "${@}" && break || exit 1
-        ;;
+        rdo__args__check_unknown_flag rdo_build "${@}" && break || exit 1 ;;
     esac
   done
 
@@ -58,6 +57,9 @@ rdo_build() {
       ;;
     libtorrent-compile)
       rdo_build__libtorrent_check "${@}"
+      ;;
+    libtorrent-complete)
+      rdo_build__libtorrent_complete "${@}"
       ;;
     libtorrent-dev)
       rdo_build_libtorrent_dev "${@}"
@@ -153,6 +155,12 @@ rdo_build__libtorrent_compile() {
   rdo_build__libtorrent_configure
   rdo docker context build --context-type "compile"   --context-name "libtorrent" "${build_args[@]}" "build/libtorrent-compile"
   rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-compile" "build/libtorrent-stage"
+}
+
+rdo_build__libtorrent_complete() {
+  rdo docker context build --context-type "apk"       --context-name "apk/libtorrent" "${build_args[@]}" "build/libtorrent-base"
+  rdo docker context build --context-type "complete"  --context-name "libtorrent" "${build_args[@]}" "build/libtorrent-complete"
+  rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-complete" "build/libtorrent-stage"
 }
 
 rdo_build__rtorrent_configure() {

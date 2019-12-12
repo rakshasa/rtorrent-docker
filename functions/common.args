@@ -2,7 +2,7 @@
 
 rdo_header common.args
 
-# - rdo_foo "${@}" && break || exit 1
+# - rdo_foo "${@}" && break || exit 1 ;;
 rdo__args__check_unknown_flag() {
   local arg_namespace="${1:?Missing namespace argument.}"; shift
 
@@ -12,7 +12,7 @@ rdo__args__check_unknown_flag() {
   fi
 }
 
-# - rdo_foo "${@}" && break || exit 1
+# - rdo_foo "${@}" && break || exit 1 ;;
 rdo__args__check_empty() {
   local arg_namespace="${1:?Missing namespace argument.}"; shift
 

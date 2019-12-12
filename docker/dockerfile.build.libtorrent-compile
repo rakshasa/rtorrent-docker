@@ -13,7 +13,7 @@ COPY --from=stage /deploy/prefix/ /prefix/
 COPY /compile/ /stage/
 RUN rsync-update /stage/ /build/source/
 
-RUN echo -e "\033[0;32mbuilding libtorrent\033[0m"; set -xe; cd /build/output; \
+RUN echo -e "\033[0;32mlibtorrent compile\033[0m"; set -xe; cd /build/output; \
 make -j12; \
 make -j12 install
 
