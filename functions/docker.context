@@ -135,15 +135,6 @@ rdo_docker_context__pre_ancestor() {
   rm -r "${context_path}/bin" 2> /dev/null || :
   mkdir -p "${context_path}/bin"
   cp "${project_path}"/misc/{build,pkg,rsync,stat}-*[!~] "${context_path}/bin/"
-
-  rdo_docker_context__pre_apk "${context_name}" "${tag_full}"
-}
-
-rdo_docker_context__post_ancestor() {
-  local context_name="${1:?Missing ancestor name argument.}"
-  local tag_full="${2:?Missing tag argument.}"
-
-  rdo_docker_context__post_apk "${context_name}" "${tag_full}"
 }
 
 rdo_docker_context__pre_apk() {

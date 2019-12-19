@@ -12,3 +12,8 @@ rdo__running_container_id__name() {
   local container_name="${1:?Missing container name argument.}"
   echo "$(docker ps --no-trunc --format '{{ .ID }}' --filter "name=${container_name}" 2> /dev/null)"
 }
+
+rdo__image_id__name() {
+  local image_name="${1:?Missing image name argument.}"
+  echo "$(docker images --no-trunc --quiet "${container_name}" 2> /dev/null)"
+}

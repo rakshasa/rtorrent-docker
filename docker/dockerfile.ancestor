@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:experimental
+#
 # A common ancestor image that allows for easy deletion of all images
 # created by this project.
 #
@@ -7,34 +9,18 @@
 # /prefix - install resulting builds here
 # /stage  - initially copy docker context here
 
-
 FROM "alpine" as packages
 
 LABEL ancestor_project="rtorrent-docker"
 
-RUN ln -s /apk-cache /etc/apk/cache
-
-COPY bin/* /usr/bin/
-COPY apk-cache /apk-cache
-
-RUN pkg-add bash rsync tar
-
-ARG REPOSITORY
-ARG TAG_APPEND
-
-# Used by post_apk to copy the package cache.
-LABEL package_tag="ready:${REPOSITORY}/ancestor:${TAG_APPEND}"
-LABEL package_tag="empty:${REPOSITORY}/ancestor:${TAG_APPEND}"
-
-RUN rm -rf /apk-cache
-
-
-FROM "scratch"
-
-LABEL ancestor_project="rtorrent-docker"
-
-COPY --from=packages / /
-
 RUN \
 mkdir -p /build /deploy /prefix /stage; \
 touch /empty
+
+RUN --mount=type=cache,id=rdo-apk,sharing=locked,target=/var/cache/apk \
+apk add \
+    bash \
+    rsync \
+    tar
+
+COPY bin/* /usr/bin/

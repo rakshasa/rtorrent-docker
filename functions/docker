@@ -183,6 +183,8 @@ rdo_docker_build() {
     ${arg_pre_exec} "${tag_full}"
   fi
 
+  export DOCKER_BUILDKIT=1
+
   if ! "${docker_prefix[@]}" docker build "${args[@]}" "${arg_context}"; then
     print_error "failed to build docker container '${tag_full}'"
     exit 1

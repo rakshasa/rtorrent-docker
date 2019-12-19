@@ -1,75 +1,79 @@
+# syntax=docker/dockerfile:experimental
+#
 # Prepare image ready for compiling the project, including selecting
 # compiler family and version, configure flags, etc.
 
 ARG REPOSITORY
 ARG TAG_APPEND
 
+FROM "${REPOSITORY}/ancestor:${TAG_APPEND}"
 
-FROM "${REPOSITORY}/ancestor:${TAG_APPEND}" as packages
+# RUN --mount=type=cache,id=rdo-apk,sharing=locked,target=/var/cache/apk \
 
-COPY apk-cache /apk-cache
 
-RUN echo -e "\033[0;32minstalling base build packages\033[0m"; set -xe; \
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apk,source=/rdo-apk \
+echo -e "\033[0;32minstalling base build packages\033[0m"; set -xe; \
 \
-echo "export PKG_CONFIG_PATH=\"/prefix/lib/pkgconfig:\${PKG_CONFIG_PATH}\"" >> /env.configure; \
+ls -l /var/cache/apk; \
+ls -l /var/cache/apk; \
 \
-pkg-add \
-  autoconf \
-  automake \
-  binutils \
-  file \
-  libc-dev \
-  libtool \
-  linux-headers \
-  make \
-  musl-dev \
-  openssl-dev \
-  zlib-dev
+apk add \
+    autoconf \
+    automake \
+    binutils \
+    file \
+    libc-dev \
+    libtool \
+    linux-headers \
+    make \
+    musl-dev \
+    openssl-dev \
+    zlib-dev
 
 ARG COMPILER="clang"
 ENV COMPILER="${COMPILER}"
 
-RUN echo -e "\033[0;32musing compiler family ${COMPILER}\033[0m"; set -xe; \
+RUN --mount=type=cache,id=rdo-apk,sharing=locked,target=/var/cache/apk \
+echo -e "\033[0;32musing compiler family ${COMPILER}\033[0m"; set -xe; \
 \
 if [ "${COMPILER}" = "clang" ]; then \
   # clang requires crtbeginS.o from gcc and std headers from g++
   echo "export CC=clang CXX=clang++" >> /env.configure; \
-  pkg-add gcc g++ gdb clang clang-dev cppunit-dev curl-dev ncurses-dev; \
+  \
+  apk add \
+      gcc \
+      g++ \
+      gdb \
+      clang \
+      clang-dev \
+      cppunit-dev \
+      curl-dev \
+      ncurses-dev; \
 \
 elif [ "${COMPILER}" = "gcc" ]; then \
   echo "export CC=gcc CXX=g++" >> /env.configure; \
-  pkg-add add gcc g++ gdb cppunit-dev curl-dev ncurses-dev; \
+  \
+  apk add \
+      gcc \
+      g++ \
+      gdb \
+      cppunit-dev \
+      curl-dev \
+      ncurses-dev; \
 \
 else \
   echo -e "\033[0;31munknown compiler family: ${COMPILER}\033[0m"; \
   exit 1; \
 fi
 
-ARG REPOSITORY
-ARG TAG_APPEND
-LABEL package_tag="ready:${REPOSITORY}/build/base:${TAG_APPEND}"
-LABEL package_tag="empty:${REPOSITORY}/build/base:${TAG_APPEND}"
-
-RUN rm -rf /apk-cache || :
-
-
-FROM "scratch"
-
-LABEL ancestor_project="rtorrent-docker"
-
-WORKDIR /build
-
-ENV PKG_CONFIG_PATH="/prefix/lib/pkgconfig/"
-ARG COMPILER="clang"
-ENV COMPILER="${COMPILER}"
 ARG COMPILER_STANDARD="c++11"
 ENV COMPILER_STANDARD="${COMPILER_STANDARD}"
 
-COPY --from=packages / /
-
 RUN echo -e "\033[0;32msetting configure flags\033[0m"; set -xe; \
 \
-echo "export CXXFLAGS=\"\
+echo "\
+export PKG_CONFIG_PATH=\"/prefix/lib/pkgconfig/:${PKG_CONFIG_PATH}\"\
+export CXXFLAGS=\"\
 -std=${COMPILER_STANDARD} \
 -Wno-exceptions -Wno-pessimizing-move \
 \"" >> /env.configure

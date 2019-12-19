@@ -83,10 +83,10 @@ rdo_build() {
 rdo_build_all() {
   rdo init verify
   rdo_build__init
-  rdo_build__libtorrent_configure
-  rdo_build__libtorrent_compile
-  rdo_build__rtorrent_configure
-  rdo_build__rtorrent_compile
+  # rdo_build__libtorrent_configure
+  # rdo_build__libtorrent_compile
+  # rdo_build__rtorrent_configure
+  # rdo_build__rtorrent_compile
 }
 
 rdo_build_check() {
@@ -140,9 +140,16 @@ rdo_build_rtorrent_dev() {
 # Helper functions
 
 rdo_build__init() {
+  if
+    [[ -z "$(rdo__image_id__name "docker/dockerfile:experimental")" ]] ||
+    [[ -z "$(rdo__image_id__name "docker.io/library/alpine:latest")" ]]; then
+    docker pull "docker/dockerfile:experimental"
+    docker pull "docker.io/library/alpine:latest"
+  fi
+
   rdo docker context build --context-type "ancestor" --context-name "ancestor" "${build_args[@]}" "ancestor"
   rdo docker build "${build_args[@]}" "stage"
-  rdo docker context build --context-type "apk" --context-name "apk/base" "${build_args[@]}" "build/base"
+  rdo docker build "${build_args[@]}" "build/base"
 }
 
 rdo_build__libtorrent_configure() {
