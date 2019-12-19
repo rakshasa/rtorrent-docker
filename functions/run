@@ -63,24 +63,23 @@ rdo_run_init() {
   local container_name="${2:?Missing container name argument.}"
   local container_id="$(rdo__container_id__name "${container_name}")"
 
-  echo xxx"$(rdo__running_container_id__name "${container_name}")"xxx
-
   if [[ -n "${container_id}" ]] &&
        ([[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__running_container_id__name "${container_name}")" ]]); then
-    print_normal "removing old container ${container_name}"
+    print_progress "removing old container ${container_name}"
     docker rm -f "${container_id}"
     container_id=
   fi
 
   if [[ -n "${container_id}" ]]; then
-    print_normal "using container ${container_name}"
+    print_progress "using container ${container_name}"
     echo "${container_id}"
     return
   fi
 
-  local project_data_path="$(rdo__project_absolute_unix_path)/data"
+  local project_data_path
+  project_data_path="$(rdo__project_absolute_unix_path)/data"
 
-  print_normal "starting build container ${container_name} with data path ${project_data_path}"
+  print_progress "starting build container ${container_name} with data path ${project_data_path}"
 
   docker run --detach --name "${container_name}" \
          --volume "${project_data_path}:/data" \
