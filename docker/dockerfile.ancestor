@@ -1,14 +1,12 @@
 # A common ancestor image that allows for easy deletion of all images
 # created by this project.
 #
-# /stage  - initially copy docker context here
 # /build  - use this for any intermediate processing
 # /deploy - use rsync to copy only relevant files here
 # /empty  - empty file allowing docker copy of possibly missing files
 # /prefix - install resulting builds here
+# /stage  - initially copy docker context here
 
-
-# Create separate packages image. (can't, make scripts instead)
 
 FROM "alpine" as packages
 
@@ -16,7 +14,7 @@ LABEL ancestor_project="rtorrent-docker"
 
 RUN ln -s /apk-cache /etc/apk/cache
 
-COPY bin/ /usr/bin/
+COPY bin/* /usr/bin/
 COPY apk-cache /apk-cache
 
 RUN pkg-add bash rsync tar
@@ -36,17 +34,7 @@ FROM "scratch"
 LABEL ancestor_project="rtorrent-docker"
 
 COPY --from=packages / /
-COPY bin/ /usr/bin/
 
 RUN \
 mkdir -p /build /deploy /prefix /stage; \
 touch /empty
-
-# ARG RSYNC_CMD="rsync -acm --update -v"
-# ENV RSYNC_CMD="${RSYNC_CMD}"
-
-# ARG TAR_C_CMD="tar cv --sort=name --owner=0 --group=0 --numeric-owner"
-# ENV TAR_C_CMD="${TAR_C_CMD}"
-
-# ARG TAR_X_CMD="tar xv"
-# ENV TAR_X_CMD="${TAR_X_CMD}"

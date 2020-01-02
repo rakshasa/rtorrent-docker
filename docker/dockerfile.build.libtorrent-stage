@@ -8,7 +8,7 @@ ARG STAGE_IMAGE
 FROM "${REPOSITORY}/${STAGE_IMAGE}:${TAG_APPEND}" AS stage
 
 
-FROM "${REPOSITORY}/stage:${TAG_APPEND}"
+FROM "${REPOSITORY}/build/libtorrent-base:${TAG_APPEND}"
 
 COPY --from=stage /deploy/build/ /deploy/build/
 COPY --from=stage /deploy/prefix/ /deploy/prefix/

@@ -7,4 +7,8 @@ arg_target="${2:?Missing target argument.}"
 
 mkdir -p "${arg_target}"
 
-rsync -rlpgoD -m --update --checksum -v "${arg_source}" "${arg_target}"
+rsync -rlpgoD -m --update --checksum \
+--exclude '*~' \
+--exclude '.#*' \
+--exclude '*/.#*' \
+"${arg_source}" "${arg_target}"

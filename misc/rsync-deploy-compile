@@ -7,7 +7,7 @@ arg_target="${2:?Missing target argument.}"
 
 mkdir -p "${arg_target}"
 
-rsync -rlpgoD -muc --delete-after -v \
+rsync -rlpgoD -muc --delete-after \
 \
 --include '/config.h' \
 \

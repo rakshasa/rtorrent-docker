@@ -11,12 +11,12 @@ COPY --from=stage /deploy/build/ /build/
 COPY --from=stage /deploy/prefix/ /prefix/
 
 COPY /check/ /stage/
-RUN rsync-update /stage/ /build/
+RUN rsync-update /stage/ /build/source/
 
-RUN echo -e "\033[0;32mcompiling libtorrent tests\033[0m"; set -xe; \
+RUN echo -e "\033[0;32mcompiling libtorrent tests\033[0m"; set -xe; cd /build/output; \
 make -j12 check TESTS=
 
-RUN echo -e "\033[0;32mrunning libtorrent tests\033[0m"; set -xe; \
+RUN echo -e "\033[0;32mrunning libtorrent tests\033[0m"; set -xe; cd /build/output; \
 make -j12 check
 
 RUN \

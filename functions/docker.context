@@ -5,9 +5,9 @@ rdo_header docker.context
 DOCKER_CONTEXT_TYPES=(
   ancestor
   apk
-  check
   configure
   compile
+  complete
   empty
   stage
 )
@@ -108,7 +108,8 @@ rdo_docker_context_build() {
 }
 
 rdo_docker_context_clean() {
-  local project_path="$(get_project_path)"
+  local project_path
+  project_path="$(get_project_path)"
 
   if [[ -z "${project_path}" ]]; then
     print_error "rdo docker context clean: could not get project path"
@@ -125,14 +126,15 @@ rdo_docker_context_types() {
 # Helper functions
 
 rdo_docker_context__pre_ancestor() {
-  local project_path="$(get_project_path)"
+  local project_path
+  project_path="$(get_project_path)"
   local context_name="${1:?Missing ancestor name argument.}"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
   local tag_full="${2:?Missing tag argument.}"
 
   rm -r "${context_path}/bin" 2> /dev/null || :
   mkdir -p "${context_path}/bin"
-  cp "${project_path}"/misc/{pkg,rsync,stat}-*[!~] "${context_path}/bin/"
+  cp "${project_path}"/misc/{build,pkg,rsync,stat}-*[!~] "${context_path}/bin/"
 
   rdo_docker_context__pre_apk "${context_name}" "${tag_full}"
 }
@@ -145,8 +147,10 @@ rdo_docker_context__post_ancestor() {
 }
 
 rdo_docker_context__pre_apk() {
+  local project_path
+  project_path="$(get_project_path)"
+
   local context_name="${1:?Missing stage name argument.}"
-  local project_path="$(get_project_path)"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
 
   mkdir -p "${context_path}/apk-cache"
@@ -154,7 +158,9 @@ rdo_docker_context__pre_apk() {
 }
 
 rdo_docker_context__post_apk() {
-  local project_path="$(get_project_path)"
+  local project_path
+  project_path="$(get_project_path)"
+
   local context_name="${1:?Missing stage name argument.}"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
   local tag_full="${2:?Missing tag argument.}"
@@ -197,36 +203,42 @@ rdo_docker_context__post_apk() {
   )
 }
 
-rdo_docker_context__pre_check() {
-  local project_path="$(get_project_path)"
-  local context_name="${1:?Missing stage name argument.}"
-  local context_path="${project_path:?Missing project path.}/context/${context_name}"
-
-  "${project_path}/misc/rsync-stage-check" "${project_path}/data/${context_name%/check}/" "${context_path}/check/"
-}
-
 rdo_docker_context__pre_configure() {
-  local project_path="$(get_project_path)"
+  local project_path
+  project_path="$(get_project_path)"
   local context_name="${1:?Missing stage name argument.}"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
 
-  "${project_path}/misc/rsync-stage-configure" "${project_path}/data/${context_name%/configure}/" "${context_path}/configure/"
+  "${project_path}/misc/rsync-stage-configure" "${project_path}/data/${context_name}/" "${context_path}/configure/"
 }
 
 rdo_docker_context__pre_compile() {
-  local project_path="$(get_project_path)"
+  local project_path
+  project_path="$(get_project_path)"
   local context_name="${1:?Missing stage name argument.}"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
 
-  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name%/compile}/" "${context_path}/compile/"
+  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name}/" "${context_path}/compile/"
+}
+
+rdo_docker_context__pre_complete() {
+  local project_path
+  project_path="$(get_project_path)"
+  local context_name="${1:?Missing stage name argument.}"
+  local context_path="${project_path:?Missing project path.}/context/${context_name}"
+
+  "${project_path}/misc/rsync-stage-configure" "${project_path}/data/${context_name}/" "${context_path}/configure/"
+  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name}/" "${context_path}/compile/"
 }
 
 rdo_docker_context__pre_empty() {
-  local project_path="$(get_project_path)"
+  local project_path
+  project_path="$(get_project_path)"
   mkdir -p "${project_path:?Missing project path.}/context/empty/"
 }
 
 rdo_docker_context__pre_stage() {
-  local project_path="$(get_project_path)"
+  local project_path
+  project_path="$(get_project_path)"
   mkdir -p "${project_path:?Missing project path.}/context/stage/"
 }

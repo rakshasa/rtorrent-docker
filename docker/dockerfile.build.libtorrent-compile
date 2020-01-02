@@ -10,11 +10,10 @@ FROM "${REPOSITORY}/build/libtorrent-base:${TAG_APPEND}"
 COPY --from=stage /deploy/build/ /build/
 COPY --from=stage /deploy/prefix/ /prefix/
 
-# TODO: Do the update in separate stage.
 COPY /compile/ /stage/
-RUN rsync-update /stage/ /build/
+RUN rsync-update /stage/ /build/source/
 
-RUN echo -e "\033[0;32mbuilding libtorrent\033[0m"; set -xe; \
+RUN echo -e "\033[0;32mlibtorrent compile\033[0m"; set -xe; cd /build/output; \
 make -j12; \
 make -j12 install
 

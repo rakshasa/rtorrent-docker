@@ -9,9 +9,7 @@ FROM "${REPOSITORY}/ancestor:${TAG_APPEND}" as packages
 
 COPY apk-cache /apk-cache
 
-RUN \
-echo -e "\033[0;32minstalling base build packages\033[0m"; \
-set -xe; \
+RUN echo -e "\033[0;32minstalling base build packages\033[0m"; set -xe; \
 \
 echo "export PKG_CONFIG_PATH=\"/prefix/lib/pkgconfig:\${PKG_CONFIG_PATH}\"" >> /env.configure; \
 \
@@ -21,7 +19,6 @@ pkg-add \
   binutils \
   file \
   libc-dev \
-  libexecinfo-dev \
   libtool \
   linux-headers \
   make \
@@ -32,18 +29,16 @@ pkg-add \
 ARG COMPILER="clang"
 ENV COMPILER="${COMPILER}"
 
-RUN \
-echo -e "\033[0;32musing compiler family ${COMPILER}\033[0m"; \
-set -xe; \
+RUN echo -e "\033[0;32musing compiler family ${COMPILER}\033[0m"; set -xe; \
 \
 if [ "${COMPILER}" = "clang" ]; then \
   # clang requires crtbeginS.o from gcc and std headers from g++
   echo "export CC=clang CXX=clang++" >> /env.configure; \
-  pkg-add gcc g++ clang clang-dev; \
+  pkg-add gcc g++ gdb clang clang-dev cppunit-dev curl-dev ncurses-dev; \
 \
 elif [ "${COMPILER}" = "gcc" ]; then \
   echo "export CC=gcc CXX=g++" >> /env.configure; \
-  pkg-add add gcc g++; \
+  pkg-add add gcc g++ gdb cppunit-dev curl-dev ncurses-dev; \
 \
 else \
   echo -e "\033[0;31munknown compiler family: ${COMPILER}\033[0m"; \
@@ -72,9 +67,7 @@ ENV COMPILER_STANDARD="${COMPILER_STANDARD}"
 
 COPY --from=packages / /
 
-RUN \
-echo -e "\033[0;32msetting configure flags\033[0m"; \
-set -xe; \
+RUN echo -e "\033[0;32msetting configure flags\033[0m"; set -xe; \
 \
 echo "export CXXFLAGS=\"\
 -std=${COMPILER_STANDARD} \

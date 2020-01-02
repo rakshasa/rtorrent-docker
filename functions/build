@@ -4,15 +4,20 @@ rdo_header build
 
 rdo_build() {
   local build_args=("--tag-append" "default")
+  local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
+  local arg_rebuild=
 
   while true; do
     case "${1}" in
-      --dry-run)
-        build_args+=("--dry-run")
-        shift ;;
       --compiler|-c)
         build_args+=("--build-arg" "COMPILER=${2:?Missing compiler argument.}")
         shift 2 ;;
+      --dry-run)
+        build_args+=("--dry-run")
+        shift ;;
+      --rebuild)
+        arg_rebuild="yes"
+        shift ;;
       --help|-h|'')
         echo "Usage: rdo build COMMAND"
         echo
@@ -31,13 +36,7 @@ rdo_build() {
         return
         ;;
       *)
-        if [[ -z "${1##-*}" ]]; then
-          echo "rdo build: unknown flag: ${1}" 2> /dev/null
-          exit 1
-        fi
-
-        break
-        ;;
+        rdo__args__check_unknown_flag rdo_build "${@}" && break || exit 1 ;;
     esac
   done
 
@@ -57,13 +56,22 @@ rdo_build() {
       rdo_build__libtorrent_check "${@}"
       ;;
     libtorrent-compile)
-      rdo_build__libtorrent_check "${@}"
+      rdo_build__libtorrent_compile "${@}"
+      ;;
+    libtorrent-complete)
+      rdo_build__libtorrent_complete "${@}"
+      ;;
+    libtorrent-dev)
+      rdo_build_libtorrent_dev "${@}"
       ;;
     rtorrent-check)
       rdo_build__rtorrent_check "${@}"
       ;;
     rtorrent-compile)
-      rdo_build__rtorrent_check "${@}"
+      rdo_build__rtorrent_compile "${@}"
+      ;;
+    rtorrent-dev)
+      rdo_build_rtorrent_dev "${@}"
       ;;
     *)
       print_error "rdo build: unknown command: ${cmd}"
@@ -75,10 +83,10 @@ rdo_build() {
 rdo_build_all() {
   rdo init verify
   rdo_build__init
+  rdo_build__libtorrent_configure
   rdo_build__libtorrent_compile
-  rdo_build__libtorrent_check
+  rdo_build__rtorrent_configure
   rdo_build__rtorrent_compile
-  rdo_build__rtorrent_check
 }
 
 rdo_build_check() {
@@ -93,6 +101,42 @@ rdo_build_compile() {
   rdo_build__rtorrent_compile "${@}"
 }
 
+rdo_build_libtorrent_dev() {
+  rdo init verify
+
+  local image_tag="${arg_repository}/build/libtorrent-stage:default"
+  local container_name="rdo-build-libtorrent"
+
+  if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__running_container_id__name "${container_name}")" ]]; then
+    rdo_build__init
+    rdo_build__libtorrent_configure
+    print_space
+    rdo run init --rebuild "${image_tag}" "${container_name}"
+    print_space
+  fi
+
+  docker exec "${container_name}" build-all libtorrent
+}
+
+rdo_build_rtorrent_dev() {
+  rdo init verify
+
+  local image_tag="${arg_repository}/build/rtorrent-stage:default"
+  local container_name="rdo-build-rtorrent"
+
+  if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__container_id__name "${container_name}")" ]]; then
+    rdo_build__init
+    rdo_build__libtorrent_configure
+    rdo_build__libtorrent_compile
+    rdo_build__rtorrent_configure
+    print_space
+    rdo run init --rebuild "${image_tag}" "${container_name}"
+    print_space
+  fi
+
+  docker exec "${container_name}" build-all rtorrent
+}
+
 # Helper functions
 
 rdo_build__init() {
@@ -101,28 +145,69 @@ rdo_build__init() {
   rdo docker context build --context-type "apk" --context-name "apk/base" "${build_args[@]}" "build/base"
 }
 
-rdo_build__libtorrent_compile() {
+rdo_build__libtorrent_configure() {
   rdo docker context build --context-type "apk"       --context-name "apk/libtorrent" "${build_args[@]}" "build/libtorrent-base"
-  rdo docker context build --context-type "configure" --context-name "libtorrent/configure" "${build_args[@]}" "build/libtorrent-configure"
+  rdo docker context build --context-type "configure" --context-name "libtorrent" "${build_args[@]}" "build/libtorrent-configure"
   rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-configure" "build/libtorrent-stage"
+}
+
+rdo_build__libtorrent_compile() {
   rdo docker context build --context-type "compile"   --context-name "libtorrent" "${build_args[@]}" "build/libtorrent-compile"
   rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-compile" "build/libtorrent-stage"
 }
 
-rdo_build__rtorrent_compile() {
+rdo_build__libtorrent_check() {
+  rdo init verify
+
+  local image_tag="${arg_repository}/build/libtorrent-stage:default"
+  local container_name="rdo-check-libtorrent"
+
+  if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__running_container_id__name "${container_name}")" ]]; then
+    rdo_build__init
+    rdo_build__libtorrent_configure
+    rdo_build__libtorrent_compile
+    print_space
+    rdo run init --rebuild "${image_tag}" "${container_name}"
+    print_space
+  fi
+
+  docker exec "${container_name}" build-check libtorrent
+}
+
+rdo_build__libtorrent_complete() {
+  rdo docker context build --context-type "apk"       --context-name "apk/libtorrent" "${build_args[@]}" "build/libtorrent-base"
+  rdo docker context build --context-type "complete"  --context-name "libtorrent" "${build_args[@]}" "build/libtorrent-complete"
+  rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-complete" "build/libtorrent-stage"
+}
+
+rdo_build__rtorrent_configure() {
   rdo docker context build --context-type "apk"       --context-name "apk/rtorrent" "${build_args[@]}" "build/rtorrent-base"
-  rdo docker context build --context-type "configure" --context-name "rtorrent/configure" "${build_args[@]}" "build/rtorrent-configure"
+  rdo docker context build --context-type "configure" --context-name "rtorrent" "${build_args[@]}" "build/rtorrent-configure"
   rdo docker stage "${build_args[@]}" --stage-image "build/rtorrent-configure" "build/rtorrent-stage"
+}
+
+rdo_build__rtorrent_compile() {
   rdo docker context build --context-type "compile"   --context-name "rtorrent" "${build_args[@]}" "build/rtorrent-compile"
   rdo docker stage "${build_args[@]}" --stage-image "build/rtorrent-compile" "build/rtorrent-stage"
 }
 
-rdo_build__libtorrent_check() {
-  rdo docker context build --context-type "check"     --context-name "libtorrent" "${build_args[@]}" "build/libtorrent-check"
-  rdo docker build "${build_args[@]}" --stage-image "build/libtorrent-check" "build/libtorrent-stage"
+rdo_build__rtorrent_check() {
+  rdo init verify
+
+  local image_tag="${arg_repository}/build/rtorrent-stage:default"
+  local container_name="rdo-check-rtorrent"
+
+  if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__running_container_id__name "${container_name}")" ]]; then
+    rdo_build__init
+    rdo_build__libtorrent_configure
+    rdo_build__libtorrent_compile
+    rdo_build__rtorrent_configure
+    rdo_build__rtorrent_compile
+    print_space
+    rdo run init --rebuild "${image_tag}" "${container_name}"
+    print_space
+  fi
+
+  docker exec "${container_name}" build-check rtorrent
 }
 
-rdo_build__rtorrent_check() {
-  rdo docker context build --context-type "check"     --context-name "rtorrent" "${build_args[@]}" "build/rtorrent-check"
-  rdo docker build "${build_args[@]}" --stage-image "build/rtorrent-check" "build/rtorrent-stage"
-}
