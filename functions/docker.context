@@ -79,13 +79,17 @@ rdo_docker_context_build() {
     esac
   done
 
-  if [[ -z "${arg_context_name}" ]]; then
-    print_error "rdo docker context build: missing context name argument"
+  if [[ -z "${arg_context_type}" ]]; then
+    print_error "rdo docker context build: missing context type argument"
     exit 1
   fi
 
-  if [[ -z "${arg_context_type}" ]]; then
-    print_error "rdo docker context build: missing context type argument"
+  if [[ "${arg_context_type}" == "empty" ]]; then
+    arg_context_name="empty"
+  fi
+
+  if [[ -z "${arg_context_name}" ]]; then
+    print_error "rdo docker context build: missing context name argument"
     exit 1
   fi
 

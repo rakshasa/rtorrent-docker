@@ -9,18 +9,24 @@
 # /prefix - install resulting builds here
 # /stage  - initially copy docker context here
 
-FROM "alpine" as packages
+FROM "alpine"
 
 LABEL ancestor_project="rtorrent-docker"
+
+ARG REPOSITORY
+ARG TAG_APPEND
 
 RUN \
 mkdir -p /build /deploy /prefix /stage; \
 touch /empty
 
-RUN --mount=type=cache,id=rdo-apk,sharing=locked,target=/var/cache/apk \
-apk add \
-    bash \
-    rsync \
-    tar
-
 COPY bin/* /usr/bin/
+
+# Argument replacement in mount option fields is not currently
+# supported, use hardcoded dockerfiles for now.
+#RUN --mount=type=bind,from=${REPOSITORY}/cache/apk:${TAG_APPEND},source=/deploy,target=/var/cache/apk-stage \
+RUN --mount=type=bind,from=rdo/cache/apk:default,source=/deploy,target=/var/cache/apk-stage \
+\
+pkg-add bash \
+        rsync \
+        tar

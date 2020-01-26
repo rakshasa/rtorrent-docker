@@ -140,16 +140,26 @@ rdo_build_rtorrent_dev() {
 # Helper functions
 
 rdo_build__init() {
-  if
-    [[ -z "$(rdo__image_id__name "docker/dockerfile:experimental")" ]] ||
-    [[ -z "$(rdo__image_id__name "docker.io/library/alpine:latest")" ]]; then
+  if [[ -z "$(rdo__image_id__name "docker/dockerfile:experimental")" ]]; then
     docker pull "docker/dockerfile:experimental"
-    docker pull "docker.io/library/alpine:latest"
+  fi
+
+  if [[ -z "$(rdo__image_id__name "alpine:latest")" ]]; then
+    docker pull "alpine:latest"
+  fi
+
+  if [[ -z "$(rdo__image_id__name "rdo/cache/apk:default")" ]]; then
+    rdo docker context build --context-type "empty" --ancestor-project "rdo-apk-cache" --image-name "ancestor.cache"  "${build_args[@]}" "cache/apk"
   fi
 
   rdo docker context build --context-type "ancestor" --context-name "ancestor" "${build_args[@]}" "ancestor"
+  rdo docker context build --context-type "empty" --base-image "cache/apk" --image-name "cache.ancestor" "${build_args[@]}" "cache/apk"
   rdo docker build "${build_args[@]}" "stage"
-  rdo docker build "${build_args[@]}" "build/base"
+
+  rdo docker context build --context-type "empty" "${build_args[@]}" "build/base"
+  rdo docker context build --context-type "empty" --base-image "cache/apk" --image-name "cache.build.base" "${build_args[@]}" "cache/apk"
+  rdo docker context build --context-type "empty" "${build_args[@]}" "build/base/compiler"
+  rdo docker context build --context-type "empty" --base-image "cache/apk" --image-name "cache.build.base.compiler" "${build_args[@]}" "cache/apk"
 }
 
 rdo_build__libtorrent_configure() {

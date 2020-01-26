@@ -15,5 +15,5 @@ rdo__running_container_id__name() {
 
 rdo__image_id__name() {
   local image_name="${1:?Missing image name argument.}"
-  echo "$(docker images --no-trunc --quiet "${container_name}" 2> /dev/null)"
+  echo "$(docker images --no-trunc --quiet "${image_name}" 2> /dev/null)"
 }
