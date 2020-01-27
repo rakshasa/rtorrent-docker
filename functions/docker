@@ -29,6 +29,9 @@ rdo_docker() {
     inspect)
       rdo_docker_inspect "${@}"
       ;;
+    pull)
+      rdo_docker_pull "${@}"
+      ;;
     stage)
       rdo_docker_stage "${@}"
       ;;
@@ -195,7 +198,7 @@ rdo_docker_build() {
   fi
 
   export DOCKER_BUILDKIT=1
-  export BUILDKIT_PROGRESS=plain
+  # export BUILDKIT_PROGRESS=plain
 
   if ! "${docker_prefix[@]}" docker build "${args[@]}" "${arg_context}"; then
     print_error "failed to build docker container '${tag_full}'"
@@ -303,6 +306,15 @@ rdo_docker_inspect() {
   done
 
   docker inspect --format "${arg_format[@]}" "${@}"
+}
+
+rdo_docker_pull() {
+  local tag_name
+  for tag_name in "${@}"; do
+    if [[ -z "$(rdo__image_id__name "${tag_name}")" ]]; then
+      docker pull "${tag_name}"
+    fi
+  done
 }
 
 rdo_docker_stage() {

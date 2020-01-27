@@ -140,13 +140,7 @@ rdo_build_rtorrent_dev() {
 # Helper functions
 
 rdo_build__init() {
-  if [[ -z "$(rdo__image_id__name "docker/dockerfile:experimental")" ]]; then
-    docker pull "docker/dockerfile:experimental"
-  fi
-
-  if [[ -z "$(rdo__image_id__name "alpine:latest")" ]]; then
-    docker pull "alpine:latest"
-  fi
+  rdo docker pull "docker/dockerfile:experimental" "alpine:latest"
 
   if [[ -z "$(rdo__image_id__name "rdo/cache/apk:default")" ]]; then
     rdo docker context build --context-type "empty" --ancestor-project "rdo-apk-cache" --image-name "ancestor.cache"  "${build_args[@]}" "cache/apk"
