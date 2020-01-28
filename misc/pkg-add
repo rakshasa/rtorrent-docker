@@ -4,18 +4,12 @@ set -e
 
 arg_packages="${@}"
 
-rm -rf /var/cache/apk /var/cache/apk-deploy &> /dev/null || :
-mkdir -p /var/cache/apk /var/cache/apk-deploy
-
-if [ ! -h /etc/apk/cache ]; then
-  ln -s /var/cache/apk /etc/apk/cache
-fi
+rm -rf /var/cache/apk-deploy &> /dev/null || :
+mkdir -p /var/cache/apk-deploy
 
 cd /var/cache/apk-stage
 find . -type d -exec mkdir -p "/var/cache/apk/{}" \;
 find . -type f -exec ln -s "/var/cache/apk-stage/{}" "/var/cache/apk/{}" \;
-
-# ls -l /var/cache/apk-stage || :
 
 if apk add --no-network ${arg_packages}; then
   echo "\033[0;32minstalled all packages from cache\033[0m"
@@ -32,5 +26,3 @@ echo "\033[0;33minstalled all packages from remote repository\033[0m"
 cd /var/cache/apk
 find . -type d -exec mkdir -p "/var/cache/apk-deploy/{}" \;
 find . -type f -exec mv "{}" "/var/cache/apk-deploy/{}" \;
-
-rm -rf /var/cache/apk

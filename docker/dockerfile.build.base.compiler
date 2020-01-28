@@ -11,7 +11,10 @@ FROM "${REPOSITORY}/build/base:${TAG_APPEND}"
 ARG COMPILER="clang"
 ENV COMPILER="${COMPILER}"
 
-RUN --mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
+RUN \
+--mount=type=tmpfs,target=/var/cache/apk \
+--mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
+\
 echo -e "\033[0;32musing compiler family ${COMPILER}\033[0m"; set -xe; \
 \
 if [ "${COMPILER}" = "clang" ]; then \

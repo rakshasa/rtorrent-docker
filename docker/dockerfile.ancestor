@@ -17,16 +17,19 @@ ARG TAG_APPEND
 
 LABEL ancestor_project="${ANCESTOR_PROJECT}"
 
-RUN \
+RUN set -xe; \
+\
 mkdir -p /build /deploy /prefix /stage; \
-touch /empty
+ln -s /var/cache/apk /etc/apk/cache
 
 COPY bin/* /usr/bin/
 
 # Argument replacement in mount option fields is not currently
 # supported, use hardcoded dockerfiles for now.
 #RUN --mount=type=bind,from=${REPOSITORY}/cache/apk:${TAG_APPEND},source=/deploy,target=/var/cache/apk-stage \
-RUN --mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
+RUN \
+--mount=type=tmpfs,target=/var/cache/apk \
+--mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
 \
 pkg-add bash \
         rsync \

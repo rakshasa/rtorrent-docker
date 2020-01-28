@@ -156,7 +156,7 @@ rdo_build__init() {
 rdo_build__libtorrent_configure() {
   rdo docker context build --empty "${build_args[@]}" "build/libtorrent-base"
   rdo docker context build --context-type "configure" --context-name "libtorrent" "${build_args[@]}" "build/libtorrent-configure"
-  # rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-configure" "build/libtorrent-stage"
+  rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-configure" "build/libtorrent-stage"
 }
 
 rdo_build__libtorrent_compile() {
