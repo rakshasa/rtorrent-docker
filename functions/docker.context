@@ -45,12 +45,17 @@ rdo_docker_context() {
 }
 
 rdo_docker_context_build() {
+  local context_build_args=()
+
   local arg_context_args=
   local arg_context_name=
   local arg_context_type=
 
   while [[ -n "${1}" ]]; do
     case "${1}" in
+      --cache)
+        context_build_args+=(--post-exec "rdo_docker_context__post_cache ${2:?Missing cache name argument.}")
+        shift 2 ;;
       --context-args)
         arg_context_args="${2:?Missing context args argument.}"
         shift 2 ;;
@@ -60,6 +65,9 @@ rdo_docker_context_build() {
       --context-type)
         arg_context_type="${2:?Missing context type argument.}"
         shift 2 ;;
+      --empty)
+        arg_context_type="empty"
+        shift ;;
       --help|-h)
         echo "Usage: rdo docker context build [OPTIONS]"
         echo
@@ -69,6 +77,7 @@ rdo_docker_context_build() {
         echo "      --context-args  Args of the context"
         echo "      --context-name  Name of the context"
         echo "      --context-type  Type of the context"
+        echo "      --empty         Build in an empty context"
         echo
         echo "Run 'rdo env create --help' for more information on a command."
         exit 1
@@ -98,17 +107,17 @@ rdo_docker_context_build() {
     exit 1
   fi
 
-  local args=(--context "${arg_context_name}")
+  context_build_args+=(--context "${arg_context_name}")
 
   if declare -f rdo_docker_context__pre_${arg_context_type} &> /dev/null; then
-    args+=("--pre-exec" "rdo_docker_context__pre_${arg_context_type} ${arg_context_name} ${arg_context_args}")
+    context_build_args+=("--pre-exec" "rdo_docker_context__pre_${arg_context_type} ${arg_context_name} ${arg_context_args}")
   fi
 
   if declare -f rdo_docker_context__post_${arg_context_type} &> /dev/null; then
-    args+=("--post-exec" "rdo_docker_context__post_${arg_context_type} ${arg_context_name} ${arg_context_args}")
+    context_build_args+=("--post-exec" "rdo_docker_context__post_${arg_context_type} ${arg_context_name} ${arg_context_args}")
   fi
 
-  rdo_docker_build "${args[@]}" "${@}"
+  rdo_docker_build "${context_build_args[@]}" "${@}"
 }
 
 rdo_docker_context_clean() {
@@ -196,6 +205,11 @@ rdo_docker_context__post_apk() {
     
     echo "${package_id}" > ./apk-cache.imageid
   )
+}
+
+rdo_docker_context__post_cache() {
+  local cache_image_name="${1:?Missing cache image name argument.}"
+  rdo_docker_context_build --empty --base-image "cache/apk:global" --image-name "${cache_image_name}" "cache/apk:global"
 }
 
 rdo_docker_context__pre_configure() {

@@ -10,6 +10,7 @@
 FROM "alpine"
 
 ARG ANCESTOR_PROJECT
+
 LABEL ancestor_project="${ANCESTOR_PROJECT}"
 
 RUN mkdir -p /deploy /stage

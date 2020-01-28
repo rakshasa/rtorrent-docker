@@ -80,8 +80,8 @@ rdo_docker_build() {
   local arg_dry_run=
   local arg_image_name=
   local arg_no_cache=
-  local arg_post_exec=
-  local arg_pre_exec=
+  local arg_post_exec=()
+  local arg_pre_exec=()
   local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
   local arg_rsync_args=
   local arg_stage_image=
@@ -113,10 +113,10 @@ rdo_docker_build() {
         arg_no_cache="yes"
         shift ;;
       --post-exec)
-        arg_post_exec="${2:?Missing exec argument.}"
+        arg_post_exec+=("${2:?Missing exec argument.}")
         shift 2 ;;
       --pre-exec)
-        arg_pre_exec="${2:?Missing exec argument.}"
+        arg_pre_exec+=("${2:?Missing exec argument.}")
         shift 2 ;;
       --repository)
         arg_repository="${2:?Missing repository argument.}"
@@ -192,23 +192,24 @@ rdo_docker_build() {
   # absolute windows paths that might be ambigious.
   cd "${PROJECT_PATH}"
 
-  if [[ -n "${arg_pre_exec}" ]]; then
-    print_progress "calling pre exec '${arg_pre_exec}'"
-    ${arg_pre_exec} "${tag_full}"
-  fi
+  local pre_cmd
+  for pre_cmd in "${arg_pre_exec[@]}"; do
+    print_progress "calling pre exec command '${pre_cmd} ${tag_full}'"
+    ${pre_cmd} "${tag_full}"
+  done
 
-  export DOCKER_BUILDKIT=1
-  # export BUILDKIT_PROGRESS=plain
+  #export BUILDKIT_PROGRESS=plain
 
-  if ! "${docker_prefix[@]}" docker build "${args[@]}" "${arg_context}"; then
+  if ! DOCKER_BUILDKIT=1 "${docker_prefix[@]}" docker build "${args[@]}" "${arg_context}"; then
     print_error "failed to build docker container '${tag_full}'"
     exit 1
   fi
 
-  if [[ -n "${arg_post_exec}" ]]; then
-    print_progress "calling post exec '${arg_post_exec}'"
-    ${arg_post_exec} "${tag_full}"
-  fi
+  local post_cmd
+  for post_cmd in "${arg_post_exec[@]}"; do
+    print_progress "calling post exec command '${post_cmd} ${tag_full}'"
+    ${post_cmd} "${tag_full}"
+  done
 }
 
 rdo_docker_children() {
@@ -222,7 +223,7 @@ rdo_docker_children() {
       exit 1
     fi
 
-    local image_list=($(docker inspect --format '{{ .ID }}_{{ .Parent }}' $(docker images --all --no-trunc --quiet --filter label=ancestor_project=rtorrent-docker)))
+    local image_list=($(docker inspect --format '{{ .ID }}_{{ .Parent }}' $(docker images --all --no-trunc --quiet --filter label=ancestor_project=rdo-project)))
     local parent_list=()
 
     local iidx

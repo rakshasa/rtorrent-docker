@@ -5,9 +5,8 @@
 
 ARG REPOSITORY
 ARG BASE_IMAGE
-ARG TAG_APPEND
 
-FROM "${REPOSITORY}/${BASE_IMAGE}:${TAG_APPEND}"
+FROM "${REPOSITORY}/${BASE_IMAGE}"
 
 RUN --mount=type=bind,from=rdo/ancestor:default,source=/var/cache/apk-deploy,target=/stage \
 \

@@ -5,7 +5,7 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/ancestor:${TAG_APPEND}"
 
-RUN --mount=type=bind,from=rdo/cache/apk:default,source=/deploy,target=/var/cache/apk-stage \
+RUN --mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
 echo -e "\033[0;32minstalling base build packages\033[0m"; set -xe; \
 \
 pkg-add autoconf \

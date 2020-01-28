@@ -1,11 +1,6 @@
+# syntax=docker/dockerfile:experimental
+
 ARG REPOSITORY
 ARG TAG_APPEND
-
 
 FROM "${REPOSITORY}/build/base:${TAG_APPEND}"
-
-COPY apk-cache/ /apk-cache/
-
-ARG REPOSITORY
-ARG TAG_APPEND
-LABEL package_tag="ready:${REPOSITORY}/build/libtorrent-base:${TAG_APPEND}"

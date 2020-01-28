@@ -11,10 +11,11 @@
 
 FROM "alpine"
 
-LABEL ancestor_project="rtorrent-docker"
-
+ARG ANCESTOR_PROJECT
 ARG REPOSITORY
 ARG TAG_APPEND
+
+LABEL ancestor_project="${ANCESTOR_PROJECT}"
 
 RUN \
 mkdir -p /build /deploy /prefix /stage; \
@@ -25,7 +26,7 @@ COPY bin/* /usr/bin/
 # Argument replacement in mount option fields is not currently
 # supported, use hardcoded dockerfiles for now.
 #RUN --mount=type=bind,from=${REPOSITORY}/cache/apk:${TAG_APPEND},source=/deploy,target=/var/cache/apk-stage \
-RUN --mount=type=bind,from=rdo/cache/apk:default,source=/deploy,target=/var/cache/apk-stage \
+RUN --mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
 \
 pkg-add bash \
         rsync \

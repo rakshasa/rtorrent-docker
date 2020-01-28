@@ -149,6 +149,7 @@ _rtorrent_docker__rdo_docker_context_build() {
       --context-args
       --context-name
       --context-type
+      --empty
     )
   fi
 }
