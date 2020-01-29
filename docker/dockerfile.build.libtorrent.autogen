@@ -1,0 +1,14 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}"
+
+COPY /configure/ /build/
+
+RUN echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; \
+\
+cd /build; \
+./autogen.sh; \
+mv /build /deploy/source

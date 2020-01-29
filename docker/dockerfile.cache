@@ -20,4 +20,4 @@ RUN --mount=type=bind,from=${REPOSITORY}/${CACHE_FROM},source=${CACHE_SOURCE},ta
 cd stage; \
 \
 find . -type d -exec mkdir -p "/deploy/{}" \; ;\
-find . -type f -exec cp "{}" "/deploy/{}" \;
+find . -not -type d -exec cp -ap "{}" "/deploy/{}" \;

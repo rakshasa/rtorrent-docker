@@ -1,0 +1,14 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}"
+
+RUN \
+--mount=type=bind,from=rdo/build/libtorrent/configure:default,source=/deploy/source,target=/stage/source \
+set -xe; \
+\
+cd /stage/source; \
+find . -type d -exec mkdir -p "/deploy/source/{}" \; ;\
+find . -not -type d -exec cp -ap "{}" "/deploy/source/{}" \;

@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:experimental
+#
 # Stage build files in a separate container so as to ensure caches
 # work when no relevant files have been changed. This uses rsync to
 # only include files required for building any particular project.
@@ -13,7 +15,6 @@
 
 ARG REPOSITORY
 ARG TAG_APPEND
-
 
 FROM "${REPOSITORY}/ancestor:${TAG_APPEND}"
 

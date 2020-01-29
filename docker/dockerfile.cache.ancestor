@@ -13,4 +13,4 @@ RUN --mount=type=bind,from=rdo/ancestor:default,source=/var/cache/apk-deploy,tar
 cd stage; \
 \
 find . -type d -exec mkdir -p "/deploy/{}" \; ;\
-find . -type f -exec cp "{}" "/deploy/{}" \;
+find . -not -type d -exec cp -ap "{}" "/deploy/{}" \;

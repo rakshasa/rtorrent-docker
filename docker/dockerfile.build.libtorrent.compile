@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}"
+
+RUN \
+--mount=type=bind,source=/compile,target=/stage/compile \
+--mount=type=bind,from=rdo/build/libtorrent/stage:default,source=/deploy/source,target=/stage/source \
+--mount=type=tmpfs,target=/build \
+set -xe; \
+\
+cp -rp /stage/source /build/source; \
+touch /start.compile; \
+\
+cd /stage/compile; \
+find . -type d -newer /start.compile -exec mkdir -p "/build/source/{}" \; ;\
+find . -type f -newer /start.compile -exec cp -p "{}" "/build/source/{}" \; ;\
+
+
+
+
+# COPY --from=stage /deploy/build/ /build/
+# COPY --from=stage /deploy/prefix/ /prefix/
+
+# COPY /compile/ /stage/
+# RUN rsync-update /stage/ /build/source/
+
+# RUN echo -e "\033[0;32mlibtorrent compile\033[0m"; set -xe; cd /build/output; \
+# make -j12; \
+# make -j12 install
+
+# RUN \
+# rsync-deploy-compile /build/ /deploy/build/; \
+# cp -rp /prefix /deploy/
