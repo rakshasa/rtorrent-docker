@@ -161,7 +161,7 @@ rdo_build__libtorrent_configure() {
 
 rdo_build__libtorrent_compile() {
   rdo docker context build --context-type "compile" --context-name "libtorrent" "${build_args[@]}" "build/libtorrent/compile"
-  # rdo docker stage "${build_args[@]}" --stage-image "build/libtorrent-compile" "build/libtorrent-stage"
+  rdo docker context build --empty --image-name "stage.libtorrent.compile" "${build_args[@]}" "build/libtorrent/stage"
 }
 
 rdo_build__libtorrent_check() {

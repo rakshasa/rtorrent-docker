@@ -8,18 +8,18 @@ FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}"
 RUN \
 --mount=type=bind,source=/configure,target=/stage/configure \
 --mount=type=bind,from=rdo/build/libtorrent/stage:default,source=/deploy/source,target=/stage/source \
---mount=type=tmpfs,target=/build \
 set -xe; \
-\
-cp -rp /stage/source /build/source; \
-touch /start.configure; \
-\
-rsync-stage-configure /stage/configure/ /build/source/; \
-\
 mkdir -p /build/output; \
+cp -rp /stage/source /build/source; \
+rsync-stage-configure /stage/configure/ /build/source/
+
+# TODO: Configure in a tmpfs, check if config.h matches old, if not copy all to /build/output.
+
+RUN set -xe; \
 cd /build/output; \
 . /env.configure; \
-/build/source/configure --prefix=/prefix --disable-backtrace; \
-\
+/build/source/configure --prefix=/prefix --disable-backtrace
+
+RUN set -xe; \
 mv /build/source /deploy/source; \
 mv /build/output /deploy/output
