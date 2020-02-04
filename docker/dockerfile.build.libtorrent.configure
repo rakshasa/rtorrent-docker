@@ -5,10 +5,13 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}"
 
+#COPY /configure/ /stage/configure/
+
 RUN \
 --mount=type=bind,source=/configure,target=/stage/configure \
 --mount=type=bind,from=rdo/build/libtorrent/stage:default,source=/deploy/source,target=/stage/source \
 set -xe; \
+\
 mkdir -p /build/output; \
 cp -rp /stage/source /build/source; \
 rsync-stage-configure /stage/configure/ /build/source/

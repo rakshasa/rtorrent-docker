@@ -11,4 +11,5 @@ RUN \
 set -xe; \
 \
 rsync -rlpgoD -muc --delete-after /stage/output/ /deploy/output/; \
-rsync -rlpgoD -muc --delete-after /stage/source/ /deploy/source/
+rsync -rlpgoD -muc --delete-after /stage/source/ /deploy/source/; \
+rsync-deploy-configure /stage/output/ /deploy/configure/

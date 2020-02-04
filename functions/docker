@@ -78,7 +78,7 @@ rdo_docker_build() {
   local arg_base_image=
   local arg_context="."
   local arg_dry_run=
-  local arg_image_name=
+  local arg_filename=
   local arg_no_rebuild=
   local arg_no_cache=
   local arg_post_exec=()
@@ -107,8 +107,8 @@ rdo_docker_build() {
       --dry-run)
         arg_dry_run="yes"
         shift ;;
-      --image-name)
-        arg_image_name="${2:?Missing image name argument.}"
+      --filename)
+        arg_filename="${2:?Missing filename argument.}"
         shift 2 ;;
       --no-rebuild)
         arg_no_rebuild="yes"
@@ -146,6 +146,7 @@ rdo_docker_build() {
         echo "      --base-image      Select base image"
         echo "      --build-arg       Pass build argument to docker"
         echo "      --dry-run         Do not actually build the container"
+        echo "      --filename        Set dockerfile filename"
         echo "      --stage-image     Select stage image"
         echo "      --repository      Set repository name"
         echo "      --rsync-verbose   Explain what rsync is doing"
@@ -168,7 +169,7 @@ rdo_docker_build() {
 
   local arg_1="${1:?Missing first argument.}"
 
-  local image_name="${arg_image_name:-${arg_1}}"
+  local filename="${arg_filename:-${arg_1}}"
   local tag_full="${arg_repository}/${arg_tag:-${arg_1}}"
 
   if [[ -z "${arg_tag_append}" ]] || [[ "${tag_full}" =~ : ]]; then
@@ -178,7 +179,7 @@ rdo_docker_build() {
   fi
 
   args+=("--tag" "${tag_full}")
-  args+=("--file" "./docker/dockerfile.${image_name//\//.}")
+  args+=("--file" "./docker/dockerfile.${filename//\//.}")
 
   [[ -n "${arg_dry_run}" ]] && docker_prefix+=("echo")
 
@@ -207,7 +208,7 @@ rdo_docker_build() {
     ${pre_cmd} "${tag_full}"
   done
 
-  #export BUILDKIT_PROGRESS=plain
+  args+=(--progress plain)
 
   if ! DOCKER_BUILDKIT=1 "${docker_prefix[@]}" docker build "${args[@]}" "${arg_context}"; then
     print_error "failed to build docker container '${tag_full}'"

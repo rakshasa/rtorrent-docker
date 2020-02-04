@@ -208,8 +208,8 @@ rdo_docker_context__post_apk() {
 }
 
 rdo_docker_context__post_cache() {
-  local cache_image_name="${1:?Missing cache image name argument.}"
-  rdo_docker_context_build --empty --base-image "cache/apk:global" --image-name "${cache_image_name}" "cache/apk:global"
+  local cache_filename="${1:?Missing cache filename argument.}"
+  rdo_docker_context_build --empty --base-image "cache/apk:global" --filename "${cache_filename}" "cache/apk:global"
 }
 
 rdo_docker_context__pre_configure() {

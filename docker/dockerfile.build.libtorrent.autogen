@@ -11,4 +11,4 @@ RUN echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; \
 \
 cd /build; \
 ./autogen.sh; \
-mv /build /deploy/source
+mv /build /deploy/configure

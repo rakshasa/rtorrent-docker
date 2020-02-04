@@ -142,26 +142,26 @@ rdo_build_rtorrent_dev() {
 rdo_build__init() {
   rdo docker pull "docker/dockerfile:experimental" "alpine:latest"
 
-  # Rename --image-name.
   # Make docker build add repository prefix to tag_full.
-  rdo docker context build --empty --no-rebuild --ancestor-project "rdo-apk-cache" --image-name "ancestor.cache" "cache/apk:global"
+  rdo docker context build --empty --no-rebuild --ancestor-project "rdo-apk-cache" --filename "ancestor.cache" "cache/apk:global"
   rdo docker context build --context-type "ancestor" --context-name "ancestor" --cache "cache.ancestor" --no-rebuild --ancestor-project "rdo-project" "${build_args[@]}" "ancestor"
   rdo docker context build --empty --cache "cache.build.base" --no-rebuild "${build_args[@]}" "build/base"
   rdo docker context build --empty --cache "cache.build.base.compiler" --no-rebuild "${build_args[@]}" "build/base/compiler"
   rdo docker context build --empty --no-rebuild "${build_args[@]}" "stage"
 
-  rdo docker context build --empty --no-rebuild --image-name "stage" "${build_args[@]}" "build/result"
-  rdo docker context build --context-type "configure" --context-name "libtorrent" --no-rebuild --image-name "build.libtorrent.autogen" "${build_args[@]}" "build/libtorrent/stage"
+  rdo docker context build --empty --no-rebuild --filename "stage" "${build_args[@]}" "build/result"
+  rdo docker context build --context-type "configure" --context-name "libtorrent" --no-rebuild --filename "build.libtorrent.autogen" "${build_args[@]}" "build/libtorrent/stage"
 }
 
 rdo_build__libtorrent_configure() {
   rdo docker context build --context-type "configure" --context-name "libtorrent" "${build_args[@]}" "build/libtorrent/configure"
-  rdo docker context build --empty --image-name "stage.libtorrent.configure" "${build_args[@]}" "build/libtorrent/stage"
+  rdo docker context build --empty --filename "stage.libtorrent.configure" "${build_args[@]}" "build/libtorrent/stage"
 }
 
 rdo_build__libtorrent_compile() {
-  rdo docker context build --context-type "compile" --context-name "libtorrent" "${build_args[@]}" "build/libtorrent/compile"
-  rdo docker context build --empty --image-name "stage.libtorrent.compile" "${build_args[@]}" "build/libtorrent/stage"
+  # rdo docker context build --context-type "compile" --context-name "libtorrent" "${build_args[@]}" "build/libtorrent/compile"
+  # rdo docker context build --empty --filename "stage.libtorrent.compile" "${build_args[@]}" "build/libtorrent/stage"
+  :
 }
 
 rdo_build__libtorrent_check() {
