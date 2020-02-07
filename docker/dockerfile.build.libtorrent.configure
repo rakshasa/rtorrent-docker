@@ -5,24 +5,42 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}"
 
-#COPY /configure/ /stage/configure/
+COPY --from=rdo/build/libtorrent/stage:default /deploy/autogen/ /stage/autogen/
 
-RUN \
---mount=type=bind,source=/configure,target=/stage/configure \
---mount=type=bind,from=rdo/build/libtorrent/stage:default,source=/deploy/source,target=/stage/source \
-set -xe; \
-\
-mkdir -p /build/output; \
-cp -rp /stage/source /build/source; \
-rsync-stage-configure /stage/configure/ /build/source/
+COPY ./configure/ /build/source/
 
-# TODO: Configure in a tmpfs, check if config.h matches old, if not copy all to /build/output.
+RUN set -xe; cd /stage/autogen/; \
+find . -type d -exec mkdir -p "/build/source/{}" \; ;\
+find . -not -type d -exec cp -ap "{}" "/build/source/{}" \;
 
-RUN set -xe; \
-cd /build/output; \
-. /env.configure; \
+
+RUN set -xe; mkdir -p /build/output; cd /build/output; \
+source /env.configure; \
 /build/source/configure --prefix=/prefix --disable-backtrace
 
-RUN set -xe; \
-mv /build/source /deploy/source; \
-mv /build/output /deploy/output
+RUN set -xe; mv /build/* /deploy/
+
+# RUN \
+# --mount=type=bind,source=/configure,target=/stage/configure \
+# --mount=type=bind,from=rdo/build/libtorrent/stage:default,source=/deploy/source,target=/stage/source \
+
+
+# RUN \
+# --mount=type=bind,source=/configure,target=/stage/configure \
+# --mount=type=bind,from=rdo/build/libtorrent/stage:default,source=/deploy/source,target=/stage/source \
+# set -xe; \
+# \
+# mkdir -p /build/output; \
+# cp -rp /stage/source /build/source; \
+# rsync-stage-configure /stage/configure/ /build/source/
+
+# # TODO: Configure in a tmpfs, check if config.h matches old, if not copy all to /build/output.
+
+# RUN set -xe; \
+# cd /build/output; \
+# . /env.configure; \
+# /build/source/configure --prefix=/prefix --disable-backtrace
+
+# RUN set -xe; \
+# mv /build/source /deploy/source; \
+# mv /build/output /deploy/output

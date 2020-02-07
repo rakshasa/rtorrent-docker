@@ -15,9 +15,4 @@ ARG CACHE_SOURCE
 
 # Argument replacement in mount option fields is not currently
 # supported, use hardcoded dockerfiles for now.
-RUN --mount=type=bind,from=${REPOSITORY}/${CACHE_FROM},source=${CACHE_SOURCE},target=/stage \
-\
-cd stage; \
-\
-find . -type d -exec mkdir -p "/deploy/{}" \; ;\
-find . -not -type d -exec cp -ap "{}" "/deploy/{}" \;
+RUN --mount=type=bind,from=${REPOSITORY}/${CACHE_FROM},source=${CACHE_SOURCE},target=/stage pkg-copy

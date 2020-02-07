@@ -8,9 +8,4 @@ ARG BASE_IMAGE
 
 FROM "${REPOSITORY}/${BASE_IMAGE}"
 
-RUN --mount=type=bind,from=rdo/build/base/compiler:default,source=/var/cache/apk-deploy,target=/stage \
-\
-cd stage; \
-\
-find . -type d -exec mkdir -p "/deploy/{}" \; ;\
-find . -type f -exec cp -ap "{}" "/deploy/{}" \;
+RUN --mount=type=bind,from=rdo/build/base/compiler:default,source=/var/cache/apk-deploy,target=/stage pkg-copy

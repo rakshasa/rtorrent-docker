@@ -14,3 +14,5 @@ ARG ANCESTOR_PROJECT
 LABEL ancestor_project="${ANCESTOR_PROJECT}"
 
 RUN mkdir -p /deploy /stage
+
+COPY bin/pkg-copy /usr/bin/
