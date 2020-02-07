@@ -72,7 +72,7 @@ rdo_docker_args() {
 
 rdo_docker_build() {
   local args=()
-  local docker_prefix=()
+  local cmd_prefix=()
 
   local arg_ancestor_project=
   local arg_base_image=
@@ -81,14 +81,15 @@ rdo_docker_build() {
   local arg_filename=
   local arg_no_rebuild=
   local arg_no_cache=
-  local arg_post_exec=()
-  local arg_pre_exec=()
   local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
   local arg_rsync_args=
   local arg_stage_image=
   local arg_tag=
   local arg_tag_append=
 
+  local arg_post_exec=()
+  local arg_pre_exec=()
+  local arg_test_exec=()
 
   while [[ -n "${1}" ]]; do
     case "${1}" in
@@ -137,6 +138,9 @@ rdo_docker_build() {
       --tag-append)
         arg_tag_append="${2:?Missing tag argument.}"
         shift 2 ;;
+      --test-exec)
+        arg_test_exec+=("${2:?Missing exec argument.}")
+        shift 2 ;;
       --help|-h)
         echo "Usage: rdo docker build "
         echo
@@ -169,7 +173,7 @@ rdo_docker_build() {
 
   local arg_1="${1:?Missing first argument.}"
 
-  local filename="${arg_filename:-${arg_1}}"
+  local filename="${arg_filename:-${arg_1%:*}}"
   local tag_full="${arg_repository}/${arg_tag:-${arg_1}}"
 
   if [[ -z "${arg_tag_append}" ]] || [[ "${tag_full}" =~ : ]]; then
@@ -181,7 +185,7 @@ rdo_docker_build() {
   args+=("--tag" "${tag_full}")
   args+=("--file" "./docker/dockerfile.${filename//\//.}")
 
-  [[ -n "${arg_dry_run}" ]] && docker_prefix+=("echo")
+  [[ -n "${arg_dry_run}" ]] && cmd_prefix+=("echo")
 
   [[ -n "${arg_no_cache}" ]] && args+=("--no-cache")
   [[ -n "${arg_ancestor_project}" ]] && args+=("--build-arg" "ANCESTOR_PROJECT=${arg_ancestor_project}")
@@ -196,7 +200,17 @@ rdo_docker_build() {
     return 0
   fi
 
-  print_progress "\nbuilding ${tag_full}"
+  print_progress "\nbuilding ${tag_full} from ${filename}"
+
+  local test_cmd
+  for test_cmd in "${arg_test_exec[@]}"; do
+    print_progress "calling test exec command '${test_cmd} ${tag_full}'"
+
+    if ! "${cmd_prefix[@]}" ${test_cmd} "${tag_full}"; then
+      print_progress "skipping, not needed"
+      return
+    fi
+  done
 
   # Change cwd to PROJECT_PATH so that docker doesn't get confused by
   # absolute windows paths that might be ambigious.
@@ -205,12 +219,12 @@ rdo_docker_build() {
   local pre_cmd
   for pre_cmd in "${arg_pre_exec[@]}"; do
     print_progress "calling pre exec command '${pre_cmd} ${tag_full}'"
-    ${pre_cmd} "${tag_full}"
+    "${cmd_prefix[@]}" ${pre_cmd} "${tag_full}"
   done
 
   args+=(--progress plain)
 
-  if ! DOCKER_BUILDKIT=1 "${docker_prefix[@]}" docker build "${args[@]}" "${arg_context}"; then
+  if ! DOCKER_BUILDKIT=1 "${cmd_prefix[@]}" docker build "${args[@]}" "${arg_context}"; then
     print_error "failed to build docker container '${tag_full}'"
     exit 1
   fi
@@ -218,7 +232,7 @@ rdo_docker_build() {
   local post_cmd
   for post_cmd in "${arg_post_exec[@]}"; do
     print_progress "calling post exec command '${post_cmd} ${tag_full}'"
-    ${post_cmd} "${tag_full}"
+    "${cmd_prefix[@]}" ${post_cmd} "${tag_full}"
   done
 }
 

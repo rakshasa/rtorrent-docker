@@ -5,6 +5,7 @@ rdo_header docker.context
 DOCKER_CONTEXT_TYPES=(
   ancestor
   apk
+  autogen
   configure
   compile
   complete
@@ -109,6 +110,10 @@ rdo_docker_context_build() {
 
   context_build_args+=(--context "${arg_context_name}")
 
+  if declare -f rdo_docker_context__test_${arg_context_type} &> /dev/null; then
+    context_build_args+=("--test-exec" "rdo_docker_context__test_${arg_context_type} ${arg_context_name} ${arg_context_args}")
+  fi
+
   if declare -f rdo_docker_context__pre_${arg_context_type} &> /dev/null; then
     context_build_args+=("--pre-exec" "rdo_docker_context__pre_${arg_context_type} ${arg_context_name} ${arg_context_args}")
   fi
@@ -154,7 +159,7 @@ rdo_docker_context__pre_apk() {
   local project_path
   project_path="$(get_project_path)"
 
-  local context_name="${1:?Missing stage name argument.}"
+  local context_name="${1:?Missing context name argument.}"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
 
   mkdir -p "${context_path}/apk-cache"
@@ -165,7 +170,7 @@ rdo_docker_context__post_apk() {
   local project_path
   project_path="$(get_project_path)"
 
-  local context_name="${1:?Missing stage name argument.}"
+  local context_name="${1:?Missing context name argument.}"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
   local tag_full="${2:?Missing tag argument.}"
 
@@ -207,6 +212,29 @@ rdo_docker_context__post_apk() {
   )
 }
 
+rdo_docker_context__test_autogen() {
+  local project_path
+  project_path="$(get_project_path)"
+  local context_name="${1:?Missing context name argument.}"
+  local context_path="${project_path:?Missing project path.}/context/${context_name}"
+  local tag_full="${2:?Missing tag argument.}"
+
+  if [[ -n "$(rdo__image_id__name "${tag_full}")" ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
+rdo_docker_context__pre_autogen() {
+  local project_path
+  project_path="$(get_project_path)"
+  local context_name="${1:?Missing context name argument.}"
+  local context_path="${project_path:?Missing project path.}/context/${context_name}"
+
+  "${project_path}/misc/rsync-stage-configure" "${project_path}/data/${context_name}/" "${context_path}/autogen/"
+}
+
 rdo_docker_context__post_cache() {
   local cache_filename="${1:?Missing cache filename argument.}"
   rdo_docker_context_build --empty --base-image "cache/apk:global" --filename "${cache_filename}" "cache/apk:global"
@@ -215,7 +243,7 @@ rdo_docker_context__post_cache() {
 rdo_docker_context__pre_configure() {
   local project_path
   project_path="$(get_project_path)"
-  local context_name="${1:?Missing stage name argument.}"
+  local context_name="${1:?Missing context name argument.}"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
 
   "${project_path}/misc/rsync-stage-configure" "${project_path}/data/${context_name}/" "${context_path}/configure/"
@@ -224,7 +252,7 @@ rdo_docker_context__pre_configure() {
 rdo_docker_context__pre_compile() {
   local project_path
   project_path="$(get_project_path)"
-  local context_name="${1:?Missing stage name argument.}"
+  local context_name="${1:?Missing context name argument.}"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
 
   "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name}/" "${context_path}/compile/"
@@ -233,7 +261,7 @@ rdo_docker_context__pre_compile() {
 rdo_docker_context__pre_complete() {
   local project_path
   project_path="$(get_project_path)"
-  local context_name="${1:?Missing stage name argument.}"
+  local context_name="${1:?Missing context name argument.}"
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
 
   "${project_path}/misc/rsync-stage-configure" "${project_path}/data/${context_name}/" "${context_path}/configure/"

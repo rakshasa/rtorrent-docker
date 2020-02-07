@@ -8,9 +8,7 @@ ARG BASE_IMAGE
 
 FROM "${REPOSITORY}/${BASE_IMAGE}"
 
-RUN --mount=type=bind,from=rdo/ancestor:default,source=/var/cache/apk-deploy,target=/stage \
-\
+RUN --mount=type=bind,from=rdo/ancestor:global,source=/var/cache/apk-deploy,target=/stage \
 cd stage; \
-\
 find . -type d -exec mkdir -p "/deploy/{}" \; ;\
 find . -not -type d -exec cp -ap "{}" "/deploy/{}" \;

@@ -14,8 +14,7 @@
 # '/deploy' changed.
 
 ARG REPOSITORY
-ARG TAG_APPEND
 
-FROM "${REPOSITORY}/ancestor:${TAG_APPEND}"
+FROM "${REPOSITORY}/ancestor:global"
 
 WORKDIR /stage

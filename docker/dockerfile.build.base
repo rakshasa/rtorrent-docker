@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:experimental
 
 ARG REPOSITORY
-ARG TAG_APPEND
 
-FROM "${REPOSITORY}/ancestor:${TAG_APPEND}"
+FROM "${REPOSITORY}/ancestor:global"
+
+WORKDIR /build
 
 RUN \
 --mount=type=tmpfs,target=/var/cache/apk \
