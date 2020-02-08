@@ -17,6 +17,7 @@ rdo_build() {
         build_args+=("--dry-run")
         shift ;;
       --rebuild)
+        build_args+=("--rebuild")
         arg_rebuild="yes"
         shift ;;
       --help|-h|'')
@@ -157,10 +158,9 @@ rdo_build__init() {
 
   rdo_build__build --context-type "ancestor" --context-name "ancestor" --no-rebuild --ancestor-project "rdo-apk-cache" --filename "ancestor.cache" "cache/apk:global"
   rdo_build__build --context-type "ancestor" --context-name "ancestor" --cache "cache.ancestor" --no-rebuild --ancestor-project "rdo-project" "ancestor:global"
+  rdo_build__build --empty --no-rebuild "stage:global"
   rdo_build__build --empty --cache "cache.build.base" "build/base"
   rdo_build__build --empty --cache "cache.build.base.compiler" "build/base/compiler"
-  rdo_build__build --empty --no-rebuild "stage:global"
-  # rdo_build__build --empty --no-rebuild --filename "stage" "build/result"
 }
 
 rdo_build__libtorrent_configure() {

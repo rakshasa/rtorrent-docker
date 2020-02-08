@@ -81,6 +81,7 @@ rdo_docker_build() {
   local arg_filename=
   local arg_no_rebuild=
   local arg_no_cache=
+  local arg_rebuild=
   local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
   local arg_rsync_args=
   local arg_stage_image=
@@ -123,6 +124,9 @@ rdo_docker_build() {
       --pre-exec)
         arg_pre_exec+=("${2:?Missing exec argument.}")
         shift 2 ;;
+      --rebuild)
+        arg_rebuild="yes"
+        shift ;;
       --repository)
         arg_repository="${2:?Missing repository argument.}"
         shift 2 ;;
@@ -195,7 +199,7 @@ rdo_docker_build() {
   [[ -n "${arg_stage_image}" ]] && args+=("--build-arg" "STAGE_IMAGE=${arg_stage_image}")
   [[ -n "${arg_tag_append}" ]] && args+=("--build-arg" "TAG_APPEND=${arg_tag_append}")
 
-  if [[ -n "${arg_no_rebuild}" ]] && [[ -n "$(rdo__image_id__name "${tag_full}")" ]]; then
+  if [[ -z "${arg_rebuild}" ]] && [[ -n "${arg_no_rebuild}" ]] && [[ -n "$(rdo__image_id__name "${tag_full}")" ]]; then
     print_progress "\nskipping ${tag_full}, already exists"
     return 0
   fi

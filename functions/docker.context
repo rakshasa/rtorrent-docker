@@ -219,9 +219,9 @@ rdo_docker_context__test_autogen() {
   local context_path="${project_path:?Missing project path.}/context/${context_name}"
   local tag_full="${2:?Missing tag argument.}"
 
-  if [[ -n "$(rdo__image_id__name "${tag_full}")" ]]; then
-    return 1
-  fi
+  # if [[ -n "$(rdo__image_id__name "${tag_full}")" ]]; then
+  #   return 1
+  # fi
 
   return 0
 }
