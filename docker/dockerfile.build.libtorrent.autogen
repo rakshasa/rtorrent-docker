@@ -12,23 +12,15 @@
 ARG REPOSITORY
 ARG TAG_APPEND
 
+# TODO: Rename to .stage, we start by creating a result stage image
+# for libtorrent.
+
+# TODO: Put timestamps in tmpfs?
+
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" as build
 
-RUN \
---mount=type=bind,source=/autogen,target=/stage/autogen \
-set -xe; cd /stage/autogen; \
-\
-rsync -rlpgoD -muc --delete-after \
---include '/autogen.sh' \
---include '/configure.ac' \
---include '/libtorrent.pc.in' \
---include '/scripts/*.m4' \
---include '*/' \
---exclude '*' \
-./ /build/; \
-\
-find . -name Makefile.am -exec install -Dm0644 /dev/null /build/{} \;
+COPY /autogen /build
 
 RUN echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; \
 \
@@ -41,8 +33,6 @@ find . -not -type d -newer /timestamp.autogen -exec mv -v {} /deploy/autogen/{} 
 
 FROM "${REPOSITORY}/stage:global"
 
-RUN \
---mount=type=bind,from=build,source=/deploy,target=/stage \
-set -xe; \
-\
-cp -a /stage/autogen/ /deploy/autogen/
+RUN mkdir -p /deploy/output
+
+COPY --from=build /deploy/autogen /deploy/source

@@ -7,19 +7,12 @@ arg_target="${2:?Missing target argument.}"
 
 mkdir -p "${arg_target}"
 
-rsync -rlpgoD -muc --delete-after \
+rsync -rlpgoD -muc -t --delete-after \
 \
---include '*.ac' \
 --include '*.am' \
 --include '*.m4' \
 --include '*.pc.in' \
---include '/AUTHORS' \
---include '/autogen.sh' \
---include '/ChangeLog' \
---include '/COPYING' \
---include '/INSTALL' \
---include '/NEWS' \
---include '/README' \
+--include 'configure.ac' \
 \
 --include '*.cc' \
 --include '*.h' \
@@ -27,4 +20,5 @@ rsync -rlpgoD -muc --delete-after \
 --include '*/' \
 --exclude '/test/' \
 --exclude '*' \
+\
 ${arg_source} ${arg_target}

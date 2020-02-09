@@ -80,6 +80,10 @@ source ~/.bash_profile
 update() {
   source "${project_path}/misc/rtorrent-docker.bash"
 
+  if [[ -f "${project_path}/data/env.engine" ]]; then
+    source "${project_path}/data/env.engine"
+  fi
+
   case "\${RDO_DOCKER_TYPE}" in
     machine)
       if [[ -f "${project_path}/data/env.machine" ]]; then
@@ -88,39 +92,32 @@ update() {
         echo "Missing '${project_path}/data/env.machine' file." >&2
       fi
       ;;
-    engine)
-      if [[ -f "${project_path}/data/env.engine" ]]; then
-        source "${project_path}/data/env.engine"
-      else
-        echo "Missing '${project_path}/data/env.engine' file." >&2
-      fi
-      ;;
   esac
 }
 
 export PATH="${project_path}:\${PATH}"
 export EXEC_PTY="$((command -v winpty) || (command -v console) || :)"
+export PROMPT_COMMAND+="; PS1=\"<context:\\\${DOCKER_CONTEXT}> \\\${PS1}\""
 
 export RDO_BASH_SESSION="yes"
 export RDO_DOCKER_TYPE="${arg_docker_type}"
-
 EOF
 
   if [[ -n "${arg_docker_machine}" ]]; then
     cat >> "${DATA_PATH}/env.bash" <<EOF
-export PROMPT_COMMAND+="; PS1=\"<machine: \\\${DOCKER_MACHINE_NAME}> \\\${PS1}\""
+export PROMPT_COMMAND+="; PS1=\"<machine:\\\${DOCKER_MACHINE_NAME}> \\\${PS1}\""
 export RDO_DOCKER_MACHINE="${arg_docker_machine}"
 EOF
   fi
 
   if [[ -n "${arg_repository}" ]]; then
     cat >> "${DATA_PATH}/env.bash" <<EOF
-export PROMPT_COMMAND+="; PS1=\"<context: \\\${DOCKER_CONTEXT}> \\\${PS1}\""
 export RDO_REPOSITORY="${arg_repository}"
 EOF
   fi
 
     cat >> "${DATA_PATH}/env.bash" <<EOF
+
 update
 EOF
 

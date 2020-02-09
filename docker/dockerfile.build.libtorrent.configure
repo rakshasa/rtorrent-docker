@@ -4,25 +4,29 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/stage:global" AS stage
-
-COPY --from=rdo/build/libtorrent/stage:default /deploy/autogen/ /deploy/configure/
-COPY ./configure/ /stage/configure/
-
-RUN set -xe; cd /stage/configure/; \
-find . -type d -exec mkdir -p "/deploy/configure/{}" \; ;\
-find . -not -type d -exec cp -a "{}" "/deploy/configure/{}" \;
+FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}" AS stage
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
-COPY --from=stage /deploy/configure/ /build/configure/
-
-RUN set -xe; mkdir -p /deploy/configure; cd /deploy/configure; \
+RUN \
+--mount=type=bind,rw,source=/configure,target=/build/source \
+--mount=type=bind,from=stage,source=/deploy/source,target=/stage/source \
+--mount=type=bind,rw,from=stage,source=/deploy/output,target=/build/output \
+\
+echo -e "\033[0;32mlibtorrent configure\033[0m"; set -xe; cd /build/output; \
+\
+rsync -rlpgoD -muc -t /stage/source/ /build/source/; \
+\
 source /env.configure; \
-/build/configure/configure --prefix=/prefix --disable-backtrace
+touch /timestamp.configure; \
+/build/source/configure --prefix=/prefix --disable-backtrace; \
+\
+find . -type d -newer /timestamp.configure -exec mkdir -v -p /deploy/output/{} \; ;\
+find . -not -type d -newer /timestamp.configure -exec mv -v {} /deploy/output/{} \;
 
 
 FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}"
 
-COPY --from=build /deploy/configure/ /deploy/configure/
+RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage/output \
+rsync -rlpgoD -muc -t /stage/output/ /deploy/output/
