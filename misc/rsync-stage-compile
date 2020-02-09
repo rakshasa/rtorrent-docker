@@ -18,7 +18,6 @@ rsync -rlpgoD -muc -t --delete-after \
 --include '*.h' \
 \
 --include '*/' \
---exclude '/test/' \
 --exclude '*' \
 \
 ${arg_source} ${arg_target}

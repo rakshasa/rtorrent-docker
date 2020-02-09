@@ -170,6 +170,7 @@ rdo_build__libtorrent_configure() {
 
 rdo_build__libtorrent_compile() {
   rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.compile" "build/libtorrent/stage"
+  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.check" "build/libtorrent/stage"
 }
 
 rdo_build__libtorrent_check() {

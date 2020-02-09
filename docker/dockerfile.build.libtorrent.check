@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}" AS stage
+
+
+FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
+
+RUN \
+--mount=type=bind,rw,source=/compile,target=/build/source \
+--mount=type=bind,from=stage,source=/deploy/source,target=/stage/source \
+--mount=type=bind,rw,from=stage,source=/deploy/output,target=/build/output \
+\
+echo -e "\033[0;32mlibtorrent compile check\033[0m"; set -xe; cd /build/output; \
+\
+rsync -rlpgoD -muc -t /stage/source/ /build/source/; \
+\
+touch /timestamp.compile; \
+make -j12 check TESTS=; \
+\
+find . -type d -newer /timestamp.compile -exec mkdir -v -p /deploy/output/{} \; ;\
+find . -not -type d -newer /timestamp.compile -exec mv -v {} /deploy/output/{} \;
+
+
+FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}"
+
+RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage/output \
+rsync -rlpgoD -muc -t /stage/output/ /deploy/output/
