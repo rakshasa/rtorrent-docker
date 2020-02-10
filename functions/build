@@ -156,8 +156,11 @@ rdo_build__build() {
 rdo_build__init() {
   rdo docker pull "docker/dockerfile:experimental" "alpine:latest"
 
-  rdo_build__build --context-type "ancestor" --context-name "ancestor" --no-rebuild --ancestor-project "rdo-apk-cache" --filename "ancestor.cache" "cache/apk:global"
+  rdo_build__build --context-type "ancestor" --context-name "ancestor" --no-rebuild --ancestor-project "rdo-apk-cache" "ancestor/cache:global"
+  rdo_build__build --empty --no-rebuild "cache/apk:global"
+
   rdo_build__build --context-type "ancestor" --context-name "ancestor" --cache "cache.ancestor" --no-rebuild --ancestor-project "rdo-project" "ancestor:global"
+
   rdo_build__build --empty --no-rebuild "stage:global"
   rdo_build__build --empty --cache "cache.build.base" "build/base"
   rdo_build__build --empty --cache "cache.build.base.compiler" "build/base/compiler"
@@ -170,7 +173,7 @@ rdo_build__libtorrent_configure() {
 
 rdo_build__libtorrent_compile() {
   rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.compile" "build/libtorrent/stage"
-  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.check" "build/libtorrent/stage"
+  # rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.check" "build/libtorrent/stage"
 }
 
 rdo_build__libtorrent_check() {

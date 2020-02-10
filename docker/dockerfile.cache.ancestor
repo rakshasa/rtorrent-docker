@@ -6,6 +6,15 @@
 ARG REPOSITORY
 ARG BASE_IMAGE
 
-FROM "${REPOSITORY}/${BASE_IMAGE}"
+# TODO: Build package cache with no intermediate steps?
+
+# TODO: Copy new files directly to second stage before copying from first stage, this ensures we use the cache.
+
+FROM "${REPOSITORY}/${BASE_IMAGE}" AS stage
 
 RUN --mount=type=bind,from=rdo/ancestor:global,source=/var/cache/apk-deploy,target=/stage pkg-copy
+
+
+FROM "${REPOSITORY}/ancestor/cache:global"
+
+COPY --from=stage /deploy /deploy

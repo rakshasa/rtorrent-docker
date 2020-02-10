@@ -6,6 +6,11 @@
 ARG REPOSITORY
 ARG BASE_IMAGE
 
-FROM "${REPOSITORY}/${BASE_IMAGE}"
+FROM "${REPOSITORY}/${BASE_IMAGE}" AS stage
 
 RUN --mount=type=bind,from=rdo/build/base/compiler:default,source=/var/cache/apk-deploy,target=/stage pkg-copy
+
+
+FROM "${REPOSITORY}/ancestor/cache:global"
+
+COPY --from=stage /deploy /deploy

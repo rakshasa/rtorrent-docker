@@ -22,8 +22,14 @@ source /env.configure; \
 touch /timestamp.configure; \
 /build/source/configure --prefix=/prefix --disable-backtrace; \
 \
-find . -type d -newer /timestamp.configure -exec mkdir -v -p /deploy/output/{} \; ;\
-find . -not -type d -newer /timestamp.configure -exec mv -v {} /deploy/output/{} \;
+find . -type d \
+  -newer /timestamp.configure \
+  -exec mkdir -v -p /deploy/output/{} \; ;\
+find . -not -type d \
+  -newer /timestamp.configure \
+  -not -name \*.Po \
+  -not -name \*.Plo \
+  -exec mv -v {} /deploy/output/{} \;
 
 
 FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}"

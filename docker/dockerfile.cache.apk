@@ -1,0 +1,5 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+
+FROM "${REPOSITORY}/ancestor/cache:global"

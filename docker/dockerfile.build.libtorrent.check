@@ -19,6 +19,8 @@ echo -e "\033[0;32mlibtorrent compile check\033[0m"; set -xe; cd /build/output; 
 rsync -rlpgoD -muc -t /stage/source/ /build/source/; \
 \
 touch /timestamp.compile; \
+sleep 2; \
+\
 make -j12 check TESTS=; \
 \
 find . -type d -newer /timestamp.compile -exec mkdir -v -p /deploy/output/{} \; ;\
