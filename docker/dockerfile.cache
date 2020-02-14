@@ -4,15 +4,23 @@
 # /deploy - the cache location to be mounted by the user of the cache
 
 ARG REPOSITORY
-ARG BASE_IMAGE
+ARG CACHE_BASE_TAG
 ARG TAG_APPEND
 
-FROM "${REPOSITORY}/${BASE_IMAGE}:${TAG_APPEND}"
 
-ARG REPOSITORY
-ARG CACHE_FROM
-ARG CACHE_SOURCE
+FROM "${REPOSITORY}/${CACHE_BASE_TAG}" AS stage
 
-# Argument replacement in mount option fields is not currently
-# supported, use hardcoded dockerfiles for now.
-RUN --mount=type=bind,from=${REPOSITORY}/${CACHE_FROM},source=${CACHE_SOURCE},target=/stage pkg-copy
+
+FROM "${REPOSITORY}/cache/apk:global" AS cache
+
+
+FROM "${REPOSITORY}/ancestor/cache:global"
+
+COPY --from=stage /var/cache/apk-deploy /stage
+COPY --from=cache /deploy /deploy
+
+RUN echo -e "\033[0;32mupdating cache\033[0m"; set -xe; \
+\
+cd /stage; \
+find . -type d -exec mkdir -v -p /deploy/{} \; ;\
+find . -not -type d -exec mv -v {} /deploy/{} \;

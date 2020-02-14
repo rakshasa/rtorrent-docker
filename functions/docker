@@ -76,6 +76,7 @@ rdo_docker_build() {
 
   local arg_ancestor_project=
   local arg_base_image=
+  local arg_cache_base_tag=
   local arg_context="."
   local arg_dry_run=
   local arg_filename=
@@ -102,6 +103,9 @@ rdo_docker_build() {
         shift 2 ;;
       --build-arg)
         args+=("--build-arg" "${2:?Missing build arg argument.}")
+        shift 2 ;;
+      --cache-base-tag)
+        arg_cache_base_tag="${2:?Missing cache base tag argument.}"
         shift 2 ;;
       --context)
         arg_context="./context/${2:?Missing context argument.}"
@@ -180,24 +184,31 @@ rdo_docker_build() {
   local filename="${arg_filename:-${arg_1%:*}}"
   local tag_full="${arg_repository}/${arg_tag:-${arg_1}}"
 
-  if [[ -z "${arg_tag_append}" ]] || [[ "${tag_full}" =~ : ]]; then
-    tag_full+="${arg_tag_append}"
-  else
-    tag_full+=":${arg_tag_append}"
+  if [[ -n "${arg_tag_append}" ]]; then
+    if [[ ! "${tag_full}" =~ : ]]; then
+      tag_full+=":${arg_tag_append}"
+    else
+      tag_full+="${arg_tag_append}"
+    fi
+
+    if [[ -n "${arg_cache_base_tag}" ]] && [[ ! "${arg_cache_base_tag}" =~ : ]]; then
+      arg_cache_base_tag+=":${arg_tag_append}"
+    fi
   fi
 
   args+=("--tag" "${tag_full}")
   args+=("--file" "./docker/dockerfile.${filename//\//.}")
 
   [[ -n "${arg_dry_run}" ]] && cmd_prefix+=("echo")
-
   [[ -n "${arg_no_cache}" ]] && args+=("--no-cache")
+
   [[ -n "${arg_ancestor_project}" ]] && args+=("--build-arg" "ANCESTOR_PROJECT=${arg_ancestor_project}")
-  [[ -n "${arg_base_image}" ]] && args+=("--build-arg" "BASE_IMAGE=${arg_base_image}")
-  [[ -n "${arg_repository}" ]] && args+=("--build-arg" "REPOSITORY=${arg_repository}")
-  [[ -n "${arg_rsync_args}" ]] && args+=("--build-arg" "RSYNC_ARGS=${arg_rsync_args}")
-  [[ -n "${arg_stage_image}" ]] && args+=("--build-arg" "STAGE_IMAGE=${arg_stage_image}")
-  [[ -n "${arg_tag_append}" ]] && args+=("--build-arg" "TAG_APPEND=${arg_tag_append}")
+  [[ -n "${arg_base_image}" ]]       && args+=("--build-arg" "BASE_IMAGE=${arg_base_image}")
+  [[ -n "${arg_cache_base_tag}" ]]   && args+=("--build-arg" "CACHE_BASE_TAG=${arg_cache_base_tag}")
+  [[ -n "${arg_repository}" ]]       && args+=("--build-arg" "REPOSITORY=${arg_repository}")
+  [[ -n "${arg_rsync_args}" ]]       && args+=("--build-arg" "RSYNC_ARGS=${arg_rsync_args}")
+  [[ -n "${arg_stage_image}" ]]      && args+=("--build-arg" "STAGE_IMAGE=${arg_stage_image}")
+  [[ -n "${arg_tag_append}" ]]       && args+=("--build-arg" "TAG_APPEND=${arg_tag_append}")
 
   if [[ -z "${arg_rebuild}" ]] && [[ -n "${arg_no_rebuild}" ]] && [[ -n "$(rdo__image_id__name "${tag_full}")" ]]; then
     print_progress "\nskipping ${tag_full}, already exists"
@@ -228,10 +239,15 @@ rdo_docker_build() {
 
   args+=(--progress plain)
 
+  set -x
+
   if ! DOCKER_BUILDKIT=1 "${cmd_prefix[@]}" docker build "${args[@]}" "${arg_context}"; then
+    set +x
     print_error "failed to build docker container '${tag_full}'"
     exit 1
   fi
+
+  set +x
 
   local post_cmd
   for post_cmd in "${arg_post_exec[@]}"; do

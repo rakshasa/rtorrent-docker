@@ -97,7 +97,6 @@ update() {
 
 export PATH="${project_path}:\${PATH}"
 export EXEC_PTY="$((command -v winpty) || (command -v console) || :)"
-export PROMPT_COMMAND+="; PS1=\"<context:\\\${DOCKER_CONTEXT}> \\\${PS1}\""
 
 export RDO_BASH_SESSION="yes"
 export RDO_DOCKER_TYPE="${arg_docker_type}"
@@ -105,8 +104,14 @@ EOF
 
   if [[ -n "${arg_docker_machine}" ]]; then
     cat >> "${DATA_PATH}/env.bash" <<EOF
-export PROMPT_COMMAND+="; PS1=\"<machine:\\\${DOCKER_MACHINE_NAME}> \\\${PS1}\""
 export RDO_DOCKER_MACHINE="${arg_docker_machine}"
+
+export PROMPT_COMMAND+="; PS1=\"<\\\${DOCKER_MACHINE_NAME}:\\\${DOCKER_CONTEXT}> \\\${PS1}\""
+EOF
+  else
+    cat >> "${DATA_PATH}/env.bash" <<EOF
+
+export PROMPT_COMMAND+="; PS1=\"<\\\${DOCKER_CONTEXT}> \\\${PS1}\""
 EOF
   fi
 

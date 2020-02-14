@@ -20,8 +20,11 @@ rsync -rlpgoD -muc -t /stage/source/ /build/source/; \
 \
 source /env.configure; \
 touch /timestamp.configure; \
+sleep 1.1; \
+\
 /build/source/configure --prefix=/prefix --disable-backtrace; \
 \
+mkdir -p /deploy/output; \
 find . -type d \
   -newer /timestamp.configure \
   -exec mkdir -v -p /deploy/output/{} \; ;\

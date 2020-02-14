@@ -18,13 +18,14 @@ echo -e "\033[0;32mlibtorrent compile check\033[0m"; set -xe; cd /build/output; 
 \
 rsync -rlpgoD -muc -t /stage/source/ /build/source/; \
 \
-touch /timestamp.compile; \
-sleep 2; \
+touch /timestamp.check; \
+sleep 1.1; \
 \
 make -j12 check TESTS=; \
 \
-find . -type d -newer /timestamp.compile -exec mkdir -v -p /deploy/output/{} \; ;\
-find . -not -type d -newer /timestamp.compile -exec mv -v {} /deploy/output/{} \;
+mkdir -p /deploy/output; \
+find . -type d -newer /timestamp.check -exec mkdir -v -p /deploy/output/{} \; ;\
+find . -not -type d -newer /timestamp.check -exec mv -v {} /deploy/output/{} \;
 
 
 FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}"

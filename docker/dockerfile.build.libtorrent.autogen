@@ -25,14 +25,16 @@ COPY /autogen /build
 RUN echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; \
 \
 touch /timestamp.autogen; \
+sleep 1.1; \
 ./autogen.sh; \
 \
-find . -type d -newer /timestamp.autogen -exec mkdir -v -p /deploy/autogen/{} \; ;\
-find . -not -type d -newer /timestamp.autogen -exec mv -v {} /deploy/autogen/{} \;
+mkdir -p /deploy/output; \
+find . -type d -newer /timestamp.autogen -exec mkdir -v -p /deploy/output/{} \; ;\
+find . -not -type d -newer /timestamp.autogen -exec mv -v {} /deploy/output/{} \;
 
 
 FROM "${REPOSITORY}/stage:global"
 
 RUN mkdir -p /deploy/output
 
-COPY --from=build /deploy/autogen /deploy/source
+COPY --from=build /deploy/output /deploy/source

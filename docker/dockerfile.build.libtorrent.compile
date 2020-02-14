@@ -20,11 +20,12 @@ echo -e "\033[0;32mlibtorrent compile\033[0m"; set -xe; cd /build/output; \
 rsync -rlpgoD -muc -t /stage/source/ /build/source/; \
 \
 touch /timestamp.compile; \
-sleep 2; \
+sleep 1.1; \
 \
 make -j12; \
 make -j12 install; \
 \
+mkdir -p /deploy/output; \
 find . -type d -newer /timestamp.compile -exec mkdir -v -p /deploy/output/{} \; ;\
 find . -not -type d -newer /timestamp.compile -exec mv -v {} /deploy/output/{} \;
 
