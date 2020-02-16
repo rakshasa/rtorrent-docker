@@ -10,32 +10,35 @@ FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}" AS stage
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
 RUN \
---mount=type=bind,rw,source=/configure,target=/build/source \
---mount=type=bind,from=stage,source=/deploy/source,target=/stage/source \
---mount=type=bind,rw,from=stage,source=/deploy/output,target=/build/output \
+--mount=type=bind,rw,source=/configure,target=/build/libtorrent-source \
+--mount=type=bind,from=stage,source=/deploy/libtorrent-source,target=/stage/libtorrent-source \
+--mount=type=bind,rw,from=stage,source=/deploy/libtorrent-output,target=/build/libtorrent-output \
 \
-echo -e "\033[0;32mlibtorrent configure\033[0m"; set -xe; cd /build/output; \
+echo -e "\033[0;32mlibtorrent configure\033[0m"; set -xe; cd /build/libtorrent-output; \
 \
-rsync -rlpgoD -muc -t /stage/source/ /build/source/; \
+rsync -rlpgoD -muc -t /stage/libtorrent-source/ /build/libtorrent-source/; \
 \
 source /env.configure; \
 touch /timestamp.configure; \
 sleep 1.1; \
 \
-/build/source/configure --prefix=/prefix --disable-backtrace; \
+/build/libtorrent-source/configure --prefix=/prefix --disable-backtrace; \
 \
-mkdir -p /deploy/output; \
-find . -type d \
+find . \
+  -not -type d -and \
+  -not -name \*.Po -and \
+  -not -name \*.Plo -and \
   -newer /timestamp.configure \
-  -exec mkdir -v -p /deploy/output/{} \; ;\
-find . -not -type d \
+  -exec dirname '{}' \; | uniq | tr '\n' '\0' | (mkdir -p /deploy/libtorrent-output && cd /deploy/libtorrent-output && xargs -0 -r mkdir -p); \
+find . \
+  -not -type d -and \
+  -not -name \*.Po -and \
+  -not -name \*.Plo -and \
   -newer /timestamp.configure \
-  -not -name \*.Po \
-  -not -name \*.Plo \
-  -exec mv -v {} /deploy/output/{} \;
+  -exec mv -v "{}" "/deploy/libtorrent-output/{}" \;
 
 
 FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}"
 
-RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage/output \
-rsync -rlpgoD -muc -t /stage/output/ /deploy/output/
+RUN --mount=type=bind,from=build,source=/deploy/libtorrent-output,target=/stage/libtorrent-output \
+rsync -rlpgoD -muc -t /stage/libtorrent-output/ /deploy/libtorrent-output/

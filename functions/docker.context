@@ -55,8 +55,8 @@ rdo_docker_context_build() {
   while [[ -n "${1}" ]]; do
     case "${1}" in
       --cache)
-        context_build_args+=(--post-exec "rdo_docker_context__post_cache ${2:?Missing cache name argument.}")
-        shift 2 ;;
+        context_build_args+=(--post-exec "rdo_docker_context__post_cache")
+        shift ;;
       --context-args)
         arg_context_args="${2:?Missing context args argument.}"
         shift 2 ;;
@@ -236,13 +236,7 @@ rdo_docker_context__pre_autogen() {
 }
 
 rdo_docker_context__post_cache() {
-  local cache_base_tag="${1:?Missing cache base tag argument.}"
-
-  if [[ ! "${cache_base_tag}" =~ : ]] && [[ -n "${arg_tag_append}" ]]; then
-    rdo_docker_context_build --empty --cache-base-tag "${cache_base_tag}" --filename "cache" --tag-append "${arg_tag_append}" "cache/apk:global"
-  else
-    rdo_docker_context_build --empty --cache-base-tag "${cache_base_tag}" --filename "cache" "cache/apk:global"
-  fi
+  rdo_docker_context_build --empty --cache-base-tag "${tag_full}" --filename "cache" "cache/apk:global"
 }
 
 rdo_docker_context__pre_configure() {

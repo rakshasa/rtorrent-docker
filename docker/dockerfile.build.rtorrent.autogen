@@ -20,10 +20,9 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" as build
 
-RUN \
---mount=type=bind,rw,source=/autogen,target=/build/libtorrent-source \
-\
-echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; cd /build/libtorrent-source; \
+COPY /autogen /build
+
+RUN echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; \
 \
 touch /timestamp.autogen; \
 sleep 1.1; \
@@ -33,15 +32,15 @@ sleep 1.1; \
 find . \
   -not -type d -and \
   -newer /timestamp.autogen \
-  -exec dirname '{}' \; | uniq | tr '\n' '\0' | (mkdir -p /deploy/libtorrent-source && cd /deploy/libtorrent-source && xargs -0 -r mkdir -p); \
+  -exec dirname '{}' \; | uniq | tr '\n' '\0' | (mkdir -p /deploy/output && cd /deploy/output && xargs -0 -r mkdir -p); \
 find . \
   -not -type d -and \
   -newer /timestamp.autogen \
-  -exec mv -v "{}" "/deploy/libtorrent-source/{}" \;
+  -exec mv -v "{}" "/deploy/output/{}" \;
 
 
 FROM "${REPOSITORY}/stage:global"
 
-RUN mkdir -p /deploy/libtorrent-output
+RUN mkdir -p /deploy/output
 
-COPY --from=build /deploy/libtorrent-source /deploy/libtorrent-source
+COPY --from=build /deploy/output /deploy/source

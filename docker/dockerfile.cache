@@ -8,7 +8,7 @@ ARG CACHE_BASE_TAG
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/${CACHE_BASE_TAG}" AS stage
+FROM "${CACHE_BASE_TAG}" AS stage
 
 
 FROM "${REPOSITORY}/cache/apk:global" AS cache
@@ -22,5 +22,9 @@ COPY --from=cache /deploy /deploy
 RUN echo -e "\033[0;32mupdating cache\033[0m"; set -xe; \
 \
 cd /stage; \
-find . -type d -exec mkdir -v -p /deploy/{} \; ;\
-find . -not -type d -exec mv -v {} /deploy/{} \;
+find . \
+  -not -type d \
+  -exec dirname '{}' \; | uniq | tr '\n' '\0' | (cd /deploy; xargs -0 -r mkdir -p); \
+find . \
+  -not -type d \
+  -exec mv -v "{}" "/deploy/{}" \;

@@ -202,13 +202,13 @@ rdo_docker_build() {
   [[ -n "${arg_dry_run}" ]] && cmd_prefix+=("echo")
   [[ -n "${arg_no_cache}" ]] && args+=("--no-cache")
 
-  [[ -n "${arg_ancestor_project}" ]] && args+=("--build-arg" "ANCESTOR_PROJECT=${arg_ancestor_project}")
-  [[ -n "${arg_base_image}" ]]       && args+=("--build-arg" "BASE_IMAGE=${arg_base_image}")
-  [[ -n "${arg_cache_base_tag}" ]]   && args+=("--build-arg" "CACHE_BASE_TAG=${arg_cache_base_tag}")
-  [[ -n "${arg_repository}" ]]       && args+=("--build-arg" "REPOSITORY=${arg_repository}")
-  [[ -n "${arg_rsync_args}" ]]       && args+=("--build-arg" "RSYNC_ARGS=${arg_rsync_args}")
-  [[ -n "${arg_stage_image}" ]]      && args+=("--build-arg" "STAGE_IMAGE=${arg_stage_image}")
-  [[ -n "${arg_tag_append}" ]]       && args+=("--build-arg" "TAG_APPEND=${arg_tag_append}")
+  [[ -n "${arg_ancestor_project}" ]]    && args+=("--build-arg" "ANCESTOR_PROJECT=${arg_ancestor_project}")
+  [[ -n "${arg_base_image}" ]]          && args+=("--build-arg" "BASE_IMAGE=${arg_base_image}")
+  [[ -n "${arg_cache_base_tag}" ]]      && args+=("--build-arg" "CACHE_BASE_TAG=${arg_cache_base_tag}")
+  [[ -n "${arg_repository}" ]]          && args+=("--build-arg" "REPOSITORY=${arg_repository}")
+  [[ -n "${arg_rsync_args}" ]]          && args+=("--build-arg" "RSYNC_ARGS=${arg_rsync_args}")
+  [[ -n "${arg_stage_image}" ]]         && args+=("--build-arg" "STAGE_IMAGE=${arg_stage_image}")
+  [[ -n "${arg_tag_append}" ]]          && args+=("--build-arg" "TAG_APPEND=${arg_tag_append}")
 
   if [[ -z "${arg_rebuild}" ]] && [[ -n "${arg_no_rebuild}" ]] && [[ -n "$(rdo__image_id__name "${tag_full}")" ]]; then
     print_progress "\nskipping ${tag_full}, already exists"
@@ -239,15 +239,12 @@ rdo_docker_build() {
 
   args+=(--progress plain)
 
-  set -x
+  echo docker build "${args[@]}" "${arg_context}"
 
   if ! DOCKER_BUILDKIT=1 "${cmd_prefix[@]}" docker build "${args[@]}" "${arg_context}"; then
-    set +x
     print_error "failed to build docker container '${tag_full}'"
     exit 1
   fi
-
-  set +x
 
   local post_cmd
   for post_cmd in "${arg_post_exec[@]}"; do
