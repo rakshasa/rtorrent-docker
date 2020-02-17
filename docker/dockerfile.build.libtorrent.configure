@@ -9,14 +9,16 @@ FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}" AS stage
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
+COPY /configure /build/libtorrent-source
+
 RUN \
---mount=type=bind,rw,source=/configure,target=/build/libtorrent-source \
 --mount=type=bind,from=stage,source=/deploy/libtorrent-source,target=/stage/libtorrent-source \
+rsync -rlpgoD -muc -t /stage/libtorrent-source/ /build/libtorrent-source/
+
+RUN \
 --mount=type=bind,rw,from=stage,source=/deploy/libtorrent-output,target=/build/libtorrent-output \
 \
 echo -e "\033[0;32mlibtorrent configure\033[0m"; set -xe; cd /build/libtorrent-output; \
-\
-rsync -rlpgoD -muc -t /stage/libtorrent-source/ /build/libtorrent-source/; \
 \
 source /env.configure; \
 touch /timestamp.configure; \
@@ -29,7 +31,11 @@ find . \
   -not -name \*.Po -and \
   -not -name \*.Plo -and \
   -newer /timestamp.configure \
-  -exec dirname '{}' \; | uniq | tr '\n' '\0' | (mkdir -p /deploy/libtorrent-output && cd /deploy/libtorrent-output && xargs -0 -r mkdir -p); \
+  -exec dirname '{}' \; | uniq | tr '\n' '\0' | ( \
+    mkdir -p cd /deploy/libtorrent-output && \
+    cd /deploy/libtorrent-output && \
+    xargs -r0 -I {} sh -c 'mkdir -p "{}"; touch -r "/build/libtorrent-output/{}" "{}"' \
+  ); \
 find . \
   -not -type d -and \
   -not -name \*.Po -and \
@@ -39,6 +45,11 @@ find . \
 
 
 FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}"
+
+ARG CONTEXT_TYPE
+ARG CONTEXT_NAME
+
+LABEL "rdo_stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
 RUN --mount=type=bind,from=build,source=/deploy/libtorrent-output,target=/stage/libtorrent-output \
 rsync -rlpgoD -muc -t /stage/libtorrent-output/ /deploy/libtorrent-output/

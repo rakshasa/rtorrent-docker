@@ -87,7 +87,7 @@ rdo_build_all() {
   rdo_build__init
   rdo_build__libtorrent_configure
   rdo_build__libtorrent_compile
-  # rdo_build__rtorrent_configure
+  rdo_build__rtorrent_configure
   # rdo_build__rtorrent_compile
 }
 
@@ -199,8 +199,8 @@ rdo_build__libtorrent_complete() {
 }
 
 rdo_build__rtorrent_configure() {
-  rdo_build__build --context-type "autogen"   --context-name "rtorrent" --filename "build.rtorrent.autogen" "build/rtorrent/stage"
-  rdo_build__build --context-type "configure" --context-name "rtorrent" --filename "build.rtorrent.configure" "build/rtorrent/stage"
+  rdo_build__build --context-type "autogen"   --context-name "rtorrent" --filename "build.rtorrent.autogen" "build/libtorrent/stage"
+  # rdo_build__build --context-type "configure" --context-name "rtorrent" --filename "build.rtorrent.configure" "build/libtorrent/stage"
 }
 
 rdo_build__rtorrent_compile() {

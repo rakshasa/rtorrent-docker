@@ -122,6 +122,11 @@ rdo_docker_context_build() {
     context_build_args+=("--post-exec" "rdo_docker_context__post_${arg_context_type} ${arg_context_name} ${arg_context_args}")
   fi
 
+  if [[ " autogen configure compile " =~ " ${arg_context_type} " ]]; then
+    context_build_args+=(--build-arg "CONTEXT_TYPE=${arg_context_type}")
+    context_build_args+=(--build-arg "CONTEXT_NAME=${arg_context_name}")
+  fi
+
   rdo_docker_build "${context_build_args[@]}" "${@}"
 }
 
@@ -213,17 +218,11 @@ rdo_docker_context__post_apk() {
 }
 
 rdo_docker_context__test_autogen() {
-  local project_path
-  project_path="$(get_project_path)"
   local context_name="${1:?Missing context name argument.}"
-  local context_path="${project_path:?Missing project path.}/context/${context_name}"
   local tag_full="${2:?Missing tag argument.}"
 
-  if [[ -n "$(rdo__image_id__name "${tag_full}")" ]]; then
-    return 1
-  fi
-
-  return 0
+  [[ -z "$(rdo__image_id__name "${tag_full}")" ]] ||
+    [[ "$(rdo__image_label_value__tag__label "${tag_full}" "rdo_stage__autogen__${context_name}")" != "yes" ]]
 }
 
 rdo_docker_context__pre_autogen() {

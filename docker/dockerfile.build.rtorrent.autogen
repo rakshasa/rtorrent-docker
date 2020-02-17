@@ -20,9 +20,10 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" as build
 
-COPY /autogen /build
-
-RUN echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; \
+RUN \
+--mount=type=bind,rw,source=/autogen,target=/build/rtorrent-source \
+\
+echo -e "\033[0;32mrtorrent autogen.sh\033[0m"; set -xe; cd /build/rtorrent-source; \
 \
 touch /timestamp.autogen; \
 sleep 1.1; \
@@ -32,15 +33,24 @@ sleep 1.1; \
 find . \
   -not -type d -and \
   -newer /timestamp.autogen \
-  -exec dirname '{}' \; | uniq | tr '\n' '\0' | (mkdir -p /deploy/output && cd /deploy/output && xargs -0 -r mkdir -p); \
+  -exec dirname '{}' \; | uniq | tr '\n' '\0' | ( \
+    mkdir -p cd /deploy/rtorrent-source && \
+    cd /deploy/rtorrent-source && \
+    xargs -r0 -I {} sh -c 'mkdir -p "{}"; touch -r "/build/rtorrent-source/{}" "{}"' \
+  ); \
 find . \
   -not -type d -and \
   -newer /timestamp.autogen \
-  -exec mv -v "{}" "/deploy/output/{}" \;
+  -exec mv -v "{}" "/deploy/rtorrent-source/{}" \;
 
 
-FROM "${REPOSITORY}/stage:global"
+FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}"
 
-RUN mkdir -p /deploy/output
+RUN mkdir -p /deploy/rtorrent-output
 
-COPY --from=build /deploy/output /deploy/source
+ARG CONTEXT_TYPE
+ARG CONTEXT_NAME
+
+LABEL "rdo_stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
+
+COPY --from=build /deploy/rtorrent-source /deploy/rtorrent-source

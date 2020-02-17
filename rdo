@@ -18,6 +18,7 @@ rdo() {
   rdo_included common || source "${PROJECT_PATH}/functions/common"
   rdo_included common.args || source "${PROJECT_PATH}/functions/common.args"
   rdo_included common.container || source "${PROJECT_PATH}/functions/common.container"
+  rdo_included common.image || source "${PROJECT_PATH}/functions/common.image"
   rdo_included common.system || source "${PROJECT_PATH}/functions/common.system"
 
   while true; do

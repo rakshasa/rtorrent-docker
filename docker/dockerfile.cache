@@ -24,7 +24,7 @@ RUN echo -e "\033[0;32mupdating cache\033[0m"; set -xe; \
 cd /stage; \
 find . \
   -not -type d \
-  -exec dirname '{}' \; | uniq | tr '\n' '\0' | (cd /deploy; xargs -0 -r mkdir -p); \
+  -exec dirname '{}' \; | uniq | tr '\n' '\0' | (cd /deploy && xargs -0 -r mkdir -p); \
 find . \
   -not -type d \
   -exec mv -v "{}" "/deploy/{}" \;
