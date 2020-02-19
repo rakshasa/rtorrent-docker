@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -xe
+
+if [[ -n "${4}" ]]; then
+  echo "too many arguments: ${4}" >&2
+  exit 1
+fi
+
+SRC_DIR="${1:?Missing source directory argument.}"
+DST_DIR="${2:?Missing destination directory argument.}"
+FIND_ARGS="${3:?Missing find argument.}"
+
+cd "${SRC_DIR}"
+mkdir -p "${DST_DIR}"
+
+find . \
+  ${FIND_ARGS} \
+  -exec dirname '{}' \; | uniq | tr '\n' '\0' | (
+    xargs -r0 -I {} sh -c "mkdir -p '${DST_DIR}/{}'; touch -r '${SRC_DIR}/{}' '${DST_DIR}/{}'"
+  )
+find . \
+  ${FIND_ARGS} \
+  -exec mv -v "{}" "${DST_DIR}/{}" \;

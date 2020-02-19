@@ -157,7 +157,7 @@ rdo_docker_context__pre_ancestor() {
 
   rm -r "${context_path}/bin" 2> /dev/null || :
   mkdir -p "${context_path}/bin"
-  cp "${project_path}"/misc/{build,pkg,rsync,stat}-*[!~] "${context_path}/bin/"
+  cp "${project_path}"/misc/{build,pkg,rdo,rsync,stat}-*[!~] "${context_path}/bin/"
 }
 
 rdo_docker_context__pre_apk() {

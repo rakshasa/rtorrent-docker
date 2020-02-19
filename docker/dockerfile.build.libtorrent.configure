@@ -26,30 +26,22 @@ sleep 1.1; \
 \
 /build/libtorrent-source/configure --prefix=/prefix --disable-backtrace; \
 \
-find . \
-  -not -type d -and \
-  -not -name \*.Po -and \
-  -not -name \*.Plo -and \
-  -newer /timestamp.configure \
-  -exec dirname '{}' \; | uniq | tr '\n' '\0' | ( \
-    mkdir -p cd /deploy/libtorrent-output && \
-    cd /deploy/libtorrent-output && \
-    xargs -r0 -I {} sh -c 'mkdir -p "{}"; touch -r "/build/libtorrent-output/{}" "{}"' \
-  ); \
-find . \
-  -not -type d -and \
-  -not -name \*.Po -and \
-  -not -name \*.Plo -and \
-  -newer /timestamp.configure \
-  -exec mv -v "{}" "/deploy/libtorrent-output/{}" \;
+rdo-find-move "/build/libtorrent-output" "/deploy/libtorrent-output" \
+  "-not -type d -and \
+   -not -name '*.Po' -and \
+   -not -name '*.Plo' -and \
+   -newer /timestamp.configure"
 
 
-FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}"
+FROM "${REPOSITORY}/stage:global"
 
 ARG CONTEXT_TYPE
 ARG CONTEXT_NAME
 
+LABEL "rdo_stage__autogen__${CONTEXT_NAME}"="yes"
 LABEL "rdo_stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
+
+COPY --from=stage /deploy /deploy
 
 RUN --mount=type=bind,from=build,source=/deploy/libtorrent-output,target=/stage/libtorrent-output \
 rsync -rlpgoD -muc -t /stage/libtorrent-output/ /deploy/libtorrent-output/

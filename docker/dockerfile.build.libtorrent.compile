@@ -19,7 +19,9 @@ rsync -rlpgoD -muc -t /stage/libtorrent-source/ /build/libtorrent-source/
 RUN \
 --mount=type=bind,rw,from=stage,source=/deploy/libtorrent-output,target=/build/libtorrent-output \
 \
-echo -e "\033[0;32mlibtorrent compile\033[0m"; set -xe; cd /build/libtorrent-output; \
+echo -e "\033[0;32mlibtorrent compile\033[0m"; set -xe; \
+\
+cd /build/libtorrent-output; \
 \
 touch /timestamp.compile; \
 sleep 1.1; \
@@ -27,26 +29,28 @@ sleep 1.1; \
 make -j12; \
 make -j12 install; \
 \
-find . \
-  -not -type d -and \
-  -newer /timestamp.compile \
-  -exec dirname '{}' \; | uniq | tr '\n' '\0' | ( \
-    mkdir -p cd /deploy/libtorrent-output && \
-    cd /deploy/libtorrent-output && \
-    xargs -r0 -I {} sh -c 'mkdir -p "{}"; touch -r "/build/libtorrent-output/{}" "{}"' \
-  ); \
-find . \
-  -not -type d -and \
-  -newer /timestamp.compile \
-  -exec mv -v "{}" "/deploy/libtorrent-output/{}" \;
+rdo-find-move "/build/libtorrent-output" "/deploy/libtorrent-output" \
+  "-not -type d -and \
+   -newer /timestamp.compile"; \
+\
+rdo-find-move "/prefix" "/deploy/prefix" \
+  "-not -type d -and \
+   -newer /timestamp.compile"
 
 
-FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}"
+FROM "${REPOSITORY}/stage:global"
 
 ARG CONTEXT_TYPE
 ARG CONTEXT_NAME
 
+LABEL "rdo_stage__autogen__${CONTEXT_NAME}"="yes"
 LABEL "rdo_stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
-RUN --mount=type=bind,from=build,source=/deploy/libtorrent-output,target=/stage/libtorrent-output \
-rsync -rlpgoD -muc -t /stage/libtorrent-output/ /deploy/libtorrent-output/
+COPY --from=stage /deploy /deploy
+
+RUN \
+--mount=type=bind,from=build,source=/deploy/libtorrent-output,target=/stage/libtorrent-output \
+--mount=type=bind,from=build,source=/deploy/prefix,target=/stage/prefix \
+\
+rsync -rlpgoD -muc -t /stage/libtorrent-output/ /deploy/libtorrent-output/; \
+rsync -rlpgoD -muc -t /stage/prefix/ /deploy/prefix/

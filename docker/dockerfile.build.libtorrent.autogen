@@ -29,23 +29,14 @@ sleep 1.1; \
 \
 ./autogen.sh; \
 \
-find . \
-  -not -type d -and \
-  -newer /timestamp.autogen \
-  -exec dirname '{}' \; | uniq | tr '\n' '\0' | ( \
-    mkdir -p cd /deploy/libtorrent-source && \
-    cd /deploy/libtorrent-source && \
-    xargs -r0 -I {} sh -c 'mkdir -p "{}"; touch -r "/build/libtorrent-source/{}" "{}"' \
-  ); \
-find . \
-  -not -type d -and \
-  -newer /timestamp.autogen \
-  -exec mv -v "{}" "/deploy/libtorrent-source/{}" \;
+rdo-find-move "/build/libtorrent-source" "/deploy/libtorrent-source" \
+  "-not -type d -and \
+   -newer /timestamp.autogen"
 
 
 FROM "${REPOSITORY}/stage:global"
 
-RUN mkdir -p /deploy/libtorrent-output
+RUN mkdir -p /deploy/libtorrent-output /deploy/prefix
 
 ARG CONTEXT_TYPE
 ARG CONTEXT_NAME
