@@ -18,7 +18,7 @@ RUN \
 echo -e "\033[0;32musing compiler family ${COMPILER}\033[0m"; set -xe; \
 \
 if [ "${COMPILER}" = "clang" ]; then \
-  # clang requires crtbeginS.o from gcc and std headers from g++
+  # clang requires crtbeginS.o from gcc and std headers from g++ \
   echo "export CC=clang CXX=clang++" >> /env.configure; \
   pkg-add gcc \
           g++ \
@@ -48,9 +48,10 @@ ENV COMPILER_STANDARD="${COMPILER_STANDARD}"
 
 RUN echo -e "\033[0;32msetting configure flags\033[0m"; set -xe; \
 \
-echo "\
-export PKG_CONFIG_PATH=\"/prefix/lib/pkgconfig/:${PKG_CONFIG_PATH}\"\
-export CXXFLAGS=\"\
--std=${COMPILER_STANDARD} \
--Wno-exceptions -Wno-pessimizing-move \
-\"" >> /env.configure
+echo " \
+export PKG_CONFIG_PATH=\"/prefix/lib/pkgconfig/:${PKG_CONFIG_PATH}\" \
+export CXXFLAGS=\" \
+  -std=${COMPILER_STANDARD} \
+  -Wno-exceptions -Wno-pessimizing-move \
+  \" \
+" >> /env.configure

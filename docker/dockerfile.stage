@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:experimental
-#
 # Stage build files in a separate container so as to ensure caches
 # work when no relevant files have been changed. This uses rsync to
 # only include files required for building any particular project.
@@ -16,5 +14,7 @@
 ARG REPOSITORY
 
 FROM "${REPOSITORY}/ancestor:global"
+
+LABEL "${REPOSITORY}__stage_ancestor"="yes"
 
 WORKDIR /stage

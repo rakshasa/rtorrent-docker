@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:experimental
-#
 # An ancestor image for various cache images. Each cache has a
 # different ancestor label to allow the deletion of all project
 # related images without removing e.g. the package cache.
@@ -15,4 +13,4 @@ LABEL ancestor_project="${ANCESTOR_PROJECT}"
 
 RUN mkdir -p /deploy /stage
 
-COPY bin/pkg-copy /usr/bin/
+COPY /bin/pkg-copy /bin/rdo-find-move /usr/bin/

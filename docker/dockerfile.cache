@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:experimental
-#
 # /stage  - bind mount point for new files to add to the cache
 # /deploy - the cache location to be mounted by the user of the cache
 
@@ -19,12 +17,4 @@ FROM "${REPOSITORY}/ancestor/cache:global"
 COPY --from=stage /var/cache/apk-deploy /stage
 COPY --from=cache /deploy /deploy
 
-RUN echo -e "\033[0;32mupdating cache\033[0m"; set -xe; \
-\
-cd /stage; \
-find . \
-  -not -type d \
-  -exec dirname '{}' \; | uniq | tr '\n' '\0' | (cd /deploy && xargs -0 -r mkdir -p); \
-find . \
-  -not -type d \
-  -exec mv -v "{}" "/deploy/{}" \;
+RUN rdo-find-move "/stage" "/deploy" "-not -type d"

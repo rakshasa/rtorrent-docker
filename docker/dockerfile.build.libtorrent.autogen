@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:experimental
-#
 # Copy the minimal build context required to create the automake build
 # scripts so that unrelated changes to 'Makefile.am' files does not
 # invalidate the build cache.
@@ -12,17 +10,14 @@
 ARG REPOSITORY
 ARG TAG_APPEND
 
-# TODO: Rename to .stage, we start by creating a result stage image
-# for libtorrent.
-
-# TODO: Put timestamps in tmpfs?
-
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" as build
 
 COPY /autogen /build/libtorrent-source
 
-RUN echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; cd /build/libtorrent-source; \
+RUN echo -e "\033[0;32mlibtorrent autogen.sh\033[0m"; set -xe; \
+\
+cd /build/libtorrent-source; \
 \
 touch /timestamp.autogen; \
 sleep 1.1; \
