@@ -8,21 +8,22 @@ FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
 
 # TODO: Add tag to enable pruning.
 
-COPY /compile /deploy-next/libtorrent-source
+COPY /compile /deploy-next/rtorrent-source
 
-RUN rsync -rlpgoD -muc -t /deploy/libtorrent-source/ /deploy-next/libtorrent-source/
+RUN rsync -rlpgoD -muc -t /deploy/rtorrent-source/ /deploy-next/rtorrent-source/
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
-WORKDIR /build/libtorrent-output
+WORKDIR /build/rtorrent-output
 
-COPY --from=stage /deploy-next/libtorrent-source /build/libtorrent-source
-COPY --from=stage /deploy/libtorrent-output /build/libtorrent-output
+COPY --from=stage /deploy/prefix /build/prefix
+COPY --from=stage /deploy-next/rtorrent-source /build/rtorrent-source
+COPY --from=stage /deploy/rtorrent-output /build/rtorrent-output
 
 # RUN \
-# --mount=type=bind,from=stage,source=/deploy-next/libtorrent-source,target=/build/libtorrent-source \
-# --mount=type=bind,rw,from=stage,source=/deploy/libtorrent-output,target=/build/libtorrent-output \
+# --mount=type=bind,from=stage,source=/deploy-next/rtorrent-source,target=/build/rtorrent-source \
+# --mount=type=bind,rw,from=stage,source=/deploy/rtorrent-output,target=/build/rtorrent-output \
 RUN set -xe; \
 \
 touch /timestamp.compile; \
@@ -31,7 +32,7 @@ sleep 1.1; \
 make -j12; \
 make -j12 install; \
 \
-rdo-find-move "/build/libtorrent-output" "/deploy/libtorrent-output" \
+rdo-find-move "/build/rtorrent-output" "/deploy/rtorrent-output" \
   "-not -type d -and \
    -newer /timestamp.compile"; \
 \
@@ -46,7 +47,7 @@ sleep 1.1; \
 \
 make -j12 check TESTS=; \
 \
-rdo-find-move "/build/libtorrent-output" "/deploy/libtorrent-output" \
+rdo-find-move "/build/rtorrent-output" "/deploy/rtorrent-output" \
   "-not -type d -and \
    -newer /timestamp.check"
 
@@ -61,9 +62,11 @@ LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
 COPY --from=stage /deploy /deploy
 
+# TODO: Separate prefix/image for rtorrent and final binary.
+
 RUN \
---mount=type=bind,from=build,source=/deploy/libtorrent-output,target=/stage/libtorrent-output \
+--mount=type=bind,from=build,source=/deploy/rtorrent-output,target=/stage/rtorrent-output \
 --mount=type=bind,from=build,source=/deploy/prefix,target=/stage/prefix \
 \
-rsync -rlpgoD -muc -t /stage/libtorrent-output/ /deploy/libtorrent-output/; \
+rsync -rlpgoD -muc -t /stage/rtorrent-output/ /deploy/rtorrent-output/; \
 rsync -rlpgoD -muc -t /stage/prefix/ /deploy/prefix/

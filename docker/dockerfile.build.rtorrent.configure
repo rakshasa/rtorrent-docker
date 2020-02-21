@@ -1,0 +1,57 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
+
+# TODO: Add tag to enable pruning.
+
+COPY /configure /deploy-next/rtorrent-source
+
+RUN rsync -rlpgoD -muc -t /deploy/rtorrent-source/ /deploy-next/rtorrent-source/
+
+
+FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
+
+COPY --from=stage /deploy/prefix/lib/pkgconfig /prefix/lib/pkgconfig
+COPY --from=stage /deploy-next/rtorrent-source /build/rtorrent-source
+COPY --from=stage /deploy/rtorrent-output /build/rtorrent-output
+
+# RUN \
+# --mount=type=bind,from=stage,source=/deploy-next/rtorrent-source,target=/build/rtorrent-source \
+# --mount=type=bind,rw,from=stage,source=/deploy/rtorrent-output,target=/build/rtorrent-output \
+RUN \
+\
+echo -e "\033[0;32mrtorrent configure\033[0m"; set -xe; \
+\
+cd /build/rtorrent-output; \
+\
+source /env.configure; \
+touch /timestamp.configure; \
+sleep 1.1; \
+\
+/build/rtorrent-source/configure --prefix=/prefix --disable-backtrace; \
+\
+rdo-find-move "/build/rtorrent-output" "/deploy/rtorrent-output" \
+  "-not -type d -and \
+   -not -name '*.Po' -and \
+   -not -name '*.Plo' -and \
+   -newer /timestamp.configure"
+
+
+FROM "${REPOSITORY}/stage:global"
+
+ARG CONTEXT_TYPE
+ARG CONTEXT_NAME
+
+LABEL "rdo__stage__autogen"="yes"
+LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
+
+COPY --from=stage /deploy /deploy
+
+RUN \
+--mount=type=bind,from=build,source=/deploy/rtorrent-output,target=/stage/rtorrent-output \
+\
+rsync -rlpgoD -muc -t /stage/rtorrent-output/ /deploy/rtorrent-output/; \

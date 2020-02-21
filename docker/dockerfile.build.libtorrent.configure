@@ -4,7 +4,7 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/build/libtorrent/stage:${TAG_APPEND}" AS stage
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
 
 # TODO: Add tag to enable pruning.
 
@@ -45,8 +45,8 @@ FROM "${REPOSITORY}/stage:global"
 ARG CONTEXT_TYPE
 ARG CONTEXT_NAME
 
-LABEL "rdo_stage__autogen__${CONTEXT_NAME}"="yes"
-LABEL "rdo_stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
+LABEL "rdo__stage__autogen"="yes"
+LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
 COPY --from=stage /deploy /deploy
 

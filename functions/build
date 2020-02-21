@@ -87,8 +87,8 @@ rdo_build_all() {
   rdo_build__init
   rdo_build__libtorrent_configure
   rdo_build__libtorrent_compile
-  # rdo_build__rtorrent_configure
-  # rdo_build__rtorrent_compile
+  rdo_build__rtorrent_configure
+  rdo_build__rtorrent_compile
 }
 
 rdo_build_check() {
@@ -158,20 +158,29 @@ rdo_build__init() {
 
   rdo_build__build --context-type "ancestor" --context-name "ancestor" --no-rebuild --ancestor-project "rdo-apk-cache" "ancestor/cache:global"
   rdo_build__build --empty --no-rebuild "cache/apk:global"
+
   rdo_build__build --context-type "ancestor" --context-name "ancestor" --cache --no-rebuild --ancestor-project "rdo-project" "ancestor:global"
   rdo_build__build --empty --no-rebuild "stage:global"
   rdo_build__build --empty --cache "build/base"
   rdo_build__build --empty --cache "build/base/compiler"
+
+  rdo_build__build --context-type "autogen" --filename "build.autogen" "build/stage"
 }
 
 rdo_build__libtorrent_configure() {
-  rdo_build__build --context-type "autogen"   --context-name "libtorrent" --filename "build.libtorrent.autogen" "build/libtorrent/stage"
-  rdo_build__build --context-type "configure" --context-name "libtorrent" --filename "build.libtorrent.configure" "build/libtorrent/stage"
+  rdo_build__build --context-type "configure" --context-name "libtorrent" --filename "build.libtorrent.configure" "build/stage"
 }
 
 rdo_build__libtorrent_compile() {
-  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.compile" "build/libtorrent/stage"
-  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.check" "build/libtorrent/stage"
+  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.compile" "build/stage"
+}
+
+rdo_build__rtorrent_configure() {
+  rdo_build__build --context-type "configure" --context-name "rtorrent" --filename "build.rtorrent.configure" "build/stage"
+}
+
+rdo_build__rtorrent_compile() {
+  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.compile" "build/stage"
 }
 
 rdo_build__libtorrent_check() {
@@ -196,16 +205,6 @@ rdo_build__libtorrent_complete() {
   rdo_build__build --context-type "apk"       --context-name "apk/libtorrent" "build/libtorrent-base"
   rdo_build__build --context-type "complete"  --context-name "libtorrent" "build/libtorrent-complete"
   rdo docker stage --stage-image "build/libtorrent-complete" "build/libtorrent-stage"
-}
-
-rdo_build__rtorrent_configure() {
-  rdo_build__build --context-type "autogen"   --context-name "rtorrent" --filename "build.rtorrent.autogen" "build/libtorrent/stage"
-  # rdo_build__build --context-type "configure" --context-name "rtorrent" --filename "build.rtorrent.configure" "build/libtorrent/stage"
-}
-
-rdo_build__rtorrent_compile() {
-  rdo_build__build --context-type "compile"   --context-name "rtorrent" "build/rtorrent-compile"
-  rdo docker stage --stage-image "build/rtorrent-compile" "build/rtorrent-stage"
 }
 
 rdo_build__rtorrent_check() {

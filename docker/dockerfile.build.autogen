@@ -1,0 +1,59 @@
+# Copy the minimal build context required to create the automake build
+# scripts so that unrelated changes to 'Makefile.am' files does not
+# invalidate the build cache.
+#
+# Since running autogen invalidates most of the cached build files the
+# build result of autogen is copied to a new build result image.
+
+# TODO: Check if more of the rsync'ed files can be empty.
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" as build.libtorrent
+
+WORKDIR /build/libtorrent-source
+
+COPY /libtorrent-autogen .
+
+RUN set -xe; \
+\
+touch /timestamp.autogen; \
+sleep 1.1; \
+\
+./autogen.sh; \
+\
+rdo-find-move "/build/libtorrent-source" "/deploy/libtorrent-source" \
+  "-not -type d -and \
+   -newer /timestamp.autogen"
+
+
+FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" as build.rtorrent
+
+WORKDIR /build/rtorrent-source
+
+COPY /rtorrent-autogen .
+
+RUN set -xe; \
+\
+touch /timestamp.autogen; \
+sleep 1.1; \
+\
+./autogen.sh; \
+\
+rdo-find-move "/build/rtorrent-source" "/deploy/rtorrent-source" \
+  "-not -type d -and \
+   -newer /timestamp.autogen"
+
+
+FROM "${REPOSITORY}/stage:global"
+
+RUN mkdir -p /deploy/libtorrent-output /deploy/rtorrent-output /deploy/prefix
+
+ARG CONTEXT_TYPE
+
+LABEL "rdo__stage__${CONTEXT_TYPE}"="yes"
+
+COPY --from=build.libtorrent /deploy/libtorrent-source /deploy/libtorrent-source
+COPY --from=build.rtorrent /deploy/rtorrent-source /deploy/rtorrent-source
