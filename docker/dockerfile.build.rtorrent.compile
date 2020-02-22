@@ -17,7 +17,7 @@ FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
 WORKDIR /build/rtorrent-output
 
-COPY --from=stage /deploy/prefix /build/prefix
+COPY --from=stage /deploy/prefix /prefix
 COPY --from=stage /deploy-next/rtorrent-source /build/rtorrent-source
 COPY --from=stage /deploy/rtorrent-output /build/rtorrent-output
 
