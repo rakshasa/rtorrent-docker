@@ -24,8 +24,9 @@ rsync ${RDO_RSYNC_ADD_ARGS} \
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
+COPY --from=stage.build /deploy/libtorrent/source /build/libtorrent/source
+
 RUN \
---mount=type=bind,from=stage.build,source=/deploy/libtorrent/source,target=/build/libtorrent/source \
 --mount=type=bind,rw,from=stage.build,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
 \
 set -xe; cd /build/libtorrent/output; \
