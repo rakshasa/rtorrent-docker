@@ -12,7 +12,7 @@ rsync -rlpgoD -muc -t --delete-after \
 --include '*.am' \
 --include '*.m4' \
 --include '*.pc.in' \
---include 'configure.ac' \
+--include '/configure.ac' \
 --include '/autogen.sh' \
 \
 --include '*/' \

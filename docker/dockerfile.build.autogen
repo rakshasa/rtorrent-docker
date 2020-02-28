@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:experimental
+#
 # Copy the minimal build context required to create the automake build
 # scripts so that unrelated changes to 'Makefile.am' files does not
 # invalidate the build cache.
@@ -13,47 +15,71 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" as build.libtorrent
 
-WORKDIR /build/libtorrent-source
-
-COPY /libtorrent-autogen .
-
-RUN set -xe; \
+RUN --mount=type=bind,source=/libtorrent,target=/stage/context \
 \
-touch /timestamp.autogen; \
-sleep 1.1; \
+mkdir -p /build/libtorrent/source; \
 \
+rsync ${RDO_RSYNC_UPDATE_ARGS} \
+--include '*/' \
+--include '*.am' \
+--include '*.m4' \
+--include '*.pc.in' \
+--include '/configure.ac' \
+--include '/autogen.sh' \
+--exclude '*' \
+/stage/context/ /build/libtorrent/source
+
+RUN set -xe; cd /build/libtorrent/source; \
+\
+eval ${RDO_TIMESTAMP_UPDATE}; \
 ./autogen.sh; \
 \
-rdo-find-move "/build/libtorrent-source" "/deploy/libtorrent-source" \
+rdo-find-move "./" "/deploy/source" \
   "-not -type d -and \
-   -newer /timestamp.autogen"
+   -newer ${RDO_TIMESTAMP_PATH}"
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" as build.rtorrent
 
-WORKDIR /build/rtorrent-source
-
-COPY /rtorrent-autogen .
-
-RUN set -xe; \
+RUN --mount=type=bind,source=/rtorrent,target=/stage/context \
 \
-touch /timestamp.autogen; \
-sleep 1.1; \
+mkdir -p /build/rtorrent/source; \
 \
+rsync ${RDO_RSYNC_UPDATE_ARGS} \
+--include '*/' \
+--include '*.am' \
+--include '*.m4' \
+--include '*.pc.in' \
+--include '/configure.ac' \
+--include '/autogen.sh' \
+--exclude '*' \
+/stage/context/ /build/rtorrent/source/
+
+RUN set -xe; cd /build/rtorrent/source; \
+\
+eval ${RDO_TIMESTAMP_UPDATE}; \
 ./autogen.sh; \
 \
-rdo-find-move "/build/rtorrent-source" "/deploy/rtorrent-source" \
+rdo-find-move "./" "/deploy/source" \
   "-not -type d -and \
-   -newer /timestamp.autogen"
+   -newer ${RDO_TIMESTAMP_PATH}"
 
 
+# TODO: Add counter to stage image, check in pre-compile, auto-increment option flag.
 FROM "${REPOSITORY}/stage:global"
 
-RUN mkdir -p /deploy/libtorrent-output /deploy/rtorrent-output /deploy/prefix
+RUN mkdir -p /deploy/libtorrent/output /deploy/rtorrent/output /deploy/prefix
 
 ARG CONTEXT_TYPE
 
 LABEL "rdo__stage__${CONTEXT_TYPE}"="yes"
 
-COPY --from=build.libtorrent /deploy/libtorrent-source /deploy/libtorrent-source
-COPY --from=build.rtorrent /deploy/rtorrent-source /deploy/rtorrent-source
+# Can't use COPY as it truncates filestamps.
+#COPY --from=stage /deploy-next/libtorrent-source /build/libtorrent-source
+#COPY --from=stage /deploy/libtorrent-output /build/libtorrent-output
+
+RUN --mount=type=bind,from=build.libtorrent,source=/deploy/source,target=/stage \
+rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/libtorrent/source/
+
+RUN --mount=type=bind,from=build.rtorrent,source=/deploy/source,target=/stage \
+rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/rtorrent/source/

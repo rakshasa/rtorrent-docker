@@ -108,7 +108,7 @@ rdo_docker_build() {
         arg_cache_base_tag="${2:?Missing cache base tag argument.}"
         shift 2 ;;
       --context)
-        arg_context="./context/${2:?Missing context argument.}"
+        arg_context="${2:?Missing context argument.}"
         shift 2 ;;
       --dry-run)
         arg_dry_run="yes"

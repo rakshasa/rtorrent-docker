@@ -4,40 +4,47 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.build
 
 # TODO: Add tag to enable pruning.
 
-COPY /configure /deploy-next/libtorrent-source
-
-RUN rsync -rlpgoD -muc -t /deploy/libtorrent-source/ /deploy-next/libtorrent-source/
+# TODO: Test UPDATE args.
+RUN --mount=type=bind,source=/libtorrent,target=/stage \
+\
+rsync ${RDO_RSYNC_ADD_ARGS} \
+--include '*/' \
+--include '*.am' \
+--include '*.m4' \
+--include '*.pc.in' \
+--include '/configure.ac' \
+--include '/autogen.sh' \
+--exclude '*' \
+"/stage/" "/deploy/libtorrent/source/"
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
-COPY --from=stage /deploy-next/libtorrent-source /build/libtorrent-source
-COPY --from=stage /deploy/libtorrent-output /build/libtorrent-output
-
-# RUN \
-# --mount=type=bind,from=stage,source=/deploy-next/libtorrent-source,target=/build/libtorrent-source \
-# --mount=type=bind,rw,from=stage,source=/deploy/libtorrent-output,target=/build/libtorrent-output \
 RUN \
+--mount=type=bind,from=stage.build,source=/deploy/libtorrent/source,target=/build/libtorrent/source \
+--mount=type=bind,rw,from=stage.build,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
 \
-echo -e "\033[0;32mlibtorrent configure\033[0m"; set -xe; \
-\
-cd /build/libtorrent-output; \
+set -xe; cd /build/libtorrent/output; \
 \
 source /env.configure; \
-touch /timestamp.configure; \
-sleep 1.1; \
 \
-/build/libtorrent-source/configure --prefix=/prefix --disable-backtrace; \
+eval ${RDO_TIMESTAMP_UPDATE}; \
+/build/libtorrent/source/configure --prefix=/prefix --disable-backtrace; \
 \
-rdo-find-move "/build/libtorrent-output" "/deploy/libtorrent-output" \
+rdo-find-move "./" "/deploy/output/" \
   "-not -type d -and \
    -not -name '*.Po' -and \
    -not -name '*.Plo' -and \
-   -newer /timestamp.configure"
+   -newer ${RDO_TIMESTAMP_PATH}"
+
+# Exclude config.log
+
+
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.default
 
 
 FROM "${REPOSITORY}/stage:global"
@@ -48,9 +55,9 @@ ARG CONTEXT_NAME
 LABEL "rdo__stage__autogen"="yes"
 LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
-COPY --from=stage /deploy /deploy
+COPY --from=stage.default /deploy /deploy
 
-RUN \
---mount=type=bind,from=build,source=/deploy/libtorrent-output,target=/stage/libtorrent-output \
-\
-rsync -rlpgoD -muc -t /stage/libtorrent-output/ /deploy/libtorrent-output/; \
+# TODO: Need separate place to store configure with empty .Po, and output.
+
+RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage \
+rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/libtorrent/output/

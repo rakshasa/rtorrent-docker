@@ -11,6 +11,11 @@ ARG ANCESTOR_PROJECT
 
 LABEL ancestor_project="${ANCESTOR_PROJECT}"
 
+ENV RDO_RSYNC_ADD_ARGS="-rlpgoD -muc -t"
+ENV RDO_RSYNC_UPDATE_ARGS="-rlpgoD -muc -t --delete-after"
+ENV RDO_TIMESTAMP_UPDATE="touch /timestamp; sleep 1.1"
+ENV RDO_TIMESTAMP_PATH="/timestamp"
+
 RUN mkdir -p /deploy /stage
 
 COPY /bin/pkg-copy /bin/rdo-find-move /usr/bin/

@@ -4,13 +4,9 @@ rdo_header docker.context
 
 DOCKER_CONTEXT_TYPES=(
   ancestor
-  apk
   autogen
-  configure
   compile
-  complete
   empty
-  stage
 )
 
 rdo_docker_context() {
@@ -75,6 +71,7 @@ rdo_docker_context_build() {
         echo "Build docker container with a custom context"
         echo
         echo "Options:"
+        echo "      --cache         Empty context"
         echo "      --context-args  Args of the context"
         echo "      --context-name  Name of the context"
         echo "      --context-type  Type of the context"
@@ -108,7 +105,11 @@ rdo_docker_context_build() {
     exit 1
   fi
 
-  context_build_args+=(--context "${arg_context_name}")
+  if declare -f rdo_docker_context__path_${arg_context_type} &> /dev/null; then
+    context_build_args+=(--context "./context/$(rdo_docker_context__path_${arg_context_type} "${arg_context_name}")")
+  else
+    context_build_args+=(--context "./context/${arg_context_name}")
+  fi
 
   if declare -f rdo_docker_context__test_${arg_context_type} &> /dev/null; then
     context_build_args+=("--test-exec" "rdo_docker_context__test_${arg_context_type} ${arg_context_name} ${arg_context_args}")
@@ -157,64 +158,12 @@ rdo_docker_context__pre_ancestor() {
 
   rm -r "${context_path}/bin" 2> /dev/null || :
   mkdir -p "${context_path}/bin"
+
   cp "${project_path}"/misc/{build,pkg,rdo,rsync,stat}-*[!~] "${context_path}/bin/"
 }
 
-rdo_docker_context__pre_apk() {
-  local project_path
-  project_path="$(get_project_path)"
-
-  local context_name="${1:?Missing context name argument.}"
-  local context_path="${project_path:?Missing project path.}/context/${context_name}"
-
-  mkdir -p "${context_path}/apk-cache"
-  mkdir -p "${context_path}/misc"
-}
-
-rdo_docker_context__post_apk() {
-  local project_path
-  project_path="$(get_project_path)"
-
-  local context_name="${1:?Missing context name argument.}"
-  local context_path="${project_path:?Missing project path.}/context/${context_name}"
-  local tag_full="${2:?Missing tag argument.}"
-
-  local package_id="$(rdo__latest_image_id__label "package_tag=ready:${tag_full}")"
-
-  if [[ -z "${package_id}" ]]; then
-    echo "rdo_docker_context__post_apk: could not find package image for ${tag_full}" >&2
-    exit 1
-  fi
-
-  if rdo__compare_id__file_image "${context_path}/apk-cache.imageid" "${package_id}"; then
-    print_normal "unchanged apk image id for '${context_name}'"
-    return 0
-  fi
-
-  (
-    cd "${context_path}"
-    rm -rf ./apk-cache.new
-
-    local container_name="post-apk.${RANDOM}${RANDOM}"
-
-    docker run --detach --rm --name "${container_name}" "${package_id}" sleep 100 > /dev/null 
-
-    if rdo__compare_hash__dir_dir "${container_name}:/apk-cache" "./apk-cache"; then
-      print_normal "unchanged apk directory cache for '${context_name}'"
-      docker rm -f "${container_name}" || :
-      return 0
-    fi
-
-    docker cp "${container_name}:/apk-cache" ./apk-cache.new
-    docker rm -f "${container_name}" || :
-
-    print_normal "updating apk cache for '${context_name}'"
-
-    "${project_path}/misc/rsync-replace" ./apk-cache.new/ ./apk-cache/
-    rm -rf ./apk-cache.new || :
-    
-    echo "${package_id}" > ./apk-cache.imageid
-  )
+rdo_docker_context__path_autogen() {
+  rdo_docker_context__path_compile "${@}"
 }
 
 rdo_docker_context__test_autogen() {
@@ -228,53 +177,35 @@ rdo_docker_context__test_autogen() {
 rdo_docker_context__pre_autogen() {
   local project_path
   project_path="$(get_project_path)"
-  local context_name="${1:?Missing context name argument.}"
-  local context_path="${project_path:?Missing project path.}/context/${context_name}"
+  local context_path="${project_path:?Missing project path.}/context"
 
-  "${project_path}/misc/rsync-stage-configure" "${project_path}/data/libtorrent/" "${context_path}/libtorrent-autogen/"
-  "${project_path}/misc/rsync-stage-configure" "${project_path}/data/rtorrent/" "${context_path}/rtorrent-autogen/"
+  mkdir -p "${context_path}/compile/libtorrent"
+  mkdir -p "${context_path}/compile/rtorrent"
+  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/libtorrent/" "${context_path}/compile/libtorrent/"
+  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/rtorrent/" "${context_path}/compile/rtorrent/"
 }
 
 rdo_docker_context__post_cache() {
   rdo_docker_context_build --empty --cache-base-tag "${tag_full}" --filename "cache" "cache/apk:global"
 }
 
-rdo_docker_context__pre_configure() {
-  local project_path
-  project_path="$(get_project_path)"
-  local context_name="${1:?Missing context name argument.}"
-  local context_path="${project_path:?Missing project path.}/context/${context_name}"
-
-  "${project_path}/misc/rsync-stage-configure" "${project_path}/data/${context_name}/" "${context_path}/configure/"
+rdo_docker_context__path_compile() {
+  echo "compile"
 }
 
 rdo_docker_context__pre_compile() {
   local project_path
   project_path="$(get_project_path)"
   local context_name="${1:?Missing context name argument.}"
-  local context_path="${project_path:?Missing project path.}/context/${context_name}"
+  local context_path="${project_path:?Missing project path.}/context"
 
-  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name}/" "${context_path}/compile/"
-}
-
-rdo_docker_context__pre_complete() {
-  local project_path
-  project_path="$(get_project_path)"
-  local context_name="${1:?Missing context name argument.}"
-  local context_path="${project_path:?Missing project path.}/context/${context_name}"
-
-  "${project_path}/misc/rsync-stage-configure" "${project_path}/data/${context_name}/" "${context_path}/configure/"
-  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name}/" "${context_path}/compile/"
+  mkdir -p "${context_path}/compile/${context_name}"
+  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name}/" "${context_path}/compile/${context_name}/"
 }
 
 rdo_docker_context__pre_empty() {
   local project_path
   project_path="$(get_project_path)"
-  mkdir -p "${project_path:?Missing project path.}/context/empty/"
-}
 
-rdo_docker_context__pre_stage() {
-  local project_path
-  project_path="$(get_project_path)"
-  mkdir -p "${project_path:?Missing project path.}/context/stage/"
+  mkdir -p "${project_path:?Missing project path.}/context/empty/"
 }
