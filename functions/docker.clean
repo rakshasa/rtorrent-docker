@@ -27,7 +27,7 @@ rdo_docker_clean() {
 }
 
 rdo_docker_clean_all() {
-  local arg_ancestor_project="rtorrent-docker"
+  local arg_ancestor_project="rdo-project"
 
   args=()
 

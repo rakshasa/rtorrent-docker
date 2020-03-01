@@ -4,6 +4,25 @@ set -e
 
 arg_packages="${@}"
 
-apk add --no-network ${arg_packages} || apk add ${arg_packages}
+rm -rf /var/cache/apk-deploy &> /dev/null || :
+mkdir -p /var/cache/apk-deploy
 
-find /apk-cache -exec touch -r /etc/alpine-release {} \;
+cd /var/cache/apk-stage
+find . -type d -exec mkdir -p "/var/cache/apk/{}" \;
+find . -type f -exec ln -s "/var/cache/apk-stage/{}" "/var/cache/apk/{}" \;
+
+if apk add --no-network ${arg_packages}; then
+  echo "installed all packages from cache"
+  exit 0
+fi
+
+if ! apk add ${arg_packages}; then
+  echo "failed to install some packages from remote repository"
+  exit 1
+fi
+
+echo "installed all packages from remote repository"
+
+cd /var/cache/apk
+find . -type d -exec mkdir -p "/var/cache/apk-deploy/{}" \;
+find . -type f -exec mv "{}" "/var/cache/apk-deploy/{}" \;

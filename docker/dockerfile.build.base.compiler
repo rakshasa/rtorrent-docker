@@ -1,0 +1,57 @@
+# syntax=docker/dockerfile:experimental
+#
+# Prepare image ready for compiling the project, including selecting
+# compiler family and version, configure flags, etc.
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+FROM "${REPOSITORY}/build/base:${TAG_APPEND}"
+
+ARG COMPILER="clang"
+ENV COMPILER="${COMPILER}"
+
+RUN \
+--mount=type=tmpfs,target=/var/cache/apk \
+--mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
+\
+echo -e "\033[0;32musing compiler family ${COMPILER}\033[0m"; set -xe; \
+\
+if [ "${COMPILER}" = "clang" ]; then \
+  # clang requires crtbeginS.o from gcc and std headers from g++ \
+  echo "export CC=clang CXX=clang++" >> /env.configure; \
+  pkg-add gcc \
+          g++ \
+          gdb \
+          clang \
+          clang-dev \
+          cppunit-dev \
+          curl-dev \
+          ncurses-dev; \
+\
+elif [ "${COMPILER}" = "gcc" ]; then \
+  echo "export CC=gcc CXX=g++" >> /env.configure; \
+  pkg-add gcc \
+          g++ \
+          gdb \
+          cppunit-dev \
+          curl-dev \
+          ncurses-dev; \
+\
+else \
+  echo -e "\033[0;31munknown compiler family: ${COMPILER}\033[0m"; \
+  exit 1; \
+fi
+
+ARG COMPILER_STANDARD="c++11"
+ENV COMPILER_STANDARD="${COMPILER_STANDARD}"
+
+RUN echo -e "\033[0;32msetting configure flags\033[0m"; set -xe; \
+\
+echo " \
+export PKG_CONFIG_PATH=\"/prefix/lib/pkgconfig/:${PKG_CONFIG_PATH}\" \
+export CXXFLAGS=\" \
+  -std=${COMPILER_STANDARD} \
+  -Wno-exceptions -Wno-pessimizing-move \
+  \" \
+" >> /env.configure

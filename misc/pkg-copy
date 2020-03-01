@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -e
+
+cd /stage
+
+if [[ -z "$(ls)" ]]; then
+  exit
+fi
+
+for filename in *; do
+  if [[ ! -f "${filename}" ]]; then
+    echo "pkg-copy: not a file: ${filename}"
+    exit 1
+  fi
+
+  cp -a "${filename}" "/deploy/${filename}"
+done

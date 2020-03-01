@@ -29,6 +29,9 @@ rdo_docker() {
     inspect)
       rdo_docker_inspect "${@}"
       ;;
+    pull)
+      rdo_docker_pull "${@}"
+      ;;
     stage)
       rdo_docker_stage "${@}"
       ;;
@@ -69,44 +72,65 @@ rdo_docker_args() {
 
 rdo_docker_build() {
   local args=()
-  local docker_prefix=()
+  local cmd_prefix=()
 
+  local arg_ancestor_project=
   local arg_base_image=
+  local arg_cache_base_tag=
   local arg_context="."
   local arg_dry_run=
+  local arg_filename=
+  local arg_no_rebuild=
   local arg_no_cache=
-  local arg_post_exec=
-  local arg_pre_exec=
+  local arg_rebuild=
   local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
   local arg_rsync_args=
   local arg_stage_image=
   local arg_tag=
   local arg_tag_append=
 
+  local arg_post_exec=()
+  local arg_pre_exec=()
+  local arg_test_exec=()
 
   while [[ -n "${1}" ]]; do
     case "${1}" in
+      --ancestor-project)
+        arg_ancestor_project="${2:?Missing ancestor project argument.}"
+        shift 2 ;;
       --base-image)
         arg_base_image="${2:?Missing base image argument.}"
         shift 2 ;;
       --build-arg)
         args+=("--build-arg" "${2:?Missing build arg argument.}")
         shift 2 ;;
+      --cache-base-tag)
+        arg_cache_base_tag="${2:?Missing cache base tag argument.}"
+        shift 2 ;;
       --context)
-        arg_context="./context/${2:?Missing context argument.}"
+        arg_context="${2:?Missing context argument.}"
         shift 2 ;;
       --dry-run)
         arg_dry_run="yes"
+        shift ;;
+      --filename)
+        arg_filename="${2:?Missing filename argument.}"
+        shift 2 ;;
+      --no-rebuild)
+        arg_no_rebuild="yes"
         shift ;;
       --no-cache)
         arg_no_cache="yes"
         shift ;;
       --post-exec)
-        arg_post_exec="${2:?Missing exec argument.}"
+        arg_post_exec+=("${2:?Missing exec argument.}")
         shift 2 ;;
       --pre-exec)
-        arg_pre_exec="${2:?Missing exec argument.}"
+        arg_pre_exec+=("${2:?Missing exec argument.}")
         shift 2 ;;
+      --rebuild)
+        arg_rebuild="yes"
+        shift ;;
       --repository)
         arg_repository="${2:?Missing repository argument.}"
         shift 2 ;;
@@ -122,6 +146,9 @@ rdo_docker_build() {
       --tag-append)
         arg_tag_append="${2:?Missing tag argument.}"
         shift 2 ;;
+      --test-exec)
+        arg_test_exec+=("${2:?Missing exec argument.}")
+        shift 2 ;;
       --help|-h)
         echo "Usage: rdo docker build "
         echo
@@ -131,6 +158,7 @@ rdo_docker_build() {
         echo "      --base-image      Select base image"
         echo "      --build-arg       Pass build argument to docker"
         echo "      --dry-run         Do not actually build the container"
+        echo "      --filename        Set dockerfile filename"
         echo "      --stage-image     Select stage image"
         echo "      --repository      Set repository name"
         echo "      --rsync-verbose   Explain what rsync is doing"
@@ -151,47 +179,78 @@ rdo_docker_build() {
     esac
   done
 
-  local image_name="${1:?Missing image name.}"
-  local tag_full="${arg_repository}/${arg_tag:-${image_name}}"
+  local arg_1="${1:?Missing first argument.}"
 
-  if [[ -z "${arg_tag_append}" ]] || [[ "${tag_full}" =~ : ]]; then
-    tag_full+="${arg_tag_append}"
-  else
-    tag_full+=":${arg_tag_append}"
+  local filename="${arg_filename:-${arg_1%:*}}"
+  local tag_full="${arg_repository}/${arg_tag:-${arg_1}}"
+
+  if [[ -n "${arg_tag_append}" ]]; then
+    if [[ ! "${tag_full}" =~ : ]]; then
+      tag_full+=":${arg_tag_append}"
+    else
+      tag_full+="${arg_tag_append}"
+    fi
+
+    if [[ -n "${arg_cache_base_tag}" ]] && [[ ! "${arg_cache_base_tag}" =~ : ]]; then
+      arg_cache_base_tag+=":${arg_tag_append}"
+    fi
   fi
 
   args+=("--tag" "${tag_full}")
-  args+=("--file" "./docker/dockerfile.${image_name//\//.}")
+  args+=("--file" "./docker/dockerfile.${filename//\//.}")
 
-  [[ -n "${arg_dry_run}" ]] && docker_prefix+=("echo")
-
+  [[ -n "${arg_dry_run}" ]] && cmd_prefix+=("echo")
   [[ -n "${arg_no_cache}" ]] && args+=("--no-cache")
-  [[ -n "${arg_base_image}" ]] && args+=("--build-arg" "BASE_IMAGE=${arg_base_image}")
-  [[ -n "${arg_repository}" ]] && args+=("--build-arg" "REPOSITORY=${arg_repository}")
-  [[ -n "${arg_rsync_args}" ]] && args+=("--build-arg" "RSYNC_ARGS=${arg_rsync_args}")
-  [[ -n "${arg_stage_image}" ]] && args+=("--build-arg" "STAGE_IMAGE=${arg_stage_image}")
-  [[ -n "${arg_tag_append}" ]] && args+=("--build-arg" "TAG_APPEND=${arg_tag_append}")
 
-  print_progress "\nbuilding ${tag_full}"
+  [[ -n "${arg_ancestor_project}" ]]    && args+=("--build-arg" "ANCESTOR_PROJECT=${arg_ancestor_project}")
+  [[ -n "${arg_base_image}" ]]          && args+=("--build-arg" "BASE_IMAGE=${arg_base_image}")
+  [[ -n "${arg_cache_base_tag}" ]]      && args+=("--build-arg" "CACHE_BASE_TAG=${arg_cache_base_tag}")
+  [[ -n "${arg_repository}" ]]          && args+=("--build-arg" "REPOSITORY=${arg_repository}")
+  [[ -n "${arg_rsync_args}" ]]          && args+=("--build-arg" "RSYNC_ARGS=${arg_rsync_args}")
+  [[ -n "${arg_stage_image}" ]]         && args+=("--build-arg" "STAGE_IMAGE=${arg_stage_image}")
+  [[ -n "${arg_tag_append}" ]]          && args+=("--build-arg" "TAG_APPEND=${arg_tag_append}")
+
+  if [[ -z "${arg_rebuild}" ]] && [[ -n "${arg_no_rebuild}" ]] && [[ -n "$(rdo__image_id__name "${tag_full}")" ]]; then
+    print_progress "\nskipping ${tag_full}, already exists"
+    return 0
+  fi
+
+  print_progress "\nbuilding ${tag_full} from ${filename}"
+
+  local test_cmd
+  for test_cmd in "${arg_test_exec[@]}"; do
+    print_progress "calling test exec command '${test_cmd} ${tag_full}'"
+
+    if ! "${cmd_prefix[@]}" ${test_cmd} "${tag_full}"; then
+      print_progress "skipping, not needed"
+      return
+    fi
+  done
 
   # Change cwd to PROJECT_PATH so that docker doesn't get confused by
   # absolute windows paths that might be ambigious.
   cd "${PROJECT_PATH}"
 
-  if [[ -n "${arg_pre_exec}" ]]; then
-    print_progress "calling pre exec '${arg_pre_exec}'"
-    ${arg_pre_exec} "${tag_full}"
-  fi
+  local pre_cmd
+  for pre_cmd in "${arg_pre_exec[@]}"; do
+    print_progress "calling pre exec command '${pre_cmd} ${tag_full}'"
+    "${cmd_prefix[@]}" ${pre_cmd} "${tag_full}"
+  done
 
-  if ! "${docker_prefix[@]}" docker build "${args[@]}" "${arg_context}"; then
+  args+=(--progress plain)
+
+  echo docker build "${args[@]}" "${arg_context}"
+
+  if ! DOCKER_BUILDKIT=1 "${cmd_prefix[@]}" docker build "${args[@]}" "${arg_context}"; then
     print_error "failed to build docker container '${tag_full}'"
     exit 1
   fi
 
-  if [[ -n "${arg_post_exec}" ]]; then
-    print_progress "calling post exec '${arg_post_exec}'"
-    ${arg_post_exec} "${tag_full}"
-  fi
+  local post_cmd
+  for post_cmd in "${arg_post_exec[@]}"; do
+    print_progress "calling post exec command '${post_cmd} ${tag_full}'"
+    "${cmd_prefix[@]}" ${post_cmd} "${tag_full}"
+  done
 }
 
 rdo_docker_children() {
@@ -205,7 +264,7 @@ rdo_docker_children() {
       exit 1
     fi
 
-    local image_list=($(docker inspect --format '{{ .ID }}_{{ .Parent }}' $(docker images --all --no-trunc --quiet --filter label=ancestor_project=rtorrent-docker)))
+    local image_list=($(docker inspect --format '{{ .ID }}_{{ .Parent }}' $(docker images --all --no-trunc --quiet --filter label=ancestor_project=rdo-project)))
     local parent_list=()
 
     local iidx
@@ -289,6 +348,15 @@ rdo_docker_inspect() {
   done
 
   docker inspect --format "${arg_format[@]}" "${@}"
+}
+
+rdo_docker_pull() {
+  local tag_name
+  for tag_name in "${@}"; do
+    if [[ -z "$(rdo__image_id__name "${tag_name}")" ]]; then
+      docker pull "${tag_name}"
+    fi
+  done
 }
 
 rdo_docker_stage() {

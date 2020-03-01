@@ -1,0 +1,70 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.build
+
+# TODO: Add tag to enable pruning.
+
+# TODO: Test UPDATE args.
+RUN --mount=type=bind,source=/libtorrent,target=/stage \
+\
+rsync ${RDO_RSYNC_ADD_ARGS} \
+--include '*/' \
+--include '*.am' \
+--include '*.m4' \
+--include '*.pc.in' \
+--include '/configure.ac' \
+--include '*.cc' \
+--include '*.h' \
+--exclude '*' \
+"/stage/" "/deploy/libtorrent/source/"
+
+
+FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
+
+COPY --from=stage.build /deploy/libtorrent/source /build/libtorrent/source
+
+RUN \
+--mount=type=bind,rw,from=stage.build,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
+--mount=type=bind,rw,from=stage.build,source=/deploy/prefix,target=/prefix \
+\
+set -xe; cd /build/libtorrent/output; \
+\
+eval ${RDO_TIMESTAMP_UPDATE}; \
+\
+make -j12; \
+make -j12 install; \
+#make -j12 check TESTS=; \
+\
+rdo-find-move "." "/deploy/output" \
+  "-not -type d -and \
+   -not -name '*.log' -and \
+   -newer ${RDO_TIMESTAMP_PATH}"; \
+\
+rdo-find-move "/prefix" "/deploy/prefix" \
+  "-not -type d -and \
+   -newer ${RDO_TIMESTAMP_PATH}"
+
+
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.default
+
+
+FROM "${REPOSITORY}/stage:global"
+
+ARG CONTEXT_TYPE
+ARG CONTEXT_NAME
+
+LABEL "rdo__stage__autogen"="yes"
+LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
+
+RUN --mount=type=bind,from=stage.default,source=/deploy,target=/stage \
+rm -rf /deploy && cp -a /stage /deploy
+
+RUN --mount=type=bind,from=build,source=/deploy/prefix,target=/stage \
+rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/prefix/
+
+RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage \
+rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/libtorrent/output/

@@ -39,8 +39,14 @@ rdo_init_default() {
 
   env_args+=("--docker-engine")
 
+  rm -f "${DATA_PATH}/env" &> /dev/null || :
+
   rdo_init__init
   rdo env create "${env_args[@]}"
+
+  cat > "${DATA_PATH}/env.engine" <<EOF
+export DOCKER_CONTEXT="default"
+EOF
 
   print_progress "ready to start bash session"
 }
@@ -51,6 +57,8 @@ rdo_init_machine() {
 
   env_args+=("--docker-machine" "rtorrent-machine")
   machine_args+=("--docker-machine" "rtorrent-machine")
+
+  rm -f "${DATA_PATH}/env" &> /dev/null || :
 
   rdo_init__init
   rdo env create "${env_args[@]}"
