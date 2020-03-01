@@ -17,7 +17,6 @@ rsync ${RDO_RSYNC_ADD_ARGS} \
 --include '*.m4' \
 --include '*.pc.in' \
 --include '/configure.ac' \
---include '/autogen.sh' \
 --exclude '*' \
 "/stage/" "/deploy/libtorrent/source/"
 
@@ -40,9 +39,8 @@ rdo-find-move "./" "/deploy/output/" \
   "-not -type d -and \
    -not -name '*.Po' -and \
    -not -name '*.Plo' -and \
+   -not -name '*.log' -and \
    -newer ${RDO_TIMESTAMP_PATH}"
-
-# Exclude config.log
 
 
 FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.default
@@ -56,9 +54,8 @@ ARG CONTEXT_NAME
 LABEL "rdo__stage__autogen"="yes"
 LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
-COPY --from=stage.default /deploy /deploy
-
-# TODO: Need separate place to store configure with empty .Po, and output.
+RUN --mount=type=bind,from=stage.default,source=/deploy,target=/stage \
+rm -rf /deploy && cp -a /stage /deploy
 
 RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage \
 rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/libtorrent/output/

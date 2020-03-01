@@ -15,6 +15,8 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/stage:global" AS stage.libtorrent
 
+# COPY /libtorrent /stage
+
 RUN --mount=type=bind,source=/libtorrent,target=/stage \
 \
 set -xe; mkdir -p /deploy/libtorrent/source; \
@@ -41,6 +43,8 @@ eval ${RDO_TIMESTAMP_UPDATE}; \
 
 
 FROM "${REPOSITORY}/stage:global" AS stage.rtorrent
+
+# COPY /rtorrent /stage
 
 RUN --mount=type=bind,source=/rtorrent,target=/stage \
 \

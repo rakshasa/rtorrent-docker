@@ -4,36 +4,49 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.build
 
 # TODO: Add tag to enable pruning.
 
-RUN --mount=type=bind,source=/libtorrent,target=/stage/context \
-rsync-stage-configure "/stage/context/" "/deploy/libtorrent/source/"
+# TODO: Test UPDATE args.
+RUN --mount=type=bind,source=/libtorrent,target=/stage \
+\
+rsync ${RDO_RSYNC_ADD_ARGS} \
+--include '*/' \
+--include '*.am' \
+--include '*.m4' \
+--include '*.pc.in' \
+--include '/configure.ac' \
+--include '*.cc' \
+--include '*.h' \
+--exclude '*' \
+"/stage/" "/deploy/libtorrent/source/"
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
+COPY --from=stage.build /deploy/libtorrent/source /build/libtorrent/source
+
 RUN \
---mount=type=bind,from=stage,source=/deploy/libtorrent/source,target=/stage/source \
---mount=type=bind,rw,from=stage,source=/deploy/libtorrent/output,target=/build/ \
+--mount=type=bind,rw,from=stage.build,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
 \
-set -xe; \
+set -xe; cd /build/libtorrent/output; \
 \
-touch /timestamp; \
-sleep 1.1; \
+eval ${RDO_TIMESTAMP_UPDATE}; \
 \
 make -j12; \
 make -j12 install; \
 make -j12 check TESTS=; \
 \
-rdo-find-move "/build" "/deploy/libtorrent/output" \
+rdo-find-move "./" "/deploy/output" \
   "-not -type d -and \
-   -newer /timestamp"; \
+   -not -name '*.log' -and \
+   -newer ${RDO_TIMESTAMP_PATH}"; \
 \
-rdo-find-move "/prefix" "/deploy/prefix" \
+rdo-find-move "./" "/deploy/output" \
   "-not -type d -and \
-   -newer /timestamp"
+   -not -name '*.log' -and \
+   -newer ${RDO_TIMESTAMP_PATH}"
 
 
 FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.default
@@ -47,11 +60,8 @@ ARG CONTEXT_NAME
 LABEL "rdo__stage__autogen"="yes"
 LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
-COPY --from=stage.default /deploy /deploy
+RUN --mount=type=bind,from=stage.default,source=/deploy,target=/stage \
+rm -rf /deploy && cp -a /stage /deploy
 
-RUN \
---mount=type=bind,from=build,source=/deploy/libtorrent/output,target=/stage/libtorrent/output \
---mount=type=bind,from=build,source=/deploy/prefix,target=/stage/prefix \
-\
-rsync -rlpgoD -muc -t /stage/libtorrent/output/ /deploy/libtorrent/output/; \
-rsync -rlpgoD -muc -t /stage/prefix/ /deploy/prefix/
+RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage \
+rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/libtorrent/output/
