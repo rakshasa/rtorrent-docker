@@ -17,10 +17,13 @@ ARG TAG_APPEND
 
 LABEL ancestor_project="${ANCESTOR_PROJECT}"
 
+# TODO: Consider adding the timestamp to current directory.
+
 ENV RDO_RSYNC_ADD_ARGS="-rlpgoD -muc -t"
 ENV RDO_RSYNC_UPDATE_ARGS="-rlpgoD -muc -t --delete-after"
 ENV RDO_TIMESTAMP_UPDATE="touch /timestamp; sleep 1.1;"
 ENV RDO_TIMESTAMP_PATH="/timestamp"
+ENV RDO_TIMESTAMP_LS="ls -a --full-time --reverse --sort time"
 
 RUN set -xe; \
 \
@@ -34,5 +37,6 @@ RUN \
 --mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
 \
 pkg-add bash \
+        coreutils \
         rsync \
         tar

@@ -11,14 +11,17 @@ FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.build
 # TODO: Test UPDATE args.
 RUN --mount=type=bind,source=/libtorrent,target=/stage \
 \
-rsync ${RDO_RSYNC_ADD_ARGS} \
+rsync ${RDO_RSYNC_ADD_ARGS} --no-times \
 --include '*/' \
 --include '*.am' \
 --include '*.m4' \
 --include '*.pc.in' \
 --include '/configure.ac' \
 --exclude '*' \
-"/stage/" "/deploy/libtorrent/source/"
+"/stage/" "/deploy/libtorrent/source/"; \
+\
+eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/source"; \
+eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/output"
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
@@ -32,7 +35,11 @@ set -xe; cd /build/libtorrent/output; \
 \
 source /env.configure; \
 \
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/source"; \
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/output"; \
+\
 eval ${RDO_TIMESTAMP_UPDATE}; \
+\
 /build/libtorrent/source/configure --prefix=/prefix --disable-backtrace; \
 \
 rdo-find-move "./" "/deploy/output/" \
@@ -58,4 +65,7 @@ RUN --mount=type=bind,from=stage.default,source=/deploy,target=/stage \
 rm -rf /deploy && cp -a /stage /deploy
 
 RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage \
-rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/libtorrent/output/
+rsync ${RDO_RSYNC_ADD_ARGS} --no-times /stage/ /deploy/libtorrent/output/
+
+RUN \
+eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/output"

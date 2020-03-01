@@ -8,10 +8,13 @@ FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.build
 
 # TODO: Add tag to enable pruning.
 
+########################
+
+
 # TODO: Test UPDATE args.
 RUN --mount=type=bind,source=/libtorrent,target=/stage \
 \
-rsync ${RDO_RSYNC_ADD_ARGS} \
+rsync ${RDO_RSYNC_ADD_ARGS} --no-times \
 --include '*/' \
 --include '*.am' \
 --include '*.m4' \
@@ -20,7 +23,9 @@ rsync ${RDO_RSYNC_ADD_ARGS} \
 --include '*.cc' \
 --include '*.h' \
 --exclude '*' \
-"/stage/" "/deploy/libtorrent/source/"
+"/stage/" "/deploy/libtorrent/source/"; \
+\
+eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/source"
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
@@ -33,11 +38,21 @@ RUN \
 \
 set -xe; cd /build/libtorrent/output; \
 \
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/source"; \
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/output"; \
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/output/src/torrent"; \
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/output/src/torrent/.libs" || :; \
+\
 eval ${RDO_TIMESTAMP_UPDATE}; \
 \
 make -j12; \
 make -j12 install; \
 #make -j12 check TESTS=; \
+\
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/output"; \
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/output/src/torrent"; \
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/output/src/torrent/.libs" || :; \
+eval ${RDO_TIMESTAMP_LS} "/prefix/include/torrent"; \
 \
 rdo-find-move "." "/deploy/output" \
   "-not -type d -and \
@@ -46,7 +61,12 @@ rdo-find-move "." "/deploy/output" \
 \
 rdo-find-move "/prefix" "/deploy/prefix" \
   "-not -type d -and \
-   -newer ${RDO_TIMESTAMP_PATH}"
+   -newer ${RDO_TIMESTAMP_PATH}"; \
+\
+eval ${RDO_TIMESTAMP_LS} "/deploy/output"; \
+eval ${RDO_TIMESTAMP_LS} "/deploy/output/src/torrent" || :; \
+eval ${RDO_TIMESTAMP_LS} "/deploy/output/src/torrent/.libs" || :; \
+eval ${RDO_TIMESTAMP_LS} "/deploy/prefix/include/torrent"
 
 
 FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.default
@@ -61,10 +81,16 @@ LABEL "rdo__stage__autogen"="yes"
 LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
 RUN --mount=type=bind,from=stage.default,source=/deploy,target=/stage \
+eval ${RDO_TIMESTAMP_LS} "/stage/prefix/include/torrent"; \
 rm -rf /deploy && cp -a /stage /deploy
 
 RUN --mount=type=bind,from=build,source=/deploy/prefix,target=/stage \
-rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/prefix/
+rsync ${RDO_RSYNC_ADD_ARGS} --no-times /stage/ /deploy/prefix/
 
 RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage \
 rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/libtorrent/output/
+
+RUN \
+eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/output"; \
+eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/output/src"; \
+eval ${RDO_TIMESTAMP_LS} "/deploy/prefix/include/torrent"
