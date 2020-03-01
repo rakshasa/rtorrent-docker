@@ -4,52 +4,52 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.build
 
 # TODO: Add tag to enable pruning.
 
-COPY /compile /deploy-next/rtorrent-source
-
-RUN rsync -rlpgoD -muc -t /deploy/rtorrent-source/ /deploy-next/rtorrent-source/
+# TODO: Test UPDATE args.
+RUN --mount=type=bind,source=/rtorrent,target=/stage \
+\
+rsync ${RDO_RSYNC_ADD_ARGS} \
+--include '*/' \
+--include '*.am' \
+--include '*.m4' \
+--include '*.pc.in' \
+--include '/configure.ac' \
+--include '*.cc' \
+--include '*.h' \
+--exclude '*' \
+"/stage/" "/deploy/rtorrent/source/"
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
-WORKDIR /build/rtorrent-output
+COPY --from=stage.build /deploy/rtorrent/source /build/rtorrent/source
 
-COPY --from=stage /deploy/prefix /prefix
-COPY --from=stage /deploy-next/rtorrent-source /build/rtorrent-source
-COPY --from=stage /deploy/rtorrent-output /build/rtorrent-output
-
-# RUN \
-# --mount=type=bind,from=stage,source=/deploy-next/rtorrent-source,target=/build/rtorrent-source \
-# --mount=type=bind,rw,from=stage,source=/deploy/rtorrent-output,target=/build/rtorrent-output \
-RUN set -xe; \
+RUN \
+--mount=type=bind,rw,from=stage.build,source=/deploy/rtorrent/output,target=/build/rtorrent/output \
+--mount=type=bind,rw,from=stage.build,source=/deploy/prefix,target=/prefix \
 \
-touch /timestamp.compile; \
-sleep 1.1; \
+set -xe; cd /build/rtorrent/output; \
+\
+eval ${RDO_TIMESTAMP_UPDATE}; \
 \
 make -j12; \
 make -j12 install; \
+#make -j12 check TESTS=; \
 \
-rdo-find-move "/build/rtorrent-output" "/deploy/rtorrent-output" \
+rdo-find-move "." "/deploy/output" \
   "-not -type d -and \
-   -newer /timestamp.compile"; \
+   -not -name '*.log' -and \
+   -newer ${RDO_TIMESTAMP_PATH}"; \
 \
 rdo-find-move "/prefix" "/deploy/prefix" \
   "-not -type d -and \
-   -newer /timestamp.compile"
+   -newer ${RDO_TIMESTAMP_PATH}"
 
-RUN set -xe; \
-\
-touch /timestamp.check; \
-sleep 1.1; \
-\
-make -j12 check TESTS=; \
-\
-rdo-find-move "/build/rtorrent-output" "/deploy/rtorrent-output" \
-  "-not -type d -and \
-   -newer /timestamp.check"
+
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.default
 
 
 FROM "${REPOSITORY}/stage:global"
@@ -60,13 +60,11 @@ ARG CONTEXT_NAME
 LABEL "rdo__stage__autogen"="yes"
 LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
-COPY --from=stage /deploy /deploy
+RUN --mount=type=bind,from=stage.default,source=/deploy,target=/stage \
+rm -rf /deploy && cp -a /stage /deploy
 
-# TODO: Separate prefix/image for rtorrent and final binary.
+RUN --mount=type=bind,from=build,source=/deploy/prefix,target=/stage \
+rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/prefix/
 
-RUN \
---mount=type=bind,from=build,source=/deploy/rtorrent-output,target=/stage/rtorrent-output \
---mount=type=bind,from=build,source=/deploy/prefix,target=/stage/prefix \
-\
-rsync -rlpgoD -muc -t /stage/rtorrent-output/ /deploy/rtorrent-output/; \
-rsync -rlpgoD -muc -t /stage/prefix/ /deploy/prefix/
+RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage \
+rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/rtorrent/output/

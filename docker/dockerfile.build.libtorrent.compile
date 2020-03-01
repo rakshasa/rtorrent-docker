@@ -29,6 +29,7 @@ COPY --from=stage.build /deploy/libtorrent/source /build/libtorrent/source
 
 RUN \
 --mount=type=bind,rw,from=stage.build,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
+--mount=type=bind,rw,from=stage.build,source=/deploy/prefix,target=/prefix \
 \
 set -xe; cd /build/libtorrent/output; \
 \
@@ -36,16 +37,15 @@ eval ${RDO_TIMESTAMP_UPDATE}; \
 \
 make -j12; \
 make -j12 install; \
-make -j12 check TESTS=; \
+#make -j12 check TESTS=; \
 \
-rdo-find-move "./" "/deploy/output" \
+rdo-find-move "." "/deploy/output" \
   "-not -type d -and \
    -not -name '*.log' -and \
    -newer ${RDO_TIMESTAMP_PATH}"; \
 \
-rdo-find-move "./" "/deploy/output" \
+rdo-find-move "/prefix" "/deploy/prefix" \
   "-not -type d -and \
-   -not -name '*.log' -and \
    -newer ${RDO_TIMESTAMP_PATH}"
 
 
@@ -62,6 +62,9 @@ LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
 RUN --mount=type=bind,from=stage.default,source=/deploy,target=/stage \
 rm -rf /deploy && cp -a /stage /deploy
+
+RUN --mount=type=bind,from=build,source=/deploy/prefix,target=/stage \
+rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/prefix/
 
 RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage \
 rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/libtorrent/output/

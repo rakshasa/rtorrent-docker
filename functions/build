@@ -87,8 +87,8 @@ rdo_build_all() {
   rdo_build__init
   rdo_build__libtorrent_configure
   rdo_build__libtorrent_compile
-  # rdo_build__rtorrent_configure
-  # rdo_build__rtorrent_compile
+  rdo_build__rtorrent_configure
+  rdo_build__rtorrent_compile
 }
 
 rdo_build_check() {
