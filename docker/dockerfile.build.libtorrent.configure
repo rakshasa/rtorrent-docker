@@ -24,6 +24,9 @@ eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/source"; \
 eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/output"
 
 
+# TODO: Only configure if new env.configure.
+
+
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
 COPY --from=stage.build /deploy/libtorrent/source /build/libtorrent/source

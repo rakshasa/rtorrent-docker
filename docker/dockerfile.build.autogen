@@ -15,19 +15,29 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/stage:global" AS stage.libtorrent
 
-RUN --mount=type=bind,source=/libtorrent,target=/stage \
+COPY /libtorrent.tar.gz /stage/
+
+RUN set -xe; mkdir -p /deploy/libtorrent/source; \
 \
-set -xe; mkdir -p /deploy/libtorrent/source; \
+tar -v --warning=no-unknown-keyword -xzf /stage/libtorrent.tar.gz \
+  --wildcards '*.am' \
+  --wildcards '*.m4' \
+  --wildcards '*.pc.in' \
+  --no-wildcards 'libtorrent/autogen.sh' \
+  --no-wildcards 'libtorrent/configure.ac'; \
 \
-rsync ${RDO_RSYNC_UPDATE_ARGS} \
---include '*/' \
---include '*.am' \
---include '*.m4' \
---include '*.pc.in' \
---include '/configure.ac' \
---include '/autogen.sh' \
---exclude '*' \
-/stage/ /deploy/libtorrent/source/
+mv /stage/libtorrent /deploy/libtorrent/source
+
+# \
+# #rsync ${RDO_RSYNC_UPDATE_ARGS} \
+# --include '*/' \
+# --include '*.am' \
+# --include '*.m4' \
+# --include '*.pc.in' \
+# --include '/configure.ac' \
+# --include '/autogen.sh' \
+# --exclude '*' \
+# /stage/ /deploy/libtorrent/source/
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.libtorrent
@@ -35,33 +45,6 @@ FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.libtorrent
 COPY --from=stage.libtorrent /deploy/libtorrent/source /build/libtorrent/source
 
 RUN set -xe; cd /build/libtorrent/source; \
-\
-eval ${RDO_TIMESTAMP_UPDATE}; \
-./autogen.sh
-
-
-FROM "${REPOSITORY}/stage:global" AS stage.rtorrent
-
-RUN --mount=type=bind,source=/rtorrent,target=/stage \
-\
-set -xe; mkdir -p /deploy/rtorrent/source; \
-\
-rsync ${RDO_RSYNC_UPDATE_ARGS} \
---include '*/' \
---include '*.am' \
---include '*.m4' \
---include '*.pc.in' \
---include '/configure.ac' \
---include '/autogen.sh' \
---exclude '*' \
-/stage/ /deploy/rtorrent/source/
-
-
-FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.rtorrent
-
-COPY --from=stage.rtorrent /deploy/rtorrent/source /build/rtorrent/source
-
-RUN set -xe; cd /build/rtorrent/source; \
 \
 eval ${RDO_TIMESTAMP_UPDATE}; \
 ./autogen.sh
@@ -90,7 +73,7 @@ LABEL "rdo__stage__${CONTEXT_TYPE}"="yes"
 # work.
 
 COPY --from=build.libtorrent /build/libtorrent/source /deploy/libtorrent/source
-COPY --from=build.rtorrent /build/rtorrent/source /deploy/rtorrent/source
+# COPY --from=build.rtorrent /build/rtorrent/source /deploy/rtorrent/source
 
 #RUN --mount=type=bind,from=build.libtorrent,source=/deploy/source,target=/stage \
 #rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/libtorrent/source/
