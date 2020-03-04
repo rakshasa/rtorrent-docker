@@ -7,47 +7,29 @@
 # Since running autogen invalidates most of the cached build files the
 # build result of autogen is copied to a new build result image.
 
-# TODO: Check if more of the rsync'ed files can be empty.
-
 ARG REPOSITORY
 ARG TAG_APPEND
 
 
 FROM "${REPOSITORY}/stage:global" AS stage.libtorrent
 
-COPY /libtorrent.tar.gz /stage/
-
-RUN set -xe; mkdir -p /deploy/libtorrent/source; \
+RUN --mount=type=bind,source=/libtorrent.tar.gz,target=/stage/libtorrent.tar.gz \
 \
-tar -v --warning=no-unknown-keyword -xzf /stage/libtorrent.tar.gz \
+tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
+  --directory '/deploy' \
   --wildcards '*.am' \
   --wildcards '*.m4' \
   --wildcards '*.pc.in' \
-  --no-wildcards 'libtorrent/autogen.sh' \
-  --no-wildcards 'libtorrent/configure.ac'; \
-\
-mv /stage/libtorrent /deploy/libtorrent/source
-
-# \
-# #rsync ${RDO_RSYNC_UPDATE_ARGS} \
-# --include '*/' \
-# --include '*.am' \
-# --include '*.m4' \
-# --include '*.pc.in' \
-# --include '/configure.ac' \
-# --include '/autogen.sh' \
-# --exclude '*' \
-# /stage/ /deploy/libtorrent/source/
+  --no-wildcards './autogen.sh' \
+  --no-wildcards './configure.ac'
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.libtorrent
 
-COPY --from=stage.libtorrent /deploy/libtorrent/source /build/libtorrent/source
+RUN --mount=type=bind,rw,from=stage.libtorrent,source=/deploy,target=/stage \
+cp -v -a /stage/* /build/
 
-RUN set -xe; cd /build/libtorrent/source; \
-\
-eval ${RDO_TIMESTAMP_UPDATE}; \
-./autogen.sh
+RUN ./autogen.sh
 
 
 # TODO: Add counter to stage image, check in pre-compile, auto-increment option flag.
@@ -72,7 +54,9 @@ LABEL "rdo__stage__${CONTEXT_TYPE}"="yes"
 # timestamp truncation happens, mounting the build context should also
 # work.
 
-COPY --from=build.libtorrent /build/libtorrent/source /deploy/libtorrent/source
+COPY --from=build.libtorrent /build /deploy/libtorrent/source
+
+# COPY --from=build.libtorrent /build/libtorrent/source /deploy/libtorrent/source
 # COPY --from=build.rtorrent /build/rtorrent/source /deploy/rtorrent/source
 
 #RUN --mount=type=bind,from=build.libtorrent,source=/deploy/source,target=/stage \

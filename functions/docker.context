@@ -170,8 +170,9 @@ rdo_docker_context__test_autogen() {
   local context_name="${1:?Missing context name argument.}"
   local tag_full="${2:?Missing tag argument.}"
 
-  [[ -z "$(rdo__image_id__name "${tag_full}")" ]] ||
-    [[ "$(rdo__image_label_value__tag__label "${tag_full}" "rdo__stage__${context_name}")" != "yes" ]]
+  # [[ -z "$(rdo__image_id__name "${tag_full}")" ]] ||
+  #   [[ "$(rdo__image_label_value__tag__label "${tag_full}" "rdo__stage__${context_name}")" != "yes" ]]
+  :
 }
 
 rdo_docker_context__pre_autogen() {
@@ -183,10 +184,16 @@ rdo_docker_context__pre_autogen() {
   mkdir -p "${context_path}/rtorrent"
 
   "${project_path}/misc/rsync-stage-compile" "${project_path}/data/libtorrent/" "${context_path}/libtorrent/"
-  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/rtorrent/" "${context_path}/rtorrent/"
+  # "${project_path}/misc/rsync-stage-compile" "${project_path}/data/rtorrent/" "${context_path}/rtorrent/"
 
-  tar --format pax -czf "${context_path}/libtorrent.tar.gz" -C "${context_path}" libtorrent/
-  tar --format pax -czf "${context_path}/rtorrent.tar.gz" -C "${context_path}" rtorrent/
+  RDO_TAR_C_ARGS="--format pax --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime --sort=name --owner=0 --group=0 --numeric-owner -cf"
+
+  tar ${RDO_TAR_C_ARGS} "${context_path}/libtorrent.tar.gz" --directory "${context_path}/libtorrent" .
+
+  # tar --format pax -cf "${context_path}/rtorrent.tar.gz" --directory "${context_path}/rtorrent" .
+
+  echo "pre-autogen: libtorrent md5 $(md5sum "${context_path}/libtorrent.tar.gz")"
+  # echo "pre-autogen:   rtorrent md5 $(md5sum "${context_path}/rtorrent.tar.gz")"
 }
 
 rdo_docker_context__post_cache() {
