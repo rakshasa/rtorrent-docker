@@ -8,28 +8,24 @@ FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.build
 
 # TODO: Add tag to enable pruning.
 
-# TODO: Test UPDATE args.
-RUN --mount=type=bind,source=/libtorrent,target=/stage \
+RUN --mount=type=bind,source=/libtorrent.tar.gz,target=/stage/libtorrent.tar.gz \
 \
-rsync ${RDO_RSYNC_ADD_ARGS} --no-times \
---include '*/' \
---include '*.am' \
---include '*.m4' \
---include '*.pc.in' \
---include '/configure.ac' \
---exclude '*' \
-"/stage/" "/deploy/libtorrent/source/"; \
-\
-eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/source"; \
-eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/output"
-
-
-# TODO: Only configure if new env.configure.
+tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
+  --directory '/deploy' \
+  --wildcards '*.am' \
+  --wildcards '*.m4' \
+  --wildcards '*.pc.in' \
+  --no-wildcards './autogen.sh' \
+  --no-wildcards './configure.ac'
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
-COPY --from=stage.build /deploy/libtorrent/source /build/libtorrent/source
+RUN --mount=type=bind,from=stage.build,source=/deploy,target=/stage \
+cp -v -a /stage/* /build/
+
+
+
 
 RUN \
 --mount=type=bind,rw,from=stage.build,source=/deploy/libtorrent/output,target=/build/libtorrent/output \

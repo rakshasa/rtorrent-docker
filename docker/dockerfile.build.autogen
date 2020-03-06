@@ -26,7 +26,7 @@ tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.libtorrent
 
-RUN --mount=type=bind,rw,from=stage.libtorrent,source=/deploy,target=/stage \
+RUN --mount=type=bind,from=stage.libtorrent,source=/deploy,target=/stage \
 cp -v -a /stage/* /build/
 
 RUN ./autogen.sh
@@ -35,7 +35,12 @@ RUN ./autogen.sh
 # TODO: Add counter to stage image, check in pre-compile, auto-increment option flag.
 FROM "${REPOSITORY}/stage:global"
 
-RUN mkdir -p /deploy/libtorrent/output /deploy/rtorrent/output /deploy/prefix
+RUN mkdir -p \
+/deploy/libtorrent/source \
+/deploy/libtorrent/output \
+/deploy/rtorrent/source \
+/deploy/rtorrent/output \
+/deploy/prefix
 
 ARG CONTEXT_TYPE
 
@@ -54,13 +59,5 @@ LABEL "rdo__stage__${CONTEXT_TYPE}"="yes"
 # timestamp truncation happens, mounting the build context should also
 # work.
 
-COPY --from=build.libtorrent /build /deploy/libtorrent/source
-
-# COPY --from=build.libtorrent /build/libtorrent/source /deploy/libtorrent/source
-# COPY --from=build.rtorrent /build/rtorrent/source /deploy/rtorrent/source
-
-#RUN --mount=type=bind,from=build.libtorrent,source=/deploy/source,target=/stage \
-#rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/libtorrent/source/
-
-#RUN --mount=type=bind,from=build.rtorrent,source=/deploy/source,target=/stage \
-#rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/rtorrent/source/
+RUN --mount=type=bind,from=build.libtorrent,source=/build,target=/stage \
+cp -v -a /stage/* /deploy/libtorrent/source/
