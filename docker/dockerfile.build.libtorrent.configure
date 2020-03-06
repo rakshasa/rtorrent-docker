@@ -11,7 +11,7 @@ FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.build
 RUN --mount=type=bind,source=/libtorrent.tar.gz,target=/stage/libtorrent.tar.gz \
 \
 tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
-  --directory '/deploy' \
+  --directory '/deploy/libtorrent/source' \
   --wildcards '*.am' \
   --wildcards '*.m4' \
   --wildcards '*.pc.in' \
@@ -21,15 +21,15 @@ tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
-RUN --mount=type=bind,from=stage.build,source=/deploy,target=/stage \
-cp -v -a /stage/* /build/
-
-
-
-
-RUN \
---mount=type=bind,rw,from=stage.build,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
+# Replace with tarball?
+RUN --mount=type=bind,from=stage.build,source=/deploy/libtorrent/source,target=/stage \
+set -xe; \
 \
+rm -rf /build; \
+mkdir -p /build/libtorrent/source; \
+cp -v -a /stage/* /build/libtorrent/source/
+
+RUN --mount=type=bind,rw,from=stage.build,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
 set -xe; cd /build/libtorrent/output; \
 \
 source /env.configure; \
@@ -63,8 +63,8 @@ LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 RUN --mount=type=bind,from=stage.default,source=/deploy,target=/stage \
 rm -rf /deploy && cp -a /stage /deploy
 
-RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage \
-rsync ${RDO_RSYNC_ADD_ARGS} --no-times /stage/ /deploy/libtorrent/output/
+RUN --mount=type=bind,rw,from=build,source=/deploy/output,target=/stage \
+rdo-find-move "/stage/" "/deploy/libtorrent/output/" "-not -type d"
 
 RUN \
-eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/output"
+eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/output/src"

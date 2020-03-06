@@ -46,10 +46,10 @@ ARG CONTEXT_TYPE
 
 LABEL "rdo__stage__${CONTEXT_TYPE}"="yes"
 
-# Using COPY truncates timestamps.
+# Using build context truncates timestamps.
 #
-# Either never use COPY or always use it for a particular stage
-# category.
+# Either never use build context or always use it for a particular
+# stage category.
 #
 # Only source category uses COPY as it is read-only except for the
 # autogen stage.
