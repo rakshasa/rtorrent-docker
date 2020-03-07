@@ -7,7 +7,10 @@ rdo_docker_clean() {
 
   case "${cmd}" in
     all)
-      rdo_docker_clean_all "${@}"
+      rdo__call_empty rdo_docker_clean_all "${@}"
+      ;;
+    pkg)
+      rdo__call_empty rdo_docker_clean_pkg "${@}"
       ;;
     --help|-h|'')
       echo "Usage: rdo docker clean COMMAND"
@@ -27,19 +30,35 @@ rdo_docker_clean() {
 }
 
 rdo_docker_clean_all() {
-  local arg_ancestor_project="rdo-project"
+  rdo_docker_clean__rm_filter "label=ancestor_project=rdo-project"
+}
 
-  args=()
+rdo_docker_clean_pkg() {
+  rdo_docker_clean__rm_filter "label=ancestor_project=rdo-pkg-cache"
+}
 
-  [[ -n "${arg_ancestor_project}" ]] && args+=("--filter" "label=ancestor_project=${arg_ancestor_project}")
+# Helper functions
+
+rdo_docker_clean__rm_filter() {
+  local filter_args=("${@}")
+
+  if [[ -z "${filter_args[*]}" ]]; then
+    print_error "rdo_docker_clean__rm_filter: no arguments"
+  fi
+
+  local args=()
+
+  for arg in "${filter_args[@]}"; do
+    args+=("--filter" "${arg}")
+  done
 
   local containers=($(docker ps --all --quiet "${args[@]}"))
   if (( ${#containers[@]} > 0 )); then
-    docker rm --force "${containers[@]}"
+    docker rm --force "${containers[@]}" || :
   fi
 
   local images=($(docker images --all --quiet "${args[@]}"))
   if (( ${#images[@]} > 0 )); then
-    docker rmi --force "${images[@]}" 2>&1 | grep -v 'Error: No such image:' >&2
+    (docker rmi --force "${images[@]}" 2>&1 | grep -v 'Error: No such image:' >&2) || :
   fi
 }

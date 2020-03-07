@@ -126,7 +126,7 @@ _rtorrent_docker__rdo_docker_build() {
 }
 
 _rtorrent_docker__rdo_docker_clean() {
-  commands=(all)
+  commands=(all pkg)
 }
 
 _rtorrent_docker__rdo_docker_context() {

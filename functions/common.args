@@ -2,9 +2,10 @@
 
 rdo_header common.args
 
-# - rdo_foo "${@}" && break || exit 1 ;;
+# - namespace "${@}" && break || exit 1 ;;
 rdo__args__check_unknown_flag() {
-  local arg_namespace="${1:?Missing namespace argument.}"; shift
+  local arg_namespace="${1:?Missing namespace argument.}"
+  shift
 
   if [[ -z "${1##-*}" ]]; then
     print_error "${arg_namespace//_/ }: unknown flag: ${1}"
@@ -12,9 +13,10 @@ rdo__args__check_unknown_flag() {
   fi
 }
 
-# - rdo_foo "${@}" && break || exit 1 ;;
+# - namespace "${@}" && break || exit 1 ;;
 rdo__args__check_empty() {
-  local arg_namespace="${1:?Missing namespace argument.}"; shift
+  local arg_namespace="${1:?Missing namespace argument.}"
+  shift
 
   if [[ -z "${1##-*}" ]]; then
     print_error "${arg_namespace//_/ }: unknown flag: ${1}"
