@@ -32,6 +32,27 @@ cp -v -a /stage/* /build/
 RUN ./autogen.sh
 
 
+FROM "${REPOSITORY}/stage:global" AS stage.rtorrent
+
+RUN --mount=type=bind,source=/rtorrent.tar.gz,target=/stage/rtorrent.tar.gz \
+\
+tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
+  --directory '/deploy' \
+  --wildcards '*.am' \
+  --wildcards '*.m4' \
+  --wildcards '*.pc.in' \
+  --no-wildcards './autogen.sh' \
+  --no-wildcards './configure.ac'
+
+
+FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.rtorrent
+
+RUN --mount=type=bind,from=stage.rtorrent,source=/deploy,target=/stage \
+cp -v -a /stage/* /build/
+
+RUN ./autogen.sh
+
+
 # TODO: Add counter to stage image, check in pre-compile, auto-increment option flag.
 FROM "${REPOSITORY}/stage:global"
 

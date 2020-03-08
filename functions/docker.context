@@ -180,19 +180,17 @@ rdo_docker_context__pre_autogen() {
   project_path="$(get_project_path)"
   local context_path="${project_path:?Missing project path.}/context/compile"
 
-  mkdir -p "${context_path}/libtorrent"
-  mkdir -p "${context_path}/rtorrent"
-
   "${project_path}/misc/rsync-stage-compile" "${project_path}/data/libtorrent/" "${context_path}/libtorrent/"
-  # "${project_path}/misc/rsync-stage-compile" "${project_path}/data/rtorrent/" "${context_path}/rtorrent/"
+  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/rtorrent/" "${context_path}/rtorrent/"
 
   local tar_c_cmd
   tar_c_cmd="$(rdo__tar_c_cmd)"
 
   eval ${tar_c_cmd} "${context_path}/libtorrent.tar.gz" --directory "${context_path}/libtorrent" .
+  eval ${tar_c_cmd} "${context_path}/rtorrent.tar.gz" --directory "${context_path}/rtorrent" .
 
   echo "pre-autogen: libtorrent md5 $(md5sum "${context_path}/libtorrent.tar.gz")"
-  # echo "pre-autogen:   rtorrent md5 $(md5sum "${context_path}/rtorrent.tar.gz")"
+  echo "pre-autogen:   rtorrent md5 $(md5sum "${context_path}/rtorrent.tar.gz")"
 }
 
 rdo_docker_context__post_cache() {
