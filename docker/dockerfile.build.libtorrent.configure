@@ -8,34 +8,39 @@ FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.build
 
 # TODO: Add tag to enable pruning.
 
-# TODO: Test UPDATE args.
-RUN --mount=type=bind,source=/libtorrent,target=/stage \
+RUN --mount=type=bind,source=/libtorrent.tar.gz,target=/stage/libtorrent.tar.gz \
 \
-rsync ${RDO_RSYNC_ADD_ARGS} \
---include '*/' \
---include '*.am' \
---include '*.m4' \
---include '*.pc.in' \
---include '/configure.ac' \
---exclude '*' \
-"/stage/" "/deploy/libtorrent/source/"
+tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
+  --directory '/deploy/libtorrent/source' \
+  --wildcards '*.am' \
+  --wildcards '*.m4' \
+  --wildcards '*.pc.in' \
+  --no-wildcards './configure.ac'
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
-COPY --from=stage.build /deploy/libtorrent/source /build/libtorrent/source
-
-RUN \
---mount=type=bind,rw,from=stage.build,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
+# Replace with tarball?
+RUN --mount=type=bind,from=stage.build,source=/deploy/libtorrent/source,target=/stage \
+set -xe; \
 \
+rm -rf /build; \
+mkdir -p /build/libtorrent/source; \
+cp -v -a /stage/* /build/libtorrent/source/
+
+RUN --mount=type=bind,rw,from=stage.build,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
 set -xe; cd /build/libtorrent/output; \
 \
 source /env.configure; \
 \
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/source"; \
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/output"; \
+\
 eval ${RDO_TIMESTAMP_UPDATE}; \
+\
 /build/libtorrent/source/configure --prefix=/prefix --disable-backtrace; \
 \
-rdo-find-move "./" "/deploy/output/" \
+rdo-find-move "." "/deploy/output" \
   "-not -type d -and \
    -not -name '*.Po' -and \
    -not -name '*.Plo' -and \
@@ -57,5 +62,8 @@ LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 RUN --mount=type=bind,from=stage.default,source=/deploy,target=/stage \
 rm -rf /deploy && cp -a /stage /deploy
 
-RUN --mount=type=bind,from=build,source=/deploy/output,target=/stage \
-rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/libtorrent/output/
+RUN --mount=type=bind,rw,from=build,source=/deploy/output,target=/stage \
+rdo-find-move "/stage" "/deploy/libtorrent/output" "-not -type d"
+
+RUN \
+eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/output/src"

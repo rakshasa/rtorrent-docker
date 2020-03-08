@@ -21,4 +21,4 @@ find . \
   )
 find . \
   ${FIND_ARGS} \
-  -exec mv -v "{}" "${DST_DIR}/{}" \;
+  -exec mv "{}" "${DST_DIR}/{}" \;

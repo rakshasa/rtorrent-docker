@@ -4,7 +4,7 @@
 # created by this project.
 #
 # /build  - use this for any intermediate processing
-# /deploy - use rsync to copy only relevant files here
+# /deploy - use copy only relevant files here
 # /empty  - empty file allowing docker copy of possibly missing files
 # /prefix - install resulting builds here
 # /stage  - initially copy docker context here
@@ -17,10 +17,16 @@ ARG TAG_APPEND
 
 LABEL ancestor_project="${ANCESTOR_PROJECT}"
 
+# TODO: Consider adding the timestamp to current directory.
+
 ENV RDO_RSYNC_ADD_ARGS="-rlpgoD -muc -t"
 ENV RDO_RSYNC_UPDATE_ARGS="-rlpgoD -muc -t --delete-after"
 ENV RDO_TIMESTAMP_UPDATE="touch /timestamp; sleep 1.1;"
 ENV RDO_TIMESTAMP_PATH="/timestamp"
+ENV RDO_TIMESTAMP_LS="ls -a --full-time --reverse --sort time"
+
+ENV RDO_TAR_C_ARGS="-v --warning=no-unknown-keyword --format pax --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime --sort=name -cf"
+ENV RDO_TAR_X_ARGS="-v --warning=no-unknown-keyword --format pax --sort=name -xf"
 
 RUN set -xe; \
 \
@@ -34,5 +40,5 @@ RUN \
 --mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
 \
 pkg-add bash \
-        rsync \
+        coreutils \
         tar

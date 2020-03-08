@@ -28,6 +28,7 @@ rdo_build() {
         echo "Options:"
         echo "  -c, --compiler  Select the compiler to use"
         echo "      --dry-run   Do not actually build the container"
+        echo "      --rebuild   Rebuild all base images"
         echo
         echo "Commands"
         echo "  all             Compile everything"
@@ -46,34 +47,31 @@ rdo_build() {
 
   case "${cmd}" in
     all)
-      rdo_build_all "${@}"
+      rdo__call_empty rdo_build_all "${@}"
       ;;
     check)
-      rdo_build_check "${@}"
+      rdo__call_empty rdo_build_check "${@}"
       ;;
     compile)
-      rdo_build_compile "${@}"
+      rdo__call_empty rdo_build_compile "${@}"
       ;;
-    libtorrent-check)
-      rdo_build__libtorrent_check "${@}"
+    libtorrent)
+      rdo__call_empty rdo_build__libtorrent "${@}"
       ;;
     libtorrent-compile)
-      rdo_build__libtorrent_compile "${@}"
-      ;;
-    libtorrent-complete)
-      rdo_build__libtorrent_complete "${@}"
+      rdo__call_empty rdo_build__libtorrent_compile "${@}"
       ;;
     libtorrent-dev)
-      rdo_build_libtorrent_dev "${@}"
+      rdo__call_empty rdo_build_libtorrent_dev "${@}"
       ;;
     rtorrent-check)
-      rdo_build__rtorrent_check "${@}"
+      rdo__call_empty rdo_build__rtorrent_check "${@}"
       ;;
     rtorrent-compile)
-      rdo_build__rtorrent_compile "${@}"
+      rdo__call_empty rdo_build__rtorrent_compile "${@}"
       ;;
     rtorrent-dev)
-      rdo_build_rtorrent_dev "${@}"
+      rdo__call_empty rdo_build_rtorrent_dev "${@}"
       ;;
     *)
       print_error "rdo build: unknown command: ${cmd}"
@@ -156,7 +154,7 @@ rdo_build__build() {
 rdo_build__init() {
   rdo docker pull "docker/dockerfile:experimental" "alpine:latest"
 
-  rdo_build__build --context-type "ancestor" --context-name "ancestor" --no-rebuild --ancestor-project "rdo-apk-cache" "ancestor/cache:global"
+  rdo_build__build --context-type "ancestor" --context-name "ancestor" --no-rebuild --ancestor-project "rdo-pkg-cache" "ancestor/cache:global"
   rdo_build__build --empty --no-rebuild "cache/apk:global"
 
   rdo_build__build --context-type "ancestor" --context-name "ancestor" --cache --no-rebuild --ancestor-project "rdo-project" "ancestor:global"
@@ -165,6 +163,11 @@ rdo_build__init() {
   rdo_build__build --empty --cache "build/base/compiler"
 
   rdo_build__build --context-type "autogen" --filename "build.autogen" "build/stage"
+}
+
+rdo_build__libtorrent() {
+  rdo_build__libtorrent_configure
+  rdo_build__libtorrent_compile
 }
 
 rdo_build__libtorrent_configure() {
@@ -199,12 +202,6 @@ rdo_build__libtorrent_check() {
   fi
 
   docker exec "${container_name}" build-check libtorrent
-}
-
-rdo_build__libtorrent_complete() {
-  rdo_build__build --context-type "apk"       --context-name "apk/libtorrent" "build/libtorrent-base"
-  rdo_build__build --context-type "complete"  --context-name "libtorrent" "build/libtorrent-complete"
-  rdo docker stage --stage-image "build/libtorrent-complete" "build/libtorrent-stage"
 }
 
 rdo_build__rtorrent_check() {

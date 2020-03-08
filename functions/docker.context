@@ -170,19 +170,27 @@ rdo_docker_context__test_autogen() {
   local context_name="${1:?Missing context name argument.}"
   local tag_full="${2:?Missing tag argument.}"
 
-  [[ -z "$(rdo__image_id__name "${tag_full}")" ]] ||
-    [[ "$(rdo__image_label_value__tag__label "${tag_full}" "rdo__stage__${context_name}")" != "yes" ]]
+  # [[ -z "$(rdo__image_id__name "${tag_full}")" ]] ||
+  #   [[ "$(rdo__image_label_value__tag__label "${tag_full}" "rdo__stage__${context_name}")" != "yes" ]]
+  :
 }
 
 rdo_docker_context__pre_autogen() {
   local project_path
   project_path="$(get_project_path)"
-  local context_path="${project_path:?Missing project path.}/context"
+  local context_path="${project_path:?Missing project path.}/context/compile"
 
-  mkdir -p "${context_path}/compile/libtorrent"
-  mkdir -p "${context_path}/compile/rtorrent"
-  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/libtorrent/" "${context_path}/compile/libtorrent/"
-  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/rtorrent/" "${context_path}/compile/rtorrent/"
+  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/libtorrent/" "${context_path}/libtorrent/"
+  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/rtorrent/" "${context_path}/rtorrent/"
+
+  local tar_c_cmd
+  tar_c_cmd="$(rdo__tar_c_cmd)"
+
+  eval ${tar_c_cmd} "${context_path}/libtorrent.tar.gz" --directory "${context_path}/libtorrent" .
+  eval ${tar_c_cmd} "${context_path}/rtorrent.tar.gz" --directory "${context_path}/rtorrent" .
+
+  echo "pre-autogen: libtorrent md5 $(md5sum "${context_path}/libtorrent.tar.gz")"
+  echo "pre-autogen:   rtorrent md5 $(md5sum "${context_path}/rtorrent.tar.gz")"
 }
 
 rdo_docker_context__post_cache() {

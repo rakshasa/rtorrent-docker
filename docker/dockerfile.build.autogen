@@ -7,96 +7,67 @@
 # Since running autogen invalidates most of the cached build files the
 # build result of autogen is copied to a new build result image.
 
-# TODO: Check if more of the rsync'ed files can be empty.
-
 ARG REPOSITORY
 ARG TAG_APPEND
 
 
 FROM "${REPOSITORY}/stage:global" AS stage.libtorrent
 
-# COPY /libtorrent /stage
-
-RUN --mount=type=bind,source=/libtorrent,target=/stage \
+RUN --mount=type=bind,source=/libtorrent.tar.gz,target=/stage/libtorrent.tar.gz \
 \
-set -xe; mkdir -p /deploy/libtorrent/source; \
-\
-rsync ${RDO_RSYNC_UPDATE_ARGS} \
---include '*/' \
---include '*.am' \
---include '*.m4' \
---include '*.pc.in' \
---include '/configure.ac' \
---include '/autogen.sh' \
---exclude '*' \
-/stage/ /deploy/libtorrent/source/
+tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
+  --directory '/deploy' \
+  --wildcards '*.am' \
+  --wildcards '*.m4' \
+  --wildcards '*.pc.in' \
+  --no-wildcards './autogen.sh' \
+  --no-wildcards './configure.ac'
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.libtorrent
 
-COPY --from=stage.libtorrent /deploy/libtorrent/source /build/libtorrent/source
+RUN --mount=type=bind,from=stage.libtorrent,source=/deploy,target=/stage \
+cp -v -a /stage/* /build/
 
-RUN set -xe; cd /build/libtorrent/source; \
-\
-eval ${RDO_TIMESTAMP_UPDATE}; \
-./autogen.sh
+RUN ./autogen.sh
 
 
 FROM "${REPOSITORY}/stage:global" AS stage.rtorrent
 
-# COPY /rtorrent /stage
-
-RUN --mount=type=bind,source=/rtorrent,target=/stage \
+RUN --mount=type=bind,source=/rtorrent.tar.gz,target=/stage/rtorrent.tar.gz \
 \
-set -xe; mkdir -p /deploy/rtorrent/source; \
-\
-rsync ${RDO_RSYNC_UPDATE_ARGS} \
---include '*/' \
---include '*.am' \
---include '*.m4' \
---include '*.pc.in' \
---include '/configure.ac' \
---include '/autogen.sh' \
---exclude '*' \
-/stage/ /deploy/rtorrent/source/
+tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
+  --directory '/deploy' \
+  --wildcards '*.am' \
+  --wildcards '*.m4' \
+  --no-wildcards './autogen.sh' \
+  --no-wildcards './configure.ac'
 
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.rtorrent
 
-COPY --from=stage.rtorrent /deploy/rtorrent/source /build/rtorrent/source
+RUN --mount=type=bind,from=stage.rtorrent,source=/deploy,target=/stage \
+cp -v -a /stage/* /build/
 
-RUN set -xe; cd /build/rtorrent/source; \
-\
-eval ${RDO_TIMESTAMP_UPDATE}; \
-./autogen.sh
+RUN ./autogen.sh
 
 
 # TODO: Add counter to stage image, check in pre-compile, auto-increment option flag.
 FROM "${REPOSITORY}/stage:global"
 
-RUN mkdir -p /deploy/libtorrent/output /deploy/rtorrent/output /deploy/prefix
+RUN mkdir -p \
+/deploy/libtorrent/source \
+/deploy/libtorrent/output \
+/deploy/rtorrent/source \
+/deploy/rtorrent/output \
+/deploy/prefix
 
 ARG CONTEXT_TYPE
 
 LABEL "rdo__stage__${CONTEXT_TYPE}"="yes"
 
-# Using COPY truncates timestamps.
-#
-# Either never use COPY or always use it for a particular stage
-# category.
-#
-# Only source category uses COPY as it is read-only except for the
-# autogen stage.
-#
-# This means the source's build context must always be COPY'ed at some
-# time before the build stge. Using rsync between other images should
-# work with rsync. (verify)
+RUN --mount=type=bind,from=build.libtorrent,source=/build,target=/stage \
+cp -v -a /stage/* /deploy/libtorrent/source/
 
-COPY --from=build.libtorrent /build/libtorrent/source /deploy/libtorrent/source
-COPY --from=build.rtorrent /build/rtorrent/source /deploy/rtorrent/source
-
-#RUN --mount=type=bind,from=build.libtorrent,source=/deploy/source,target=/stage \
-#rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/libtorrent/source/
-
-#RUN --mount=type=bind,from=build.rtorrent,source=/deploy/source,target=/stage \
-#rsync ${RDO_RSYNC_ADD_ARGS} /stage/ /deploy/rtorrent/source/
+RUN --mount=type=bind,from=build.rtorrent,source=/build,target=/stage \
+cp -v -a /stage/* /deploy/rtorrent/source/

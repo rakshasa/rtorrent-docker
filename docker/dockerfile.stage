@@ -1,6 +1,5 @@
 # Stage build files in a separate container so as to ensure caches
-# work when no relevant files have been changed. This uses rsync to
-# only include files required for building any particular project.
+# work when no relevant files have been changed.
 #
 # The docker cache works by matching that both build instructions and
 # volume content match at each step, while docker context is

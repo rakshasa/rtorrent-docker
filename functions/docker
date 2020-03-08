@@ -7,7 +7,7 @@ rdo_docker() {
 
   case "${cmd}" in
     args)
-      rdo_docker_args "${@}"
+      rdo__call_empty rdo_docker_args "${@}"
       ;;
     build)
       rdo_docker_build "${@}"
@@ -24,7 +24,7 @@ rdo_docker() {
       rdo_docker_context "${@}"
       ;;
     images)
-      rdo_docker_images "${@}"
+      rdo__call_empty rdo_docker_images "${@}"
       ;;
     inspect)
       rdo_docker_inspect "${@}"
@@ -36,7 +36,7 @@ rdo_docker() {
       rdo_docker_stage "${@}"
       ;;
     targets)
-      rdo_docker_targets "${@}"
+      rdo__call_empty rdo_docker_targets "${@}"
       ;;
     --help|-h|'')
       echo "Usage: do docker COMMAND"
