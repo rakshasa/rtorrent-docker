@@ -4,7 +4,7 @@
 # created by this project.
 #
 # /build  - use this for any intermediate processing
-# /deploy - use rsync to copy only relevant files here
+# /deploy - use copy only relevant files here
 # /empty  - empty file allowing docker copy of possibly missing files
 # /prefix - install resulting builds here
 # /stage  - initially copy docker context here
@@ -41,5 +41,4 @@ RUN \
 \
 pkg-add bash \
         coreutils \
-        rsync \
         tar
