@@ -21,6 +21,8 @@ tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
+ARG IGNORE_BUILD_ERROR=no
+
 # Replace with tarball?
 RUN --mount=type=bind,from=stage.build,source=/deploy/rtorrent/source,target=/stage \
 set -xe; \
@@ -40,9 +42,15 @@ eval ${RDO_TIMESTAMP_LS} "/build/rtorrent/output/src"; \
 \
 eval ${RDO_TIMESTAMP_UPDATE}; \
 \
-make -j12; \
-make -j12 install; \
-#make -j12 check TESTS=; \
+if [[ "${IGNORE_BUILD_ERROR}" == "no" ]]; then \
+  make -j12; \
+  make -j12 install; \
+  #make -j12 check TESTS=; \
+else \
+  make -j12 || :; \
+  make -j12 install || :; \
+  #make -j12 check TESTS= || :; \
+fi; \
 \
 rdo-find-move "." "/deploy/output" \
   "-not -type d -and \
