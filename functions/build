@@ -175,7 +175,8 @@ rdo_build__libtorrent_configure() {
 }
 
 rdo_build__libtorrent_compile() {
-  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.compile" "build/stage"
+  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=yes" "build/stage"
+  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=no" "build/stage"
 }
 
 rdo_build__rtorrent_configure() {
@@ -183,7 +184,8 @@ rdo_build__rtorrent_configure() {
 }
 
 rdo_build__rtorrent_compile() {
-  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.compile" "build/stage"
+  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=yes" "build/stage"
+  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=no" "build/stage"
 }
 
 rdo_build__libtorrent_check() {
