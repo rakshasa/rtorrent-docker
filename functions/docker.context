@@ -159,7 +159,7 @@ rdo_docker_context__pre_ancestor() {
   rm -r "${context_path}/bin" 2> /dev/null || :
   mkdir -p "${context_path}/bin"
 
-  cp "${project_path}"/misc/{build,pkg,rdo,rsync,stat}-*[!~] "${context_path}/bin/"
+  cp "${project_path}"/misc/{build,pkg,rdo}-*[!~] "${context_path}/bin/"
 }
 
 rdo_docker_context__path_autogen() {
@@ -170,9 +170,8 @@ rdo_docker_context__test_autogen() {
   local context_name="${1:?Missing context name argument.}"
   local tag_full="${2:?Missing tag argument.}"
 
-  # [[ -z "$(rdo__image_id__name "${tag_full}")" ]] ||
-  #   [[ "$(rdo__image_label_value__tag__label "${tag_full}" "rdo__stage__${context_name}")" != "yes" ]]
-  :
+  [[ -z "$(rdo__image_id__name "${tag_full}")" ]] ||
+    [[ "$(rdo__image_label_value__tag__label "${tag_full}" "rdo__stage__${context_name}")" != "yes" ]]
 }
 
 rdo_docker_context__pre_autogen() {

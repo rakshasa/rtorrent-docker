@@ -63,8 +63,9 @@ RUN mkdir -p \
 /deploy/prefix
 
 ARG CONTEXT_TYPE
+ARG REPOSITORY
 
-LABEL "rdo__stage__${CONTEXT_TYPE}"="yes"
+LABEL "${REPOSITORY}__stage__${CONTEXT_TYPE}"="yes"
 
 RUN --mount=type=bind,from=build.libtorrent,source=/build,target=/stage \
 cp -v -a /stage/* /deploy/libtorrent/source/
