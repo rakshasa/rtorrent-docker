@@ -77,4 +77,4 @@ rdo-find-move "/stage/" "/deploy/rtorrent/output" "-not -type d"
 RUN \
 eval ${RDO_TIMESTAMP_LS} "/deploy/rtorrent/output"; \
 eval ${RDO_TIMESTAMP_LS} "/deploy/rtorrent/output/src"; \
-eval ${RDO_TIMESTAMP_LS} "/deploy/prefix/include/torrent"
+eval ${RDO_TIMESTAMP_LS} "/deploy/prefix/bin"

@@ -40,7 +40,6 @@ tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
   --directory '/deploy' \
   --wildcards '*.am' \
   --wildcards '*.m4' \
-  --wildcards '*.pc.in' \
   --no-wildcards './autogen.sh' \
   --no-wildcards './configure.ac'
 
@@ -67,18 +66,8 @@ ARG CONTEXT_TYPE
 
 LABEL "rdo__stage__${CONTEXT_TYPE}"="yes"
 
-# Using build context truncates timestamps.
-#
-# Either never use build context or always use it for a particular
-# stage category.
-#
-# Only source category uses COPY as it is read-only except for the
-# autogen stage.
-#
-# This means the source's build context must always be COPY'ed at some
-# time before the build stage. Or assuming build context is where the
-# timestamp truncation happens, mounting the build context should also
-# work.
-
 RUN --mount=type=bind,from=build.libtorrent,source=/build,target=/stage \
 cp -v -a /stage/* /deploy/libtorrent/source/
+
+RUN --mount=type=bind,from=build.rtorrent,source=/build,target=/stage \
+cp -v -a /stage/* /deploy/rtorrent/source/
