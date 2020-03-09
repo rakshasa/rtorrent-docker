@@ -84,7 +84,6 @@ rdo_docker_build() {
   local arg_no_cache=
   local arg_rebuild=
   local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
-  local arg_rsync_args=
   local arg_stage_image=
   local arg_tag=
   local arg_tag_append=
@@ -134,9 +133,6 @@ rdo_docker_build() {
       --repository)
         arg_repository="${2:?Missing repository argument.}"
         shift 2 ;;
-      --rsync-verbose)
-        arg_rsync_args="-acmv"
-        shift ;;
       --stage-image)
         arg_stage_image="${2:?Missing stage image argument.}"
         shift 2 ;;
@@ -161,7 +157,6 @@ rdo_docker_build() {
         echo "      --filename        Set dockerfile filename"
         echo "      --stage-image     Select stage image"
         echo "      --repository      Set repository name"
-        echo "      --rsync-verbose   Explain what rsync is doing"
         echo "      --tag             Set the image tag"
         echo "      --tag-append      Append to the image tag"
         echo
@@ -206,7 +201,6 @@ rdo_docker_build() {
   [[ -n "${arg_base_image}" ]]          && args+=("--build-arg" "BASE_IMAGE=${arg_base_image}")
   [[ -n "${arg_cache_base_tag}" ]]      && args+=("--build-arg" "CACHE_BASE_TAG=${arg_cache_base_tag}")
   [[ -n "${arg_repository}" ]]          && args+=("--build-arg" "REPOSITORY=${arg_repository}")
-  [[ -n "${arg_rsync_args}" ]]          && args+=("--build-arg" "RSYNC_ARGS=${arg_rsync_args}")
   [[ -n "${arg_stage_image}" ]]         && args+=("--build-arg" "STAGE_IMAGE=${arg_stage_image}")
   [[ -n "${arg_tag_append}" ]]          && args+=("--build-arg" "TAG_APPEND=${arg_tag_append}")
 

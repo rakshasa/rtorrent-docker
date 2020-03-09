@@ -4,7 +4,7 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.build
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
 
 # TODO: Add tag to enable pruning.
 
@@ -25,7 +25,7 @@ FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 ARG IGNORE_BUILD_ERROR=no
 
 # Replace with tarball?
-RUN --mount=type=bind,from=stage.build,source=/deploy/libtorrent/source,target=/stage \
+RUN --mount=type=bind,from=stage,source=/deploy/libtorrent/source,target=/stage \
 set -xe; \
 \
 rm -rf /build; \
@@ -33,8 +33,8 @@ mkdir -p /build/libtorrent/source; \
 cp -v -a /stage/* /build/libtorrent/source/
 
 RUN \
---mount=type=bind,rw,from=stage.build,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
---mount=type=bind,rw,from=stage.build,source=/deploy/prefix,target=/prefix \
+--mount=type=bind,rw,from=stage,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
+--mount=type=bind,rw,from=stage,source=/deploy/prefix,target=/prefix \
 \
 set -xe; cd /build/libtorrent/output; \
 \
@@ -63,19 +63,12 @@ rdo-find-move "/prefix" "/deploy/prefix" \
    -newer ${RDO_TIMESTAMP_PATH}"
 
 
-FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.default
-
-
-FROM "${REPOSITORY}/stage:global"
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}"
 
 ARG CONTEXT_TYPE
 ARG CONTEXT_NAME
 
-LABEL "rdo__stage__autogen"="yes"
 LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
-
-RUN --mount=type=bind,from=stage.default,source=/deploy,target=/stage \
-rm -rf /deploy && cp -a /stage /deploy
 
 RUN --mount=type=bind,rw,from=build,source=/deploy/prefix,target=/stage \
 rdo-find-move "/stage/" "/deploy/prefix" "-not -type d"
