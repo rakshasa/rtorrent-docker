@@ -27,7 +27,7 @@ tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.libtorrent
 
 RUN --mount=type=bind,from=stage.libtorrent,source=/deploy,target=/stage \
-cp -v -a /stage/* /build/
+cp ${RDO_CP_A_ARGS} /stage/* /build/
 
 RUN ./autogen.sh
 
@@ -47,7 +47,7 @@ tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.rtorrent
 
 RUN --mount=type=bind,from=stage.rtorrent,source=/deploy,target=/stage \
-cp -v -a /stage/* /build/
+cp ${RDO_CP_A_ARGS} /stage/* /build/
 
 RUN ./autogen.sh
 
@@ -68,7 +68,7 @@ ARG REPOSITORY
 LABEL "${REPOSITORY}__stage__${CONTEXT_TYPE}"="yes"
 
 RUN --mount=type=bind,from=build.libtorrent,source=/build,target=/stage \
-cp -v -a /stage/* /deploy/libtorrent/source/
+cp ${RDO_CP_A_ARGS} /stage/* /deploy/libtorrent/source/
 
 RUN --mount=type=bind,from=build.rtorrent,source=/build,target=/stage \
-cp -v -a /stage/* /deploy/rtorrent/source/
+cp ${RDO_CP_A_ARGS} /stage/* /deploy/rtorrent/source/

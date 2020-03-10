@@ -26,7 +26,7 @@ set -xe; \
 \
 rm -rf /build; \
 mkdir -p /build/libtorrent/source; \
-cp -v -a /stage/* /build/libtorrent/source/
+cp ${RDO_CP_A_ARGS} /stage/* /build/libtorrent/source/
 
 RUN --mount=type=bind,rw,from=stage,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
 set -xe; cd /build/libtorrent/output; \

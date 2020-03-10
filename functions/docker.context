@@ -170,8 +170,7 @@ rdo_docker_context__test_autogen() {
   local context_name="${1:?Missing context name argument.}"
   local tag_full="${2:?Missing tag argument.}"
 
-  [[ -z "$(rdo__image_id__name "${tag_full}")" ]] ||
-    [[ "$(rdo__image_label_value__tag__label "${tag_full}" "stage__${context_name}")" != "yes" ]]
+  [[ -z "$(rdo__image_id__name "${tag_full}")" ]]
 }
 
 rdo_docker_context__pre_autogen() {
@@ -213,7 +212,7 @@ rdo_docker_context__pre_compile() {
 
   print_progress "pre-compile::stage_layer_depth: ${stage_layer_depth}"
 
-  if (( stage_layer_depth >= 200 )); then
+  if (( stage_layer_depth >= 100 )); then
     print_warning "rebuilding stage image"
     rdo_docker_context_build --empty --filename "stage.rebase" --build-arg "REBASE_TAG_FULL=build/stage:${arg_tag_append}" "build/stage:${arg_tag_append}"
   fi
