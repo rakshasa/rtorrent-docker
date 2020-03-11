@@ -16,15 +16,30 @@ rdo__machine_memory() {
   fi
 }
 
-rdo__tar_c_cmd() {
+rdo__call_md5() {
+  if command -v md5 &> /dev/null; then
+    local cmd="md5"
+  elif command -v md5sum &> /dev/null; then
+    local cmd="md5sum"
+  else
+    print_error "could not find md5 nor md5sum command"
+    return 1
+  fi
+
+  eval ${cmd} "${@}"
+}
+
+rdo__call_tar_cf() {
   local tar_args="--format pax --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime --sort=name --owner=0 --group=0 --numeric-owner"
 
   if (command -v tar && ! ((tar ${tar_args} || :) 2>&1 | grep -q 'not supported')) &> /dev/null; then
-    echo tar ${tar_args} -cf
+    local cmd="tar ${tar_args} -cf"
   elif (command -v gnutar && ! ((gnutar ${tar_args} || :) 2>&1 | grep -q 'not supported')) &> /dev/null; then
-    echo gnutar ${tar_args} -cf
+    local cmd="gnutar ${tar_args} -cf"
   else
     print_error "could not find a tar version that supports extended pax options, try GNU tar"
     return 1
   fi
+
+  eval ${cmd} "${@}"
 }
