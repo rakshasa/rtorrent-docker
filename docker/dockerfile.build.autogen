@@ -29,7 +29,7 @@ FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.libtorrent
 RUN --mount=type=bind,from=stage.libtorrent,source=/deploy,target=/stage \
 cp ${RDO_CP_A_ARGS} /stage/* /build/
 
-RUN ./autogen.sh
+RUN ./autogen.sh && touch /build/foo.test && eval ${RDO_TIMESTAMP_LS} "/build/"
 
 
 FROM "${REPOSITORY}/stage:global" AS stage.rtorrent
@@ -49,7 +49,7 @@ FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.rtorrent
 RUN --mount=type=bind,from=stage.rtorrent,source=/deploy,target=/stage \
 cp ${RDO_CP_A_ARGS} /stage/* /build/
 
-RUN ./autogen.sh
+RUN ./autogen.sh && eval ${RDO_TIMESTAMP_LS} "/build/"
 
 
 # TODO: Add counter to stage image, check in pre-compile, auto-increment option flag.

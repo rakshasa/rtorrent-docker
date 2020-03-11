@@ -40,6 +40,8 @@ eval ${RDO_TIMESTAMP_UPDATE}; \
 \
 /build/libtorrent/source/configure --prefix=/prefix --disable-backtrace; \
 \
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/output"; \
+\
 rdo-find-move "." "/deploy/output" \
   "-not -type d -and \
    -not -name '*.Po' -and \
