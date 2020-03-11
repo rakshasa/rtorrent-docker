@@ -28,3 +28,9 @@ rdo__image_label_value__tag__label() {
 
   docker image inspect --format "{{ range \$k, \$v := .Config.Labels }}{{ if eq \$k \"${label}\" }}{{ \$v }}{{ end }}{{ end }}" "${tag}"
 }
+
+rdo__image_layer_depth() {
+  local tag="${1:?Missing tag argument.}"
+
+  docker image inspect --format "{{ len .RootFS.Layers }}" "${tag}"
+}

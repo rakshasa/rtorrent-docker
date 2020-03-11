@@ -159,7 +159,7 @@ rdo_docker_context__pre_ancestor() {
   rm -r "${context_path}/bin" 2> /dev/null || :
   mkdir -p "${context_path}/bin"
 
-  cp "${project_path}"/misc/{build,pkg,rdo,rsync,stat}-*[!~] "${context_path}/bin/"
+  cp "${project_path}"/misc/{build,pkg,rdo}-*[!~] "${context_path}/bin/"
 }
 
 rdo_docker_context__path_autogen() {
@@ -170,9 +170,7 @@ rdo_docker_context__test_autogen() {
   local context_name="${1:?Missing context name argument.}"
   local tag_full="${2:?Missing tag argument.}"
 
-  # [[ -z "$(rdo__image_id__name "${tag_full}")" ]] ||
-  #   [[ "$(rdo__image_label_value__tag__label "${tag_full}" "rdo__stage__${context_name}")" != "yes" ]]
-  :
+  [[ -z "$(rdo__image_id__name "${tag_full}")" ]]
 }
 
 rdo_docker_context__pre_autogen() {
@@ -206,6 +204,18 @@ rdo_docker_context__pre_compile() {
   project_path="$(get_project_path)"
   local context_name="${1:?Missing context name argument.}"
   local context_path="${project_path:?Missing project path.}/context"
+
+  # TODO: Delete dangling build/stage images.
+
+  local stage_layer_depth
+  stage_layer_depth="$(rdo__image_layer_depth "${arg_repository}/build/stage:${arg_tag_append}")"
+
+  print_progress "pre-compile::stage_layer_depth: ${stage_layer_depth}"
+
+  if (( stage_layer_depth >= 100 )); then
+    print_warning "rebuilding stage image"
+    rdo_docker_context_build --empty --filename "stage.rebase" --build-arg "REBASE_TAG_FULL=build/stage:${arg_tag_append}" "build/stage:${arg_tag_append}"
+  fi
 
   mkdir -p "${context_path}/compile/${context_name}"
   "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name}/" "${context_path}/compile/${context_name}/"

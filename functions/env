@@ -78,6 +78,8 @@ rdo_env_create() {
 source ~/.bash_profile
 
 update() {
+  source "${project_path}/misc/docker.bash"
+  source "${project_path}/misc/docker-machine.bash"
   source "${project_path}/misc/rtorrent-docker.bash"
 
   if [[ -f "${project_path}/data/env.engine" ]]; then

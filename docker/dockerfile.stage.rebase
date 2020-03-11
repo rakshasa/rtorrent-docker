@@ -1,0 +1,13 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REBASE_TAG_FULL
+ARG REPOSITORY
+
+
+FROM "${REPOSITORY}/${REBASE_TAG_FULL}" AS stage
+
+
+FROM "${REPOSITORY}/stage:global"
+
+RUN --mount=type=bind,from=stage,source=/deploy,target=/stage \
+rm -rf /deploy && cp ${RDO_CP_A_ARGS} /stage /deploy

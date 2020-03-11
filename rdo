@@ -90,7 +90,9 @@ rdo() {
       rdo_tags "${@}"
       ;;
 
-
+    watch)
+      watch -n1 'echo -n "rdo/build/stage:default layers: "; docker inspect --format "{{ \$length := len .RootFS.Layers }}{{ \$length }}" rdo/build/stage:default; echo; docker images -a'
+      ;;
     destroy)
       source "${PROJECT_PATH}/functions/machine"
       rdo_machine_destroy
