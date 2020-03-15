@@ -19,12 +19,10 @@ RUN tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
+COPY --from=stage /deploy/prefix/lib/pkgconfig/libtorrent.pc /prefix/lib/pkgconfig/libtorrent.pc
 COPY --from=stage /deploy/rtorrent/source/ /build/rtorrent/source/
 
-RUN \
---mount=type=bind,rw,from=stage,source=/deploy/rtorrent/output,target=/build/rtorrent/output \
---mount=type=bind,rw,from=stage,source=/deploy/prefix,target=/prefix \
-set -xe; cd /build/rtorrent/output; \
+RUN set -xe; mkdir -p /build/rtorrent/output; cd /build/rtorrent/output; \
 \
 source /env.configure; \
 \

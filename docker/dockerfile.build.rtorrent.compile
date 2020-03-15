@@ -67,7 +67,6 @@ ARG CONTEXT_NAME
 
 LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
-# Use md5 check in rdo-find-move.
 COPY --from=build /deploy/prefix/ /stage/prefix/
 RUN rdo-find-move "/stage/prefix" "/deploy/prefix" "-not -type d"
 
