@@ -8,9 +8,9 @@ FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
 
 # TODO: Add tag to enable pruning.
 
-RUN --mount=type=bind,source=/libtorrent.tar.gz,target=/stage/libtorrent.tar.gz \
-\
-tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
+COPY /libtorrent.tar.gz /stage/libtorrent.tar.gz
+
+RUN tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
   --directory '/deploy/libtorrent/source' \
   --wildcards '*.am' \
   --wildcards '*.m4' \
@@ -20,13 +20,7 @@ tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
-# Replace with tarball?
-RUN --mount=type=bind,from=stage,source=/deploy/libtorrent/source,target=/stage \
-set -xe; \
-\
-rm -rf /build; \
-mkdir -p /build/libtorrent/source; \
-cp ${RDO_CP_A_ARGS} /stage/* /build/libtorrent/source/
+COPY --from=stage /deploy/libtorrent/source/ /build/libtorrent/source/
 
 RUN --mount=type=bind,rw,from=stage,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
 set -xe; cd /build/libtorrent/output; \
@@ -40,13 +34,16 @@ eval ${RDO_TIMESTAMP_UPDATE}; \
 \
 /build/libtorrent/source/configure --prefix=/prefix --disable-backtrace; \
 \
-rdo-find-move "." "/deploy/output" \
-  "-not -type d -and \
-   -not -name '*.Po' -and \
-   -not -name '*.Plo' -and \
-   -not -name '*.log' -and \
-   -newer ${RDO_TIMESTAMP_PATH}"
-
+eval ${RDO_TIMESTAMP_LS} "/build/libtorrent/output"; \
+\
+rdo-find-move --replace "./" "/deploy/output/" \
+  "( \
+   -not -type d -and \
+   -not -name *.Po -and \
+   -not -name *.Plo -and \
+   -not -name *.log -and \
+   -newer ${RDO_TIMESTAMP_PATH} \
+   )"
 
 FROM "${REPOSITORY}/build/stage:${TAG_APPEND}"
 
@@ -55,8 +52,7 @@ ARG CONTEXT_NAME
 
 LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
-RUN --mount=type=bind,rw,from=build,source=/deploy/output,target=/stage \
-rdo-find-move "/stage" "/deploy/libtorrent/output" "-not -type d"
+COPY --from=build /deploy/output/ /stage/output/
+RUN rdo-find-move "/stage/output" "/deploy/libtorrent/output" "-not -type d"
 
-RUN \
-eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/output/src"
+RUN eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/output/src"

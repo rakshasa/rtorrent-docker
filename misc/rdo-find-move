@@ -1,6 +1,13 @@
 #!/bin/sh
 
-set -xe
+set -e -o pipefail
+
+ARG_REPLACE=
+
+if [[ "${1}" == "--replace" ]]; then
+  ARG_REPLACE="yes"
+  shift
+fi
 
 if [[ -n "${4}" ]]; then
   echo "too many arguments: ${4}" >&2
@@ -11,14 +18,24 @@ SRC_DIR="${1:?Missing source directory argument.}"
 DST_DIR="${2:?Missing destination directory argument.}"
 FIND_ARGS="${3:?Missing find argument.}"
 
-cd "${SRC_DIR}"
+if [[ "${ARG_REPLACE}" == "yes" ]]; then
+  rm -rf "${DST_DIR}"
+fi
+
 mkdir -p "${DST_DIR}"
 
-find . \
+cd "${SRC_DIR}"
+
+find ./ \
   ${FIND_ARGS} \
   -exec dirname '{}' \; | uniq | tr '\n' '\0' | (
     xargs -r0 -I {} sh -c "mkdir -p '${DST_DIR}/{}'; touch -r '${SRC_DIR}/{}' '${DST_DIR}/{}'"
   )
-find . \
+find ./ \
   ${FIND_ARGS} \
-  -exec mv "{}" "${DST_DIR}/{}" \;
+  -exec echo '{}' \; | tr '\n' '\0' | xargs -r0 -I {} sh --noprofile --norc -c "
+set +x
+
+if [[ ! -e '${DST_DIR}/{}' ]] || ! diff -q '${SRC_DIR}/{}' '${DST_DIR}/{}'; then
+  mv -v '${SRC_DIR}/{}' '${DST_DIR}/{}';
+fi" \;

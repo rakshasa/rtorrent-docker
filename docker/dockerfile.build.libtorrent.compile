@@ -8,9 +8,9 @@ FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
 
 # TODO: Add tag to enable pruning.
 
-RUN --mount=type=bind,source=/libtorrent.tar.gz,target=/stage/libtorrent.tar.gz \
-\
-tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
+COPY /libtorrent.tar.gz /stage/libtorrent.tar.gz
+
+RUN tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
   --directory '/deploy/libtorrent/source' \
   --wildcards '*.am' \
   --wildcards '*.m4' \
@@ -24,13 +24,7 @@ FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
 ARG IGNORE_BUILD_ERROR=no
 
-# Replace with tarball?
-RUN --mount=type=bind,from=stage,source=/deploy/libtorrent/source,target=/stage \
-set -xe; \
-\
-rm -rf /build; \
-mkdir -p /build/libtorrent/source; \
-cp ${RDO_CP_A_ARGS} /stage/* /build/libtorrent/source/
+COPY --from=stage /deploy/libtorrent/source/ /build/libtorrent/source/
 
 RUN \
 --mount=type=bind,rw,from=stage,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
@@ -54,13 +48,17 @@ else \
 fi; \
 \
 rdo-find-move "." "/deploy/output" \
-  "-not -type d -and \
-   -not -name '*.log' -and \
-   -newer ${RDO_TIMESTAMP_PATH}"; \
+  "( \
+   -not -type d -and \
+   -not -name *.log -and \
+   -newer ${RDO_TIMESTAMP_PATH} \
+   )"; \
 \
 rdo-find-move "/prefix" "/deploy/prefix" \
-  "-not -type d -and \
-   -newer ${RDO_TIMESTAMP_PATH}"
+  "( \
+   -not -type d -and \
+   -newer ${RDO_TIMESTAMP_PATH} \
+   )"
 
 
 FROM "${REPOSITORY}/build/stage:${TAG_APPEND}"
@@ -70,11 +68,12 @@ ARG CONTEXT_NAME
 
 LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
-RUN --mount=type=bind,rw,from=build,source=/deploy/prefix,target=/stage \
-rdo-find-move "/stage/" "/deploy/prefix" "-not -type d"
+# Use md5 check in rdo-find-move.
+COPY --from=build /deploy/prefix/ /stage/prefix/
+RUN rdo-find-move "/stage/prefix" "/deploy/prefix" "-not -type d"
 
-RUN --mount=type=bind,rw,from=build,source=/deploy/output,target=/stage \
-rdo-find-move "/stage/" "/deploy/libtorrent/output" "-not -type d"
+COPY --from=build /deploy/output/ /stage/output/
+RUN rdo-find-move "/stage/output" "/deploy/libtorrent/output" "-not -type d"
 
 RUN \
 eval ${RDO_TIMESTAMP_LS} "/deploy/libtorrent/output"; \

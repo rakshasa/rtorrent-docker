@@ -8,9 +8,9 @@ FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
 
 # TODO: Add tag to enable pruning.
 
-RUN --mount=type=bind,source=/rtorrent.tar.gz,target=/stage/rtorrent.tar.gz \
-\
-tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
+COPY /rtorrent.tar.gz /stage/rtorrent.tar.gz
+
+RUN tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
   --directory '/deploy/rtorrent/source' \
   --wildcards '*.am' \
   --wildcards '*.m4' \
@@ -19,18 +19,11 @@ tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
-# Replace with tarball?
-RUN --mount=type=bind,from=stage,source=/deploy/rtorrent/source,target=/stage \
-set -xe; \
-\
-rm -rf /build; \
-mkdir -p /build/rtorrent/source; \
-cp ${RDO_CP_A_ARGS} /stage/* /build/rtorrent/source/
+COPY --from=stage /deploy/rtorrent/source/ /build/rtorrent/source/
 
 RUN \
 --mount=type=bind,rw,from=stage,source=/deploy/rtorrent/output,target=/build/rtorrent/output \
 --mount=type=bind,rw,from=stage,source=/deploy/prefix,target=/prefix \
-\
 set -xe; cd /build/rtorrent/output; \
 \
 source /env.configure; \
@@ -42,13 +35,16 @@ eval ${RDO_TIMESTAMP_UPDATE}; \
 \
 /build/rtorrent/source/configure --prefix=/prefix --disable-backtrace; \
 \
-rdo-find-move "." "/deploy/output" \
-  "-not -type d -and \
-   -not -name '*.Po' -and \
-   -not -name '*.Plo' -and \
-   -not -name '*.log' -and \
-   -newer ${RDO_TIMESTAMP_PATH}"
-
+eval ${RDO_TIMESTAMP_LS} "/build/rtorrent/output"; \
+\
+rdo-find-move --replace "./" "/deploy/output/" \
+  "( \
+   -not -type d -and \
+   -not -name *.Po -and \
+   -not -name *.Plo -and \
+   -not -name *.log -and \
+   -newer ${RDO_TIMESTAMP_PATH} \
+   )"
 
 FROM "${REPOSITORY}/build/stage:${TAG_APPEND}"
 
@@ -57,9 +53,7 @@ ARG CONTEXT_NAME
 
 LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
-RUN --mount=type=bind,rw,from=build,source=/deploy/output,target=/stage \
-rdo-find-move "/stage" "/deploy/rtorrent/output" "-not -type d"
+COPY --from=build /deploy/output/ /stage/output/
+RUN rdo-find-move "/stage/output" "/deploy/rtorrent/output" "-not -type d"
 
-RUN \
-eval ${RDO_TIMESTAMP_LS} "/deploy/rtorrent/output"; \
-eval ${RDO_TIMESTAMP_LS} "/deploy/rtorrent/output/src"
+RUN eval ${RDO_TIMESTAMP_LS} "/deploy/rtorrent/output/src"

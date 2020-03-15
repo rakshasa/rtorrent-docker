@@ -41,5 +41,6 @@ rdo__call_tar_cf() {
     return 1
   fi
 
+  echo eval ${cmd} "${@}"
   eval ${cmd} "${@}"
 }
