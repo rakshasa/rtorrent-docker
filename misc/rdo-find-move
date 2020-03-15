@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -xe -o pipefail
+set -e -o pipefail
 
 ARG_REPLACE=
 
@@ -36,7 +36,6 @@ find ./ \
   -exec echo '{}' \; | tr '\n' '\0' | xargs -r0 -I {} sh --noprofile --norc -c "
 set +x
 
-# TODO: Use -f.
-if ! diff -q '${SRC_DIR}/{}' '${DST_DIR}/{}'; then
-  mv '${SRC_DIR}/{}' '${DST_DIR}/{}';
+if [[ ! -e '${DST_DIR}/{}' ]] || ! diff -q '${SRC_DIR}/{}' '${DST_DIR}/{}'; then
+  mv -v '${SRC_DIR}/{}' '${DST_DIR}/{}';
 fi" \;
