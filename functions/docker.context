@@ -200,7 +200,7 @@ rdo_docker_context__pre_compile() {
   local project_path
   project_path="$(get_project_path)"
   local context_name="${1:?Missing context name argument.}"
-  local context_path="${project_path:?Missing project path.}/context"
+  local context_path="${project_path:?Missing project path.}/context/compile"
 
   # TODO: Delete dangling build/stage images.
 
@@ -214,8 +214,9 @@ rdo_docker_context__pre_compile() {
     rdo_docker_context_build --empty --filename "stage.rebase" --build-arg "REBASE_TAG_FULL=build/stage:${arg_tag_append}" "build/stage:${arg_tag_append}"
   fi
 
-  mkdir -p "${context_path}/compile/${context_name}"
-  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name}/" "${context_path}/compile/${context_name}/"
+  "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name}/" "${context_path}/${context_name}/"
+
+  rdo__call_tar_cf "${context_path}/${context_name}.tar.gz" --directory "${context_path}/${context_name}" .
 }
 
 rdo_docker_context__pre_empty() {

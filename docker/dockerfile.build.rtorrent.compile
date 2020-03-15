@@ -8,9 +8,9 @@ FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
 
 # TODO: Add tag to enable pruning.
 
-RUN --mount=type=bind,source=/rtorrent.tar.gz,target=/stage/rtorrent.tar.gz \
-\
-tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
+COPY /rtorrent.tar.gz /stage/rtorrent.tar.gz
+
+RUN tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
   --directory '/deploy/rtorrent/source' \
   --wildcards '*.am' \
   --wildcards '*.m4' \
@@ -23,13 +23,7 @@ FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
 ARG IGNORE_BUILD_ERROR=no
 
-# Replace with tarball?
-RUN --mount=type=bind,from=stage,source=/deploy/rtorrent/source,target=/stage \
-set -xe; \
-\
-rm -rf /build; \
-mkdir -p /build/rtorrent/source; \
-cp ${RDO_CP_A_ARGS} /stage/* /build/rtorrent/source/
+COPY --from=stage /deploy/rtorrent/source/ /build/rtorrent/source/
 
 RUN \
 --mount=type=bind,rw,from=stage,source=/deploy/rtorrent/output,target=/build/rtorrent/output \
@@ -42,7 +36,7 @@ eval ${RDO_TIMESTAMP_LS} "/build/rtorrent/output/src"; \
 \
 eval ${RDO_TIMESTAMP_UPDATE}; \
 \
-if [[ "${IGNORE_BUILD_ERROR}" == "no" ]]; then \
+if [ "${IGNORE_BUILD_ERROR}" == "no" ]; then \
   make -j12; \
   make -j12 install; \
   #make -j12 check TESTS=; \
@@ -53,13 +47,17 @@ else \
 fi; \
 \
 rdo-find-move "." "/deploy/output" \
-  "-not -type d -and \
-   -not -name '*.log' -and \
-   -newer ${RDO_TIMESTAMP_PATH}"; \
+  "( \
+   -not -type d -and \
+   -not -name *.log -and \
+   -newer ${RDO_TIMESTAMP_PATH} \
+   )"; \
 \
 rdo-find-move "/prefix" "/deploy/prefix" \
-  "-not -type d -and \
-   -newer ${RDO_TIMESTAMP_PATH}"
+  "( \
+   -not -type d -and \
+   -newer ${RDO_TIMESTAMP_PATH} \
+   )"
 
 
 FROM "${REPOSITORY}/build/stage:${TAG_APPEND}"
@@ -69,13 +67,13 @@ ARG CONTEXT_NAME
 
 LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
-RUN --mount=type=bind,rw,from=build,source=/deploy/prefix,target=/stage \
-rdo-find-move "/stage/" "/deploy/prefix" "-not -type d"
+# Use md5 check in rdo-find-move.
+COPY --from=build /deploy/prefix/ /stage/prefix/
+RUN rdo-find-move "/stage/prefix" "/deploy/prefix" "-not -type d"
 
-RUN --mount=type=bind,rw,from=build,source=/deploy/output,target=/stage \
-rdo-find-move "/stage/" "/deploy/rtorrent/output" "-not -type d"
+COPY --from=build /deploy/output/ /stage/output/
+RUN rdo-find-move "/stage/output" "/deploy/rtorrent/output" "-not -type d"
 
 RUN \
 eval ${RDO_TIMESTAMP_LS} "/deploy/rtorrent/output"; \
-eval ${RDO_TIMESTAMP_LS} "/deploy/rtorrent/output/src"; \
-eval ${RDO_TIMESTAMP_LS} "/deploy/prefix/bin"
+eval ${RDO_TIMESTAMP_LS} "/deploy/rtorrent/output/src"

@@ -13,9 +13,9 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/stage:global" AS stage.libtorrent
 
-RUN --mount=type=bind,source=/libtorrent.tar.gz,target=/stage/libtorrent.tar.gz \
-\
-tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
+COPY /libtorrent.tar.gz /stage/libtorrent.tar.gz
+
+RUN tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
   --directory '/deploy' \
   --wildcards '*.am' \
   --wildcards '*.m4' \
@@ -26,17 +26,16 @@ tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.libtorrent
 
-RUN --mount=type=bind,from=stage.libtorrent,source=/deploy,target=/stage \
-cp ${RDO_CP_A_ARGS} /stage/* /build/
+COPY --from=stage.libtorrent /deploy/ /build/
 
-RUN ./autogen.sh && touch /build/foo.test && eval ${RDO_TIMESTAMP_LS} "/build/"
+RUN ./autogen.sh && eval ${RDO_TIMESTAMP_LS} "/build/"
 
 
 FROM "${REPOSITORY}/stage:global" AS stage.rtorrent
 
-RUN --mount=type=bind,source=/rtorrent.tar.gz,target=/stage/rtorrent.tar.gz \
-\
-tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
+COPY /rtorrent.tar.gz /stage/rtorrent.tar.gz
+
+RUN tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
   --directory '/deploy' \
   --wildcards '*.am' \
   --wildcards '*.m4' \
@@ -46,8 +45,7 @@ tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
 
 FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.rtorrent
 
-RUN --mount=type=bind,from=stage.rtorrent,source=/deploy,target=/stage \
-cp ${RDO_CP_A_ARGS} /stage/* /build/
+COPY --from=stage.rtorrent /deploy/ /build/
 
 RUN ./autogen.sh && eval ${RDO_TIMESTAMP_LS} "/build/"
 
@@ -67,8 +65,5 @@ ARG REPOSITORY
 
 LABEL "${REPOSITORY}__stage__${CONTEXT_TYPE}"="yes"
 
-RUN --mount=type=bind,from=build.libtorrent,source=/build,target=/stage \
-cp ${RDO_CP_A_ARGS} /stage/* /deploy/libtorrent/source/
-
-RUN --mount=type=bind,from=build.rtorrent,source=/build,target=/stage \
-cp ${RDO_CP_A_ARGS} /stage/* /deploy/rtorrent/source/
+COPY --from=build.libtorrent /build/ /deploy/libtorrent/source/
+COPY --from=build.rtorrent /build/ /deploy/rtorrent/source/
