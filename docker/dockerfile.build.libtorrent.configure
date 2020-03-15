@@ -22,8 +22,7 @@ FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 
 COPY --from=stage /deploy/libtorrent/source/ /build/libtorrent/source/
 
-RUN --mount=type=bind,rw,from=stage,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
-set -xe; cd /build/libtorrent/output; \
+RUN set -xe; mkdir -p /build/libtorrent/output; cd /build/libtorrent/output; \
 \
 source /env.configure; \
 \
