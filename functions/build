@@ -151,6 +151,37 @@ rdo_build__build() {
   rdo docker context build "${build_option_args[@]}" "${build_args[@]}" "${build_tag}"
 }
 
+rdo_build__compile_status() {
+  local context_name="${1:?Missing context name argument.}"
+  local image_tag="${arg_repository}/${2:?Missing image tag argument.}"
+
+  if [[ ! "${build_tag}" =~ : ]]; then
+    image_tag+=":default"
+  fi
+
+  local file_prefix="/deploy/${context_name}/output/status"
+
+  if rdo__image_has_file "${image_tag}" "${file_prefix}.success"; then
+    echo "success"
+  elif rdo__image_has_file "${image_tag}" "${file_prefix}.failure"; then
+    echo "failure"
+  else
+    print_error "could not get compile status for ${image_tag}"
+    return 1
+  fi
+}
+
+rdo_build__check_compile() {
+  local context_name="${1:?Missing context name argument.}"
+
+  if [[ "$(rdo_build__compile_status "libtorrent" "build/stage")" == "success" ]]; then
+    print_progress "compile success"
+  else
+    print_warning "compile failed"
+    return 1
+  fi
+}
+
 rdo_build__init() {
   rdo docker pull "docker/dockerfile:experimental" "alpine:latest"
 
@@ -165,7 +196,7 @@ rdo_build__init() {
   rdo_build__build --context-type "autogen" --filename "build.autogen" "build/stage"
 }
 
-rdo_build__libtorrent() {
+ordo_build__libtorrent() {
   rdo_build__libtorrent_configure
   rdo_build__libtorrent_compile
 }
@@ -176,7 +207,7 @@ rdo_build__libtorrent_configure() {
 
 rdo_build__libtorrent_compile() {
   rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=yes" "build/stage"
-  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=no" "build/stage"
+  rdo_build__check_compile "libtorrent"
 }
 
 rdo_build__rtorrent_configure() {
@@ -185,7 +216,7 @@ rdo_build__rtorrent_configure() {
 
 rdo_build__rtorrent_compile() {
   rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=yes" "build/stage"
-  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=no" "build/stage"
+  rdo_build__check_compile "rtorrent"
 }
 
 rdo_build__libtorrent_check() {

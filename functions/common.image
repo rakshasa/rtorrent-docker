@@ -9,8 +9,8 @@ rdo__image_id() {
 }
 
 rdo__image_id__tag() {
-  local image_name="${1:?Missing image argument.}"
-  echo "$(rdo docker inspect --id "${image_name}" 2> /dev/null)"
+  local image_tag="${1:?Missing image tag argument.}"
+  echo "$(rdo docker inspect --id "${image_tag}" 2> /dev/null)"
 }
 
 rdo__latest_image_id__label() {
@@ -33,4 +33,19 @@ rdo__image_layer_depth() {
   local tag="${1:?Missing tag argument.}"
 
   docker image inspect --format "{{ len .RootFS.Layers }}" "${tag}"
+}
+
+rdo__image_has_file() {
+  local image_tag="${1:?Missing image tag argument.}"
+  local file_name="${2:?Missing file name argument.}"
+  local result=1
+  local image_id=
+  image_id="$(docker create --rm "${image_tag}")"
+
+  if docker cp "${image_id:?Missing image id result.}:${file_name}" "-" &> /dev/null; then
+    result=0
+  fi
+
+  docker rm -f "${image_id}" > /dev/null || :
+  return ${result}
 }

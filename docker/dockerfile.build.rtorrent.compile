@@ -36,14 +36,17 @@ eval ${RDO_TIMESTAMP_LS} "/build/rtorrent/output/src"; \
 \
 eval ${RDO_TIMESTAMP_UPDATE}; \
 \
-if [ "${IGNORE_BUILD_ERROR}" == "no" ]; then \
-  make -j12; \
-  make -j12 install; \
-  #make -j12 check TESTS=; \
+rm -f ./status.{success,failure}; \
+\
+#if make -j12 && make -j12 install && make -j12 check TESTS=; then \
+if make -j12 && make -j12 install; then \
+  touch ./status.success; \
 else \
-  make -j12 || :; \
-  make -j12 install || :; \
-  #make -j12 check TESTS= || :; \
+  touch ./status.failure; \
+\
+  if [ "${IGNORE_BUILD_ERROR}" != "yes" ]; then \
+    exit 1; \
+  fi \
 fi; \
 \
 rdo-find-move "." "/deploy/output" \
