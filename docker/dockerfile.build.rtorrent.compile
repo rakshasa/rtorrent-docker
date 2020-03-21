@@ -24,10 +24,10 @@ FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
 ARG IGNORE_BUILD_ERROR=no
 
 COPY --from=stage /deploy/rtorrent/source/ /build/rtorrent/source/
+COPY --from=stage /deploy/prefix/ /prefix/
 
 RUN \
 --mount=type=bind,rw,from=stage,source=/deploy/rtorrent/output,target=/build/rtorrent/output \
---mount=type=bind,rw,from=stage,source=/deploy/prefix,target=/prefix \
 \
 set -xe; cd /build/rtorrent/output; \
 \
