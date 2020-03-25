@@ -205,13 +205,19 @@ rdo_docker_context__pre_compile() {
   # TODO: Delete dangling build/stage images.
 
   local stage_layer_depth
-  stage_layer_depth="$(rdo__image_layer_depth "${arg_repository}/build/stage:${arg_tag_append}")"
+  stage_layer_depth="$(rdo__image_layer_depth "build/stage:${arg_tag_append}")"
 
   print_progress "pre-compile::stage_layer_depth: ${stage_layer_depth}"
 
   if (( stage_layer_depth >= 100 )); then
     print_warning "rebuilding stage image"
-    rdo_docker_context_build --empty --filename "stage.rebase" --build-arg "REBASE_TAG_FULL=build/stage:${arg_tag_append}" "build/stage:${arg_tag_append}"
+
+    local stage_tag_full="build/stage:${arg_tag_append}"
+    rdo_docker_context_build --empty \
+                             --filename "stage.rebase" \
+                             --build-arg "STAGE_TAG_FULL=${stage_tag_full}" \
+                             "build/stage:${arg_tag_append}"
+    rdo__image_rm__filters "dangling=true" "label=stage__tag=${arg_repository}/${stage_tag_full}"
   fi
 
   "${project_path}/misc/rsync-stage-compile" "${project_path}/data/${context_name}/" "${context_path}/${context_name}/"

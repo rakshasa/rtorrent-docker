@@ -91,7 +91,11 @@ rdo() {
       ;;
 
     watch)
-      watch -n5 'printf "rdo/build/stage:default layers: "; docker inspect --format "{{ \$length := len .RootFS.Layers }}{{ \$length }}" rdo/build/stage:default; echo; docker images -a'
+      watch -n5 '
+        printf "rdo/build/stage:default layers: "
+        docker inspect --format "{{ \$length := len .RootFS.Layers }}{{ \$length }}" rdo/build/stage:default
+        echo
+        docker images |pr -t -2 -o 4 -w 260'
       ;;
     destroy)
       source "${PROJECT_PATH}/functions/machine"
