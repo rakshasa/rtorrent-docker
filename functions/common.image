@@ -32,7 +32,40 @@ rdo__image_label_value__tag__label() {
 rdo__image_layer_depth() {
   local tag="${1:?Missing tag argument.}"
 
-  docker image inspect --format "{{ len .RootFS.Layers }}" "${tag}"
+  docker image inspect --format "{{ len .RootFS.Layers }}" "${RDO_REPOSITORY:?Not in rdo bash session.}/${tag}"
+}
+
+rdo__image_ls__filters() {
+  if [[ -z "${*}" ]]; then
+    print_error "rdo__image_ls__filters: empty filter list"
+    exit 1
+  fi
+
+  local args=(--no-trunc --all --quiet)
+
+  local filter
+  for filter in "${@}"; do
+    args+=(--filter "${filter}")
+  done
+
+  docker image ls "${args[@]}"
+}
+
+rdo__image_rm__ids() {
+  for image_id in "${@}"; do
+    if [[ ! "${image_id}" =~ ^sha256:[0-9a-f]*$ ]]; then
+      print_error "rdo__image_rm__ids: invalid image id: ${image_id}"
+      exit 1
+    fi
+  done
+
+  if (( "${#}" != 0 )); then
+    docker rmi "${@}"
+  fi
+}
+
+rdo__image_rm__filters() {
+  rdo__image_rm__ids $(rdo__image_ls__filters "${@}")
 }
 
 rdo__image_has_file() {

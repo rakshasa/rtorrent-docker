@@ -62,8 +62,11 @@ RUN mkdir -p \
 
 ARG CONTEXT_TYPE
 ARG REPOSITORY
+ARG STAGE_TAG
+ARG TAG_APPEND
 
 LABEL "${REPOSITORY}__stage__${CONTEXT_TYPE}"="yes"
+LABEL "stage__tag"="${REPOSITORY}/${STAGE_TAG}:${TAG_APPEND}"
 
 COPY --from=build.libtorrent /build/ /deploy/libtorrent/source/
 COPY --from=build.rtorrent /build/ /deploy/rtorrent/source/

@@ -193,7 +193,7 @@ rdo_build__init() {
   rdo_build__build --empty --cache "build/base"
   rdo_build__build --empty --cache "build/base/compiler"
 
-  rdo_build__build --context-type "autogen" --filename "build.autogen" "build/stage"
+  rdo_build__build --context-type "autogen" --filename "build.autogen" --build-arg "STAGE_TAG=build/stage" "build/stage"
 }
 
 ordo_build__libtorrent() {
