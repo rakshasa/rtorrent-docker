@@ -52,7 +52,7 @@ _rtorrent_docker__rdo() {
   if [[ "${word}" == -* ]]; then
     flags=(--debug#-d --help)
   else
-    commands=(bash build destroy docker env git init machine tags)
+    commands=(bash build destroy docker env git init machine tags watch)
   fi
 }
 
