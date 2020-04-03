@@ -24,7 +24,7 @@ RUN tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
   --no-wildcards './configure.ac'
 
 
-FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.libtorrent
+FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS build.libtorrent
 
 COPY --from=stage.libtorrent /deploy/ /build/
 
@@ -43,14 +43,13 @@ RUN tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
   --no-wildcards './configure.ac'
 
 
-FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build.rtorrent
+FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS build.rtorrent
 
 COPY --from=stage.rtorrent /deploy/ /build/
 
 RUN ./autogen.sh && eval ${RDO_TIMESTAMP_LS} "/build/"
 
 
-# TODO: Add counter to stage image, check in pre-compile, auto-increment option flag.
 FROM "${REPOSITORY}/stage:global"
 
 RUN mkdir -p \

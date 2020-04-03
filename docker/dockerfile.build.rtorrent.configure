@@ -6,8 +6,6 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
 
-# TODO: Add tag to enable pruning.
-
 COPY /rtorrent.tar.gz /stage/rtorrent.tar.gz
 
 RUN tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
@@ -17,7 +15,7 @@ RUN tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
   --no-wildcards './configure.ac'
 
 
-FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}" AS build
+FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS build
 
 COPY --from=stage /deploy/prefix/lib/pkgconfig/libtorrent.pc /prefix/lib/pkgconfig/libtorrent.pc
 COPY --from=stage /deploy/rtorrent/source/ /build/rtorrent/source/

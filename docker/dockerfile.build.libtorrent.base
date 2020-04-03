@@ -1,6 +1,0 @@
-# syntax=docker/dockerfile:experimental
-
-ARG REPOSITORY
-ARG TAG_APPEND
-
-FROM "${REPOSITORY}/build/base/compiler:${TAG_APPEND}"
