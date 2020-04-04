@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+cat - <<EOF
+# Bash profile for rtorrent-docker run containers.
+
+export PATH="\${PATH}:/prefix/bin"
+
+export PROMPT_COMMAND='PS1="\\h: \[\e[\$(if [[ \$? != "0" ]]; then echo 31m; elif [[ "\${USER}" = "root" ]]; then echo 32m; else echo 0m; fi)\]\\W\[\e[0m\]>"'
+EOF

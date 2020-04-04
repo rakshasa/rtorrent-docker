@@ -87,6 +87,7 @@ rdo_build_all() {
   rdo_build__libtorrent_compile
   rdo_build__rtorrent_configure
   rdo_build__rtorrent_compile
+  rdo_build__rtorrent_run
 }
 
 rdo_build_check() {
@@ -217,6 +218,10 @@ rdo_build__rtorrent_configure() {
 rdo_build__rtorrent_compile() {
   rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=yes" "build/stage"
   rdo_build__check_compile "rtorrent"
+}
+
+rdo_build__rtorrent_run() {
+  rdo_build__build --context-type "run" --context-name "rtorrent" "run/rtorrent"
 }
 
 rdo_build__libtorrent_check() {

@@ -7,6 +7,7 @@ DOCKER_CONTEXT_TYPES=(
   autogen
   compile
   empty
+  run
 )
 
 rdo_docker_context() {
@@ -30,7 +31,7 @@ rdo_docker_context() {
       echo "Commands"
       echo "  clean     Clean all context types"
       echo "  build     Build image in context"
-      echo "  types   List all build types"
+      echo "  types     List all build types"
       echo
       echo "Run 'rdo docker context COMMAND --help' for more information on a command."
       ;;
@@ -202,8 +203,6 @@ rdo_docker_context__pre_compile() {
   local context_name="${1:?Missing context name argument.}"
   local context_path="${project_path:?Missing project path.}/context/compile"
 
-  # TODO: Delete dangling build/stage images.
-
   local stage_layer_depth
   stage_layer_depth="$(rdo__image_layer_depth "build/stage:${arg_tag_append}")"
 
@@ -230,4 +229,22 @@ rdo_docker_context__pre_empty() {
   project_path="$(get_project_path)"
 
   mkdir -p "${project_path:?Missing project path.}/context/empty/"
+}
+
+rdo_docker_context__path_run() {
+  local context_name="${1:?Missing context name argument.}"
+  echo "run/${context_name}"
+}
+rdo_docker_context__pre_run() {
+  local project_path
+  project_path="$(get_project_path)"
+  local context_name="${1:?Missing context name argument.}"
+  local context_path="${project_path:?Missing project path.}/context/run/${context_name}"
+
+  local bash_profile_path
+
+  bash_profile_path="$(mktemp)"
+  "${project_path}/misc/gen-bash-profile" "${context_name}" > "${bash_profile_path}"
+
+  "${project_path}/misc/rdo-file-move" "${bash_profile_path}" "${context_path}/bash_profile"
 }
