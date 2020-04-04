@@ -1,0 +1,29 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
+
+
+FROM "${REPOSITORY}/ancestor:global"
+
+WORKDIR /var/run/rtorrent
+
+RUN \
+--mount=type=tmpfs,target=/var/cache/apk \
+--mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
+\
+pkg-add emacs \
+        \
+        curl \
+        musl \
+        ncurses \
+        openssl \
+        zlib
+
+COPY bash_profile /root/.bash_profile
+COPY --from=stage /deploy/prefix/ /prefix/
+
+ENTRYPOINT /bin/bash --login

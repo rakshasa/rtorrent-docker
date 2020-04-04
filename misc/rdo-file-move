@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -e
+
+while (( ${#} != 0 )); do
+  src_path="${1:?Missing src path argument.}"
+  dst_path="${2:?Missing dst path argument.}"
+  dst_dir="$(dirname "${dst_path}")"
+  shift 2
+
+  if [[ ! -d "${dst_dir}" ]]; then
+    mkdir -p "${dst_dir}"
+  fi
+
+  if [[ ! -e "${dst_path}" ]] || ! diff -q "${src_path}" "${dst_path}"; then
+    mv -v "${src_path}" "${dst_path}";
+  fi
+done
