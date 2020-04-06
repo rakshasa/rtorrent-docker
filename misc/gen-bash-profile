@@ -1,5 +1,8 @@
 #!/bin/sh
 
+CONTEXT_NAME="${1:?Missing context name argument.}"
+TAG_FULL="${2:?Missing tag full argument.}"
+
 set -e
 
 cat - <<EOF
@@ -7,5 +10,5 @@ cat - <<EOF
 
 export PATH="\${PATH}:/prefix/bin"
 
-export PROMPT_COMMAND='PS1="\\h: \[\e[\$(if [[ \$? != "0" ]]; then echo 31m; elif [[ "\${USER}" = "root" ]]; then echo 32m; else echo 0m; fi)\]\\W\[\e[0m\]>"'
+export PROMPT_COMMAND='PS1="<${TAG_FULL}> \\h: \[\e[\$(if [[ \$? != "0" ]]; then echo 31m; elif [[ "\${USER}" = "root" ]]; then echo 32m; else echo 0m; fi)\]\\W\[\e[0m\]>"'
 EOF
