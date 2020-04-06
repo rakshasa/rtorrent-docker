@@ -23,7 +23,7 @@ pkg-add emacs \
         openssl \
         zlib
 
-COPY bash_profile /root/.bash_profile
 COPY --from=stage /deploy/prefix/ /prefix/
+COPY bash_profile /root/.bash_profile
 
 ENTRYPOINT /bin/bash --login
