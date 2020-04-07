@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+rdo_header common.init
+
+print_normal() {
+  echo -e "${@}" >&2
+}
+
+print_progress() {
+  echo -e "${COLOR_GREEN}${@}${COLOR_NC}" >&2
+}
+
+print_error() {
+  echo -e "${COLOR_RED}${@}${COLOR_NC}" >&2
+}
+
+print_warning() {
+  echo -e "${COLOR_RED}${@}${COLOR_NC}" >&2
+}
+
+print_space() {
+  echo >&2
+}
+
+get_project_path() {
+  if [[ -z "${PROJECT_PATH}" ]]; then
+    print_error "cd_project_path: PROJECT_PATH variable not set"
+    exit 1
+  fi
+
+  local project_path="$(cd "${PROJECT_PATH}" &> /dev/null && pwd -P)"
+
+  if [[ "${project_path}" == "/" ]]; then
+    print_error "cd_project_path: path is root"
+    exit 1
+  fi
+
+  if [[ -z "${project_path}" ]]; then
+    print_error "cd_project_path: failed to enter directory '${PROJECT_PATH}'"
+    exit 1
+  fi
+
+  echo "${project_path}"
+}
+
+rdo_bash() {
+  cd "${PROJECT_PATH}"
+
+  if ! [[ -f "${DATA_PATH}/env.bash" ]]; then
+    print_error "rdo bash: environment not initialized, could not find '${DATA_PATH}/env.bash'"
+    exit 1
+  fi
+
+  print_progress "entering custom bash session"
+  /usr/bin/env bash --init-file "${DATA_PATH}/env.bash"
+  print_warning "exiting custom bash session"
+}

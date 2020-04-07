@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-# TODO: Rename to something more fitting.
-
 rdo_header run
 
 rdo_run() {
@@ -22,11 +20,14 @@ rdo_run() {
       echo "Run 'do run COMMAND --help' for more information on a command."
       ;;
     *)
-      print_error "unknown run command: ${@}"
-      return 1
+      rdo__exit__unknown_command "${cmd}"
       ;;
   esac
 }
+
+#
+# Refactor:
+#
 
 rdo_run_init() {
   local arg_rebuild=

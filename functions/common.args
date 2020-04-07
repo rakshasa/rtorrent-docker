@@ -2,6 +2,12 @@
 
 rdo_header common.args
 
+#
+# Refactor:
+#
+
+# TODO: Replace 'arg_namespace' with FUNCNAME[1].
+
 # - namespace "${@}" && break || exit 1 ;;
 rdo__args__check_unknown_flag() {
   local arg_namespace="${1:?Missing namespace argument.}"

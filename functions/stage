@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+rdo_header stage
+
+rdo_stage() {
+  # use eval $(...)
+  local cmd="${1}"; shift || :
+
+  case "${cmd}" in
+    build)
+      rdo_stage_build "${@}"
+      ;;
+    --help|-h|'')
+      local cmd_names=(
+        build
+      )
+
+      rdo__help__command
+
+      # echo "Usage: do stage COMMAND"
+      # echo
+      # echo "Stage commands"
+      # echo
+      # echo "Commands"
+      # echo "  args      List all args in build targets"
+      # echo
+      # echo "Run 'do stage COMMAND --help' for more information on a command."
+      ;;
+    *)
+      rdo__exit__unknown_command "${cmd}"
+      ;;
+  esac
+}

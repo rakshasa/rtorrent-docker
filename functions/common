@@ -1,6 +1,41 @@
 #!/usr/bin/env bash
 
+declare -A INCLUDED_HEADERS
+
+rdo_header() {
+  local header_name="${1:?Missing header name argument.}"
+
+  if [[ -n "${INCLUDED_HEADERS[${header_name}]}" ]]; then
+    echo "rdo_${header_name} already included:" >&2
+
+    for (( i=0 ; i < ${#FUNCNAME[@]} - 1 ; i++ )); do
+      echo " $i: ${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]} ${FUNCNAME[$i]}" >&2
+    done
+    
+    exit 1
+  fi
+
+  INCLUDED_HEADERS[${header_name}]="yes"
+}
+
+rdo_included() {
+  local header_name="${1:?Missing header name argument.}"
+  [[ -n "${INCLUDED_HEADERS[${header_name}]}" ]]
+}
+
 rdo_header common
+
+# rdo__exit__unknown_command "${cmd}"
+rdo__exit__unknown_command() {
+  local namespace="${FUNCNAME[1]}"
+
+  print_error "${namespace//_/ }: unknown command: ${@}"
+  exit 1
+}
+
+#
+# Refactor:
+#
 
 # - function "${@}"
 rdo__call_empty() {
