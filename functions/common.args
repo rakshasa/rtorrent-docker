@@ -2,6 +2,129 @@
 
 rdo_header common.args
 
+args::init_subcommand() {
+  local name="${1:?Missing root argument.}"
+  local description="${2:?Missing description argument.}"
+
+  cat - <<EOF
+  local args__root="${name}"
+  local args__root_description="${description}"
+  declare -A args__commands
+  declare -A args__command_descriptions
+  declare -A args__command_blocks
+  declare -A args__options
+  declare -A args__option_descriptions
+  declare -A args__option_blocks
+EOF
+}
+
+args::new_command() {
+  local name="${1:?Missing name argument.}"
+  local description="${2:?Missing description argument.}"
+  local block="${3:?Missing block argument.}"
+
+  args__commands[${name}]="${name}"
+  args__command_descriptions[${name}]="${description}"
+  args__command_blocks[${name}]="${block}"
+}
+
+args::new_option() {
+  local name="${1:?Missing name argument.}"
+  local short_flag="${2:?Missing name argument.}"
+  local description="${3:?Missing description argument.}"
+  local block="${4:?Missing block argument.}"
+
+  args__options[${name}]="${name}"
+  args__option_descriptions[${name}]="${description}"
+  args__option_blocks[${name}]="${block}"
+}
+
+args::process_options() {
+  cat - <<EOF
+  while true; do
+    case "\${1}" in
+EOF
+
+  if (( ${#args__options[@]} != 0 )); then
+    local name
+    for name in "${!args__options[@]}"; do
+      cat - <<EOF
+      --${name})
+        shift
+        ${args__option_blocks[${name}]}
+      ;;
+EOF
+    done
+  fi
+
+  cat - <<EOF
+      --help|-h|'')
+        args::print_help
+        exit 0
+        ;;
+      *)
+        if [[ -z "\${1##-*}" ]]; then
+          print_error "\${args__root}: unknown flag: \${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+EOF
+}
+
+args::process_command() {
+  cat - <<EOF
+  local args__cmd="\${1}"
+  shift || :
+
+  case "\${args__cmd}" in
+EOF
+
+  if (( ${#args__commands[@]} != 0 )); then
+    local name
+    for name in "${!args__commands[@]}"; do
+      cat - <<EOF
+    ${name})
+      ${args__command_blocks[${name}]}
+      ;;
+EOF
+    done
+  fi
+
+  cat - <<EOF
+    *)
+      print_error "${args__root}: unknown command: \${@}"
+      exit 1
+      ;;      
+  esac
+EOF
+}
+
+args::print_help() {
+  echo
+  echo "Usage: ${args__root} COMMAND"
+  echo
+  echo "${args__root_description}"
+  echo
+
+  local max_width=$(utils::array_key_max_width "args__commands")
+
+  if (( ${#args__commands[@]} != 0 )); then
+    echo "Commands:"
+
+    local name
+    for name in "${!args__commands[@]}"; do
+      echo "  $(utils::justify_string "${max_width}" "${name}")   ${args__command_descriptions[${name}]}"
+    done
+  fi
+
+  echo
+  echo "Run '${args__root} COMMAND --help' for more information on a command."
+}
+
 #
 # Refactor:
 #

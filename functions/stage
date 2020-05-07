@@ -3,31 +3,19 @@
 rdo_header stage
 
 rdo_stage() {
-  # use eval $(...)
-  local cmd="${1}"; shift || :
+  eval "$(args::init_subcommand "rdo stage" "Manage staging of environments")"
 
-  case "${cmd}" in
-    build)
-      rdo_stage_build "${@}"
-      ;;
-    --help|-h|'')
-      local cmd_names=(
-        build
-      )
+  args::new_option "verbose" "v" "Print extra information" \
+                   'arg_verbose=yes'
+  args::new_command "init" "Initialize new environment for staging" \
+                    'rdo_stage_init "${@}"'
+  args::new_command "commit" "Commit environment" \
+                    'rdo_stage_commit "${@}"'
 
-      rdo__help__command
+  args::process_options
+  args::process_command
 
-      # echo "Usage: do stage COMMAND"
-      # echo
-      # echo "Stage commands"
-      # echo
-      # echo "Commands"
-      # echo "  args      List all args in build targets"
-      # echo
-      # echo "Run 'do stage COMMAND --help' for more information on a command."
-      ;;
-    *)
-      rdo__exit__unknown_command "${cmd}"
-      ;;
-  esac
+  echo -------
+  eval "$(args::process_options)"
+  eval "$(args::process_command)"
 }

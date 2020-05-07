@@ -11,7 +11,7 @@ rdo_header() {
     for (( i=0 ; i < ${#FUNCNAME[@]} - 1 ; i++ )); do
       echo " $i: ${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]} ${FUNCNAME[$i]}" >&2
     done
-    
+
     exit 1
   fi
 

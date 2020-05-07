@@ -22,6 +22,7 @@ rdo() {
   rdo_included common.help || source "${PROJECT_PATH}/functions/common.help"
   rdo_included common.image || source "${PROJECT_PATH}/functions/common.image"
   rdo_included common.system || source "${PROJECT_PATH}/functions/common.system"
+  rdo_included common.utils || source "${PROJECT_PATH}/functions/common.utils"
 
   while true; do
     case "${1}" in
