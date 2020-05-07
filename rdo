@@ -15,14 +15,15 @@ PROJECT_ABSOLUTE_PATH=
 DATA_PATH="${PROJECT_PATH}/data"
 
 rdo() {
-  source "${PROJECT_PATH}/functions/common"
-  rdo_included common.init || source "${PROJECT_PATH}/functions/common.init"
-  rdo_included common.args || source "${PROJECT_PATH}/functions/common.args"
-  rdo_included common.container || source "${PROJECT_PATH}/functions/common.container"
-  rdo_included common.help || source "${PROJECT_PATH}/functions/common.help"
-  rdo_included common.image || source "${PROJECT_PATH}/functions/common.image"
-  rdo_included common.system || source "${PROJECT_PATH}/functions/common.system"
-  rdo_included common.utils || source "${PROJECT_PATH}/functions/common.utils"
+  source "${PROJECT_PATH}/functions/common/init"
+  is_header_included common/args || source "${PROJECT_PATH}/functions/common/args"
+
+  is_header_included common.init || source "${PROJECT_PATH}/functions/common.init"
+  is_header_included common.container || source "${PROJECT_PATH}/functions/common.container"
+  is_header_included common.help || source "${PROJECT_PATH}/functions/common.help"
+  is_header_included common.image || source "${PROJECT_PATH}/functions/common.image"
+  is_header_included common.system || source "${PROJECT_PATH}/functions/common.system"
+  is_header_included common.utils || source "${PROJECT_PATH}/functions/common.utils"
 
   while true; do
     case "${1}" in
@@ -57,39 +58,39 @@ rdo() {
 
   case "${cmd}" in
     bash)
-      rdo_included machine || source "${PROJECT_PATH}/functions/machine"
+      is_header_included machine || source "${PROJECT_PATH}/functions/machine"
       rdo_bash "${@}"
       ;;
     build)
-      rdo_included build || source "${PROJECT_PATH}/functions/build"
+      is_header_included build || source "${PROJECT_PATH}/functions/build"
       rdo_build "${@}"
       ;;
     docker)
-      rdo_included docker || source "${PROJECT_PATH}/functions/docker"
+      is_header_included docker || source "${PROJECT_PATH}/functions/docker"
       rdo_docker "${@}"
       ;;
     env)
-      rdo_included env || source "${PROJECT_PATH}/functions/env"
+      is_header_included env || source "${PROJECT_PATH}/functions/env"
       rdo_env "${@}"
       ;;
     git)
-      rdo_included git || source "${PROJECT_PATH}/functions/git"
+      is_header_included git || source "${PROJECT_PATH}/functions/git"
       do_git "${@}"
       ;;
     init)
-      rdo_included init || source "${PROJECT_PATH}/functions/init"
+      is_header_included init || source "${PROJECT_PATH}/functions/init"
       rdo_init "${@}"
       ;;
     machine)
-      rdo_included machine || source "${PROJECT_PATH}/functions/machine"
+      is_header_included machine || source "${PROJECT_PATH}/functions/machine"
       rdo_machine "${@}"
       ;;
     run)
-      rdo_included run || source "${PROJECT_PATH}/functions/run"
+      is_header_included run || source "${PROJECT_PATH}/functions/run"
       rdo_run "${@}"
       ;;
     stage)
-      rdo_included stage || source "${PROJECT_PATH}/functions/stage"
+      is_header_included stage || source "${PROJECT_PATH}/functions/stage"
       rdo_stage "${@}"
       ;;
     tags)

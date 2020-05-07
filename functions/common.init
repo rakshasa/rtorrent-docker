@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header common.init
+include_header common.init
 
 print_normal() {
   echo -e "${@}" >&2
@@ -54,4 +54,130 @@ rdo_bash() {
   print_progress "entering custom bash session"
   /usr/bin/env bash --init-file "${DATA_PATH}/env.bash"
   print_warning "exiting custom bash session"
+}
+
+#
+# Refactor:
+#
+
+rdo_header() {
+  include_header "${@}"
+}
+
+rdo_included() {
+  is_header_included "${@}"
+}
+
+# rdo__exit__unknown_command "${cmd}"
+rdo__exit__unknown_command() {
+  local namespace="${FUNCNAME[1]}"
+
+  print_error "${namespace//_/ }: unknown command: ${@}"
+  exit 1
+}
+
+# - function "${@}"
+rdo__call_empty() {
+  local arg_function="${1:?Missing function argument.}"
+  shift
+
+  if [[ -n "${*}" ]]; then
+    print_error "${arg_function//_/ }: junk at end of input: ${@}"
+    exit 1
+  fi
+
+  eval "${arg_function}" "${@}"
+}
+
+rdo__compare_id__file_image() {
+  local file_name="${1:?Missing file argument.}"
+  local image_name="${2:?Missing image argument.}"
+
+  if ! [[ -f "${file_name}" ]]; then
+    return 1
+  fi
+
+  local file_id="$(cat "${file_name}")"
+  local image_id="$(rdo docker inspect --id "${image_name}")"
+
+  [[ -n "${file_id}" ]] && [[ "${file_id}" == "${image_id}" ]]
+}
+
+rdo__compare_hash__dir_dir() {
+  local path_lhs="${1:?Missing lhs path argument.}"
+  local path_rhs="${2:?Missing rhs path argument.}"
+
+  # Sort by size to detect if any files are empty or incomplete.
+
+  if [[ "${path_lhs}" =~ : ]]; then
+    local hash_lhs="$(docker exec "${path_lhs%%:*}" sh -c "cd '${path_lhs##*:}'; \ls -S | tail -n +2")"
+  else
+    local hash_lhs="$(cd "${path_lhs}"; \ls -S | tail -n +2)"
+  fi
+
+  if [[ "${path_rhs}" =~ : ]]; then
+    local hash_rhs="$(docker exec "${path_rhs%%:*}" sh -c "cd '${path_rhs##*:}'; \ls -S | tail -n +2")"
+  else
+    local hash_rhs="$(cd "${path_rhs}"; \ls -S | tail -n +2)"
+  fi
+
+  [[ "${hash_lhs}" == "${hash_rhs}" ]]
+}
+
+# Move:
+
+rdo__project_absolute_unix_path() {
+  if [[ -z "${PROJECT_ABSOLUTE_UNIX_PATH}" ]]; then
+    if [[ "${OSTYPE}" == "cygwin" ]]; then
+      PROJECT_ABSOLUTE_UNIX_PATH="$(cd "${PROJECT_PATH}" && cygpath -au .)"
+      PROJECT_ABSOLUTE_UNIX_PATH="/cygwin64${PROJECT_ABSOLUTE_UNIX_PATH%/}"
+    else
+      PROJECT_ABSOLUTE_UNIX_PATH="$(cd "${PROJECT_PATH}" && pwd)"
+    fi
+  fi
+
+  echo "${PROJECT_ABSOLUTE_UNIX_PATH}"
+}
+
+
+#
+# Refactor:
+#
+
+# TODO: Replace 'arg_namespace' with FUNCNAME[1].
+
+# - namespace "${@}" && break || exit 1 ;;
+rdo__args__check_unknown_flag() {
+  local arg_namespace="${1:?Missing namespace argument.}"
+  shift
+
+  if [[ -z "${1##-*}" ]]; then
+    print_error "${arg_namespace//_/ }: unknown flag: ${1}"
+    return 1
+  fi
+}
+
+# - namespace "${@}" && break || exit 1 ;;
+rdo__args__check_empty() {
+  local arg_namespace="${1:?Missing namespace argument.}"
+  shift
+
+  if [[ -z "${1##-*}" ]]; then
+    print_error "${arg_namespace//_/ }: unknown flag: ${1}"
+    return 1
+  fi
+
+  if [[ -n "${@}" ]]; then
+    print_error "${arg_namespace//_/ }: junk at end of input: ${@}"
+    return 1
+  fi
+}
+
+rdo__args__check_valid_arg() {
+  local arg_name="${1:?Missing name argument.}"
+
+  if [[ -z "${!arg_name}" ]]; then
+    print_error "Missing ${arg_name} argument."
+    exit 1
+  fi
 }

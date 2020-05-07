@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header common.args
+include_header common/args
 
 args::init_subcommand() {
   local name="${1:?Missing root argument.}"
@@ -10,11 +10,12 @@ args::init_subcommand() {
   local args__root="${name}"
   local args__root_description="${description}"
   declare -A args__commands
-  declare -A args__command_descriptions
   declare -A args__command_blocks
+  declare -A args__command_descriptions
   declare -A args__options
-  declare -A args__option_descriptions
   declare -A args__option_blocks
+  declare -A args__option_descriptions
+  declare -A args__option_flags
 EOF
 }
 
@@ -30,11 +31,12 @@ args::new_command() {
 
 args::new_option() {
   local name="${1:?Missing name argument.}"
-  local short_flag="${2:?Missing name argument.}"
+  local flag="${2}"
   local description="${3:?Missing description argument.}"
   local block="${4:?Missing block argument.}"
 
   args__options[${name}]="${name}"
+  args__option_flags[${name}]="${flag}"
   args__option_descriptions[${name}]="${description}"
   args__option_blocks[${name}]="${block}"
 }
@@ -52,7 +54,7 @@ EOF
       --${name})
         shift
         ${args__option_blocks[${name}]}
-      ;;
+        ;;
 EOF
     done
   fi
@@ -103,6 +105,11 @@ EOF
 EOF
 }
 
+args::process_subcommand() {
+  echo 'eval "$(args::process_options)"'
+  echo 'eval "$(args::process_command)"'
+}
+
 args::print_help() {
   echo
   echo "Usage: ${args__root} COMMAND"
@@ -112,9 +119,24 @@ args::print_help() {
 
   local max_width=$(utils::array_key_max_width "args__commands")
 
+  if (( ${#args__options[@]} != 0 )); then
+    echo "Options:"
+    local name
+    for name in "${!args__options[@]}"; do
+      name="$(utils::justify_string "${max_width}" "${name}")"
+
+      if [[ -n "${args__option_flags[${name}]}" ]]; then
+        name="-${args__option_flags[${name}]}, --${name}"
+      else
+        name="    --${name}"
+      fi
+
+      echo "  ${name}   ${args__option_descriptions[${name}]}"
+    done
+  fi
+
   if (( ${#args__commands[@]} != 0 )); then
     echo "Commands:"
-
     local name
     for name in "${!args__commands[@]}"; do
       echo "  $(utils::justify_string "${max_width}" "${name}")   ${args__command_descriptions[${name}]}"
@@ -123,46 +145,4 @@ args::print_help() {
 
   echo
   echo "Run '${args__root} COMMAND --help' for more information on a command."
-}
-
-#
-# Refactor:
-#
-
-# TODO: Replace 'arg_namespace' with FUNCNAME[1].
-
-# - namespace "${@}" && break || exit 1 ;;
-rdo__args__check_unknown_flag() {
-  local arg_namespace="${1:?Missing namespace argument.}"
-  shift
-
-  if [[ -z "${1##-*}" ]]; then
-    print_error "${arg_namespace//_/ }: unknown flag: ${1}"
-    return 1
-  fi
-}
-
-# - namespace "${@}" && break || exit 1 ;;
-rdo__args__check_empty() {
-  local arg_namespace="${1:?Missing namespace argument.}"
-  shift
-
-  if [[ -z "${1##-*}" ]]; then
-    print_error "${arg_namespace//_/ }: unknown flag: ${1}"
-    return 1
-  fi
-
-  if [[ -n "${@}" ]]; then
-    print_error "${arg_namespace//_/ }: junk at end of input: ${@}"
-    return 1
-  fi
-}
-
-rdo__args__check_valid_arg() {
-  local arg_name="${1:?Missing name argument.}"
-
-  if [[ -z "${!arg_name}" ]]; then
-    print_error "Missing ${arg_name} argument."
-    exit 1
-  fi
 }

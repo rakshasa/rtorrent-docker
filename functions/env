@@ -1,30 +1,14 @@
 #!/usr/bin/env bash
 
-rdo_header env
+include_header env
 
 rdo_env() {
-  local cmd="${1}"; shift || :
+  eval "$(args::init_subcommand "rdo env" "Manage system environment")"
 
-  case "${cmd}" in
-    create)
-      rdo_env_create "${@}"
-      ;;
-    --help|-h|'')
-      echo "Usage: rdo env COMMAND"
-      echo
-      echo "Environment commands"
-      echo
-      echo "Commands"
-      echo "  create   Create environment file"
-      echo
-      echo "Run 'rdo env COMMAND --help' for more information on a command."
-      exit 1
-      ;;
-    *)
-      print_error "rdo end: unknown command: ${@}"
-      return 1
-      ;;
-  esac
+  args::new_command "create" "Create environment file" \
+                    'rdo_env_create "${@}"'
+
+  eval "$(args::process_subcommand)"
 }
 
 rdo_env_create() {

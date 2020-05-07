@@ -12,8 +12,7 @@ rdo_init() {
   args::new_command "verify" "Verify environment" \
                     'rdo_init_verify "${@}"'
 
-  eval "$(args::process_options)"
-  eval "$(args::process_command)"
+  eval "$(args::process_subcommand)"
 }
 
 rdo_init_default() {

@@ -8,40 +8,23 @@ rdo_build() {
   local arg_rebuild=
   local arg_tag_append=
 
-  while true; do
-    case "${1}" in
-      --compiler|-c)
-        build_args+=("--build-arg" "COMPILER=${2:?Missing compiler argument.}")
-        shift 2 ;;
-      --dry-run)
-        build_args+=("--dry-run")
-        shift ;;
-      --rebuild)
-        build_args+=("--rebuild")
-        arg_rebuild="yes"
-        shift ;;
-      --help|-h|'')
-        echo "Usage: rdo build COMMAND"
-        echo
-        echo "Build commands"
-        echo
-        echo "Options:"
-        echo "  -c, --compiler  Select the compiler to use"
-        echo "      --dry-run   Do not actually build the container"
-        echo "      --rebuild   Rebuild all base images"
-        echo
-        echo "Commands"
-        echo "  all             Compile everything"
-        echo "  check           Compile tests"
-        echo "  compile         Compile client"
-        echo
-        echo "Run 'rdo build COMMAND --help' for more information on a command."
-        return
-        ;;
-      *)
-        rdo__args__check_unknown_flag rdo_build "${@}" && break || exit 1 ;;
-    esac
-  done
+
+  eval "$(args::init_subcommand "rdo build" "Build project")"
+
+  args::new_option "compiler" "c" "Select the compiler to use" \
+                   'build_args+=("--build-arg" "COMPILER=${1:?Missing compiler argument.}"); shift'
+  args::new_option "dry-run" "" "Do not actually build the container" \
+                   'build_args+=("--dry-run"); shift'
+  args::new_option "rebuild" "" "Rebuild all base images" \
+                   'build_args+=("--rebuild"); arg_rebuild="yes"; shift'
+
+  args::process_options
+  args::process_command
+  echo ----
+  eval "$(args::process_subcommand)"
+
+  return
+
 
   local cmd="${1}"; shift || :
 
