@@ -11,12 +11,13 @@ args::init_subcommand() {
   local args__root_description="${description}"
   declare -A args__options
   declare -A args__option_types
-  declare -A args__option_blocks
-  declare -A args__option_descriptions
   declare -A args__option_flags
+  declare -A args__option_descriptions
+  declare -A args__option_blocks
   declare -A args__commands
-  declare -A args__command_blocks
+  declare -A args__command_types
   declare -A args__command_descriptions
+  declare -A args__command_blocks
 EOF
 }
 
@@ -31,12 +32,10 @@ args::new_option() {
 
 args::new_command() {
   local name="${1:?Missing name argument.}"
-  local description="${2:?Missing description argument.}"
-  local block="${3:?Missing block argument.}"
-
   args__commands[${name}]="${name}"
-  args__command_descriptions[${name}]="${description}"
-  args__command_blocks[${name}]="${block}"
+  args__command_types[${name}]="${2:?Missing type argument.}"
+  args__command_descriptions[${name}]="${3:?Missing description argument.}"
+  args__command_blocks[${name}]="${4:?Missing block argument.}"
 }
 
 args::process_options() {
@@ -109,7 +108,31 @@ EOF
     for name in "${!args__commands[@]}"; do
       cat - <<EOF
     ${name})
-      ${args__command_blocks[${name}]}
+EOF
+
+      case "${args__command_types[${name}]}" in
+        empty)
+          cat - <<EOF
+        if (( \${#} > 0 )); then
+          print_error "\${args__root} \${args__cmd}: junk at end of input: \${@}"
+          exit 1
+        fi
+
+        ${args__command_blocks[${name}]}
+EOF
+          ;;
+        default)
+          cat - <<EOF
+        ${args__command_blocks[${name}]}
+EOF
+          ;;
+        *)
+          print_error "${args__root}: invalid type for '--${name}'"
+          exit 1
+          ;;
+      esac
+
+          cat - <<EOF
       ;;
 EOF
     done
@@ -117,7 +140,7 @@ EOF
 
   cat - <<EOF
     *)
-      print_error "${args__root}: unknown command: \${@}"
+      print_error "${args__root}: unknown command: \${args__cmd}"
       exit 1
       ;;      
   esac

@@ -5,12 +5,27 @@ rdo_header stage
 rdo_stage() {
   eval "$(args::init_subcommand "rdo stage" "Manage staging of environments")"
 
-  args::new_option "verbose" "v" "Print extra information" \
-                   'arg_verbose=yes'
-  args::new_command "init" "Initialize new environment for staging" \
+  args::new_command "test" empty "Stage test environment" \
+                    'rdo_stage_test "${@}"'
+
+  args::new_command "init" empty "Initialize new environment for staging" \
                     'rdo_stage_init "${@}"'
-  args::new_command "commit" "Commit environment" \
-                    'rdo_stage_commit "${@}"'
 
   eval "$(args::process_subcommand)"
+}
+
+rdo_stage_test() {
+  rdo_stage_init
+}
+
+rdo_stage_init() {
+  local project_path
+  project_path="$(get_project_path)"
+
+  rm -rf "${project_path}/stage"
+  mkdir -p "${project_path}/stage/"{network,node}
+}
+
+rdo_stage_network() {
+  
 }

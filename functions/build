@@ -12,25 +12,25 @@ rdo_build() {
   args::new_option "rebuild" empty "" "Rebuild all base images" \
                    'build_args+=("--rebuild"); arg_rebuild="yes"'
 
-  args::new_command "all" "Build all" \
-                    'rdo__call_empty rdo_build_all "${@}"'
-  args::new_command "check" "Build check" \
-                    'rdo__call_empty rdo_build_check "${@}"'
-  args::new_command "compile" "Build compile" \
-                    'rdo__call_empty rdo_build_compile "${@}"'
+  args::new_command "all" empty "Build all" \
+                    'rdo_build_all "${@}"'
+  args::new_command "check" empty "Build check" \
+                    'rdo_build_check "${@}"'
+  args::new_command "compile" empty "Build compile" \
+                    'rdo_build_compile "${@}"'
 
-  args::new_command "libtorrent" "Build libtorrent" \
-                    'rdo__call_empty rdo_build__libtorrent "${@}"'
-  args::new_command "libtorrent-compile" "Build libtorrent-compile" \
-                    'rdo__call_empty rdo_build__libtorrent_compile "${@}"'
-  args::new_command "libtorrent-dev" "Build libtorrent-dev" \
-                    'rdo__call_empty rdo_build_libtorrent_dev "${@}"'
-  args::new_command "rtorrent" "Build rtorrent" \
-                    'rdo__call_empty rdo_build__rtorrent "${@}"'
-  args::new_command "rtorrent-compile" "Build rtorrent-compile" \
-                    'rdo__call_empty rdo_build__rtorrent_compile "${@}"'
-  args::new_command "rtorrent-dev" "Build rtorrent-dev" \
-                    'rdo__call_empty rdo_build_rtorrent_dev "${@}"'
+  args::new_command "libtorrent" empty "Build libtorrent" \
+                    'rdo_build__libtorrent "${@}"'
+  args::new_command "libtorrent-compile" empty "Build libtorrent-compile" \
+                    'rdo_build__libtorrent_compile "${@}"'
+  args::new_command "libtorrent-dev" empty "Build libtorrent-dev" \
+                    'rdo_build_libtorrent_dev "${@}"'
+  args::new_command "rtorrent" empty "Build rtorrent" \
+                    'rdo_build__rtorrent "${@}"'
+  args::new_command "rtorrent-compile" empty "Build rtorrent-compile" \
+                    'rdo_build__rtorrent_compile "${@}"'
+  args::new_command "rtorrent-dev" empty "Build rtorrent-dev" \
+                    'rdo_build_rtorrent_dev "${@}"'
 
   local build_args=()
   local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"

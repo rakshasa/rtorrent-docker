@@ -5,11 +5,11 @@ rdo_header init
 rdo_init() {
   eval "$(args::init_subcommand "rdo init" "Initialize rtorrent docker test environment")"
 
-  args::new_command "default" "Initialize default docker environment" \
+  args::new_command "default" empty "Initialize default docker environment" \
                     'rdo_init_default "${@}"'
-  args::new_command "machine" "Initialize docker-machine environment" \
+  args::new_command "machine" empty "Initialize docker-machine environment" \
                     'rdo_init_machine "${@}"'
-  args::new_command "verify" "Verify environment" \
+  args::new_command "verify" empty "Verify environment" \
                     'rdo_init_verify "${@}"'
 
   eval "$(args::process_subcommand)"
