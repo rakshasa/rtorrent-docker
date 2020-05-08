@@ -5,12 +5,12 @@ rdo_header build
 rdo_build() {
   eval "$(args::init_subcommand "rdo build" "Build project")"
 
-  args::new_option "compiler" "c" "Select the compiler to use" \
-                   'build_args+=("--build-arg" "COMPILER=${1:?Missing compiler argument.}"); shift'
-  args::new_option "dry-run" "" "Do not actually build the container" \
-                   'build_args+=("--dry-run"); shift'
-  args::new_option "rebuild" "" "Rebuild all base images" \
-                   'build_args+=("--rebuild"); arg_rebuild="yes"; shift'
+  args::new_option "compiler" string "c" "Select the compiler to use" \
+                   'build_args+=("--build-arg" "COMPILER=${args__1}"); shift'
+  args::new_option "dry-run" empty "" "Do not actually build the container" \
+                   'build_args+=("--dry-run")'
+  args::new_option "rebuild" empty "" "Rebuild all base images" \
+                   'build_args+=("--rebuild"); arg_rebuild="yes"'
 
   args::new_command "all" "Build all" \
                     'rdo__call_empty rdo_build_all "${@}"'

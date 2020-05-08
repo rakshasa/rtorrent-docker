@@ -12,10 +12,5 @@ rdo_stage() {
   args::new_command "commit" "Commit environment" \
                     'rdo_stage_commit "${@}"'
 
-  args::process_options
-  args::process_command
-
-  echo -------
-  eval "$(args::process_options)"
-  eval "$(args::process_command)"
+  eval "$(args::process_subcommand)"
 }

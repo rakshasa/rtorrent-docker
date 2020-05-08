@@ -10,6 +10,7 @@ args::init_subcommand() {
   local args__root="${name}"
   local args__root_description="${description}"
   declare -A args__options
+  declare -A args__option_types
   declare -A args__option_blocks
   declare -A args__option_descriptions
   declare -A args__option_flags
@@ -21,14 +22,11 @@ EOF
 
 args::new_option() {
   local name="${1:?Missing name argument.}"
-  local flag="${2}"
-  local description="${3:?Missing description argument.}"
-  local block="${4:?Missing block argument.}"
-
   args__options[${name}]="${name}"
-  args__option_flags[${name}]="${flag}"
-  args__option_descriptions[${name}]="${description}"
-  args__option_blocks[${name}]="${block}"
+  args__option_types[${name}]="${2:?Missing type argument.}"
+  args__option_flags[${name}]="${3}"
+  args__option_descriptions[${name}]="${4:?Missing description argument.}"
+  args__option_blocks[${name}]="${5:?Missing block argument.}"
 }
 
 args::new_command() {
@@ -52,8 +50,29 @@ EOF
     for name in "${!args__options[@]}"; do
       cat - <<EOF
       --${name})
+EOF
+
+      case "${args__option_types[${name}]}" in
+        empty)
+          cat - <<EOF
         shift
         ${args__option_blocks[${name}]}
+EOF
+          ;;
+        string)
+          cat - <<EOF
+        local args__1="\${2:?Missing argument for '\${1}'.}"
+        shift  
+        ${args__option_blocks[${name}]}
+EOF
+          ;;
+        *)
+          print_error "${args__root}: invalid type for '--${name}'"
+          exit 1
+          ;;
+      esac
+
+      cat - <<EOF
         ;;
 EOF
     done
@@ -125,7 +144,6 @@ args::print_help() {
   else
     justify_width=${command_width}
   fi
-
 
   if (( ${#args__options[@]} != 0 )); then
     echo
