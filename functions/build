@@ -3,12 +3,6 @@
 rdo_header build
 
 rdo_build() {
-  local build_args=()
-  local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
-  local arg_rebuild=
-  local arg_tag_append=
-
-
   eval "$(args::init_subcommand "rdo build" "Build project")"
 
   args::new_option "compiler" "c" "Select the compiler to use" \
@@ -18,49 +12,32 @@ rdo_build() {
   args::new_option "rebuild" "" "Rebuild all base images" \
                    'build_args+=("--rebuild"); arg_rebuild="yes"; shift'
 
-  args::process_options
-  args::process_command
-  echo ----
+  args::new_command "all" "Build all" \
+                    'rdo__call_empty rdo_build_all "${@}"'
+  args::new_command "check" "Build check" \
+                    'rdo__call_empty rdo_build_check "${@}"'
+  args::new_command "compile" "Build compile" \
+                    'rdo__call_empty rdo_build_compile "${@}"'
+
+  args::new_command "libtorrent" "Build libtorrent" \
+                    'rdo__call_empty rdo_build__libtorrent "${@}"'
+  args::new_command "libtorrent-compile" "Build libtorrent-compile" \
+                    'rdo__call_empty rdo_build__libtorrent_compile "${@}"'
+  args::new_command "libtorrent-dev" "Build libtorrent-dev" \
+                    'rdo__call_empty rdo_build_libtorrent_dev "${@}"'
+  args::new_command "rtorrent" "Build rtorrent" \
+                    'rdo__call_empty rdo_build__rtorrent "${@}"'
+  args::new_command "rtorrent-compile" "Build rtorrent-compile" \
+                    'rdo__call_empty rdo_build__rtorrent_compile "${@}"'
+  args::new_command "rtorrent-dev" "Build rtorrent-dev" \
+                    'rdo__call_empty rdo_build_rtorrent_dev "${@}"'
+
+  local build_args=()
+  local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
+  local arg_rebuild=
+  local arg_tag_append=
+
   eval "$(args::process_subcommand)"
-
-  return
-
-
-  local cmd="${1}"; shift || :
-
-  case "${cmd}" in
-    all)
-      rdo__call_empty rdo_build_all "${@}"
-      ;;
-    check)
-      rdo__call_empty rdo_build_check "${@}"
-      ;;
-    compile)
-      rdo__call_empty rdo_build_compile "${@}"
-      ;;
-    libtorrent)
-      rdo__call_empty rdo_build__libtorrent "${@}"
-      ;;
-    libtorrent-compile)
-      rdo__call_empty rdo_build__libtorrent_compile "${@}"
-      ;;
-    libtorrent-dev)
-      rdo__call_empty rdo_build_libtorrent_dev "${@}"
-      ;;
-    rtorrent-check)
-      rdo__call_empty rdo_build__rtorrent_check "${@}"
-      ;;
-    rtorrent-compile)
-      rdo__call_empty rdo_build__rtorrent_compile "${@}"
-      ;;
-    rtorrent-dev)
-      rdo__call_empty rdo_build_rtorrent_dev "${@}"
-      ;;
-    *)
-      print_error "rdo build: unknown command: ${cmd}"
-      return 1
-      ;;
-  esac
 }
 
 rdo_build_all() {
