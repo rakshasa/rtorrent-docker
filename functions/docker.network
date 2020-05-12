@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+rdo_header docker.network
+
+rdo_docker_network() {
+  eval "$(args::init_subcommand "rdo docker network" "Manage docker networks")"
+
+  args::new_command "create" default "Create a network" \
+                    'rdo_docker_network_create "${@}"'
+  args::new_command "address" default "Get network address" \
+                    'rdo_docker_network_address "${@}"'
+  args::new_command "prefix" default "Get network prefix" \
+                    'rdo_docker_network_prefix "${@}"'
+  args::new_command "subnet" default "Get network subnet" \
+                    'rdo_docker_network_subnet "${@}"'
+
+  eval "$(args::process_subcommand)"
+}
+
+rdo_docker_network_create() {
+  local name="${1:?Missing name argument.}"
+  docker network create "rdo/${name}" > /dev/null
+}
+
+rdo_docker_network_address() {
+  local subnet
+  subnet="$(rdo_docker_network_subnet "${@}")"
+  echo "${subnet%%/*}"
+}
+
+rdo_docker_network_prefix() {
+  local subnet
+  subnet="$(rdo_docker_network_subnet "${@}")"
+  echo "${subnet##*/}"
+}
+
+rdo_docker_network_subnet() {
+  local name="${1:?Missing name argument.}"
+  docker network inspect --format '{{ (index .IPAM.Config 0).Subnet }}' "rdo/${name}"
+}
