@@ -5,12 +5,15 @@ rdo_header stage
 rdo_stage() {
   eval "$(args::init_subcommand "rdo stage" "Manage staging of environments")"
 
-  args::new_command "test" empty "Stage test environment" \
-                    'rdo_stage_test "${@}"'
+  args::new_command "clean" empty "Remove environment" \
+                    'rdo_stage_clean "${@}"'
   args::new_command "init" empty "Initialize new environment for staging" \
                     'rdo_stage_init "${@}"'
   args::new_command "network" default "Add network" \
                     'rdo_stage_network "${@}"'
+
+  args::new_command "test" empty "Stage test environment" \
+                    'rdo_stage_test "${@}"'
 
   local project_path
   project_path="$(get_project_path)"
@@ -20,11 +23,16 @@ rdo_stage() {
 
 rdo_stage_test() {
   rdo_stage_init
-  rdo_stage_network "default" "172.50.1.1" "24"
+  rdo_stage_network "default"
+}
+
+rdo_stage_clean() {
+  rdo docker network clean > /dev/null
+  rm -rf "${project_path}/stage"
 }
 
 rdo_stage_init() {
-  rm -rf "${project_path}/stage"
+  rdo_stage_clean
   mkdir -p "${project_path}/stage/"{network,node}
 }
 
@@ -34,7 +42,7 @@ rdo_stage_network() {
 
   mkdir -p "${path}"
 
-  rdo docker network create "${name}"
+  rdo docker network create "${name}" > /dev/null
 
   echo "$(rdo docker network subnet "${name}")" > "${path}/subnet"
   echo "$(rdo docker network address "${name}")" > "${path}/address"

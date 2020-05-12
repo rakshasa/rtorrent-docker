@@ -79,7 +79,11 @@ EOF
 
   cat - <<EOF
       --help|-h|'')
-        args::print_help
+EOF
+
+  args::print_help
+
+  cat - <<EOF
         exit 0
         ;;
       *)
@@ -148,15 +152,18 @@ EOF
 }
 
 args::process_subcommand() {
-  echo 'eval "$(args::process_options)"'
-  echo 'eval "$(args::process_command)"'
+  args::process_options
+  echo
+  args::process_command
 }
 
 args::print_help() {
-  echo
-  echo "Usage: ${args__root} COMMAND"
-  echo
-  echo "${args__root_description}"
+  cat - <<EOF
+        echo
+        echo "Usage: ${args__root} COMMAND"
+        echo
+        echo "${args__root_description}"
+EOF
 
   local options_width command_width justify_width
   options_width=$(( $(utils::array_key_max_width "args__options") + 6 ))
@@ -169,8 +176,10 @@ args::print_help() {
   fi
 
   if (( ${#args__options[@]} != 0 )); then
-    echo
-    echo "Options:"
+    cat - <<EOF
+        echo
+        echo "Options:"
+EOF
 
     local name justified_name
     for name in "${!args__options[@]}"; do
@@ -182,20 +191,28 @@ args::print_help() {
         justified_name="    --${justified_name}"
       fi
 
-      echo "  ${justified_name}   ${args__option_descriptions[${name}]}"
+      cat - <<EOF
+        echo "  ${justified_name}   ${args__option_descriptions[${name}]}"
+EOF
     done
   fi
 
   if (( ${#args__commands[@]} != 0 )); then
-    echo
-    echo "Commands:"
+      cat - <<EOF
+        echo
+        echo "Commands:"
+EOF
 
     local name
     for name in "${!args__commands[@]}"; do
-      echo "  $(utils::justify_string "${justify_width}" "${name}")   ${args__command_descriptions[${name}]}"
+      cat - <<EOF
+        echo "  $(utils::justify_string "${justify_width}" "${name}")   ${args__command_descriptions[${name}]}"
+EOF
     done
   fi
 
-  echo
-  echo "Run '${args__root} COMMAND --help' for more information on a command."
+  cat - <<EOF
+        echo
+        echo "Run '${args__root} COMMAND --help' for more information on a command."
+EOF
 }

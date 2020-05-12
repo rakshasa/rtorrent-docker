@@ -5,21 +5,22 @@ rdo_header docker.network
 rdo_docker_network() {
   eval "$(args::init_subcommand "rdo docker network" "Manage docker networks")"
 
-  args::new_command "create" default "Create a network" \
-                    'rdo_docker_network_create "${@}"'
   args::new_command "address" default "Get network address" \
                     'rdo_docker_network_address "${@}"'
+  args::new_command "clean" empty "Remove all networks" \
+                    'rdo_docker_network_clean "${@}"'
+  args::new_command "create" default "Create a network" \
+                    'rdo_docker_network_create "${@}"'
+  args::new_command "ls" default "List networks" \
+                    'rdo_docker_network_ls "${@}"'
   args::new_command "prefix" default "Get network prefix" \
                     'rdo_docker_network_prefix "${@}"'
+  args::new_command "rm" default "Remove one or more networks" \
+                    'rdo_docker_network_rm "${@}"'
   args::new_command "subnet" default "Get network subnet" \
                     'rdo_docker_network_subnet "${@}"'
 
   eval "$(args::process_subcommand)"
-}
-
-rdo_docker_network_create() {
-  local name="${1:?Missing name argument.}"
-  docker network create "rdo/${name}" > /dev/null
 }
 
 rdo_docker_network_address() {
@@ -28,10 +29,32 @@ rdo_docker_network_address() {
   echo "${subnet%%/*}"
 }
 
+rdo_docker_network_clean() {
+  local networks
+  mapfile -t networks < <(rdo_docker_network_ls --quiet --no-trunc)
+
+  if (( ${#networks[@]} > 0 )); then
+    docker network rm "${networks[@]}"
+  fi
+}
+
+rdo_docker_network_create() {
+  local name="${1:?Missing name argument.}"
+  docker network create "rdo/${name}"
+}
+
+rdo_docker_network_ls() {
+  docker network ls --filter "name=^rdo/" "${@}"
+}
+
 rdo_docker_network_prefix() {
   local subnet
   subnet="$(rdo_docker_network_subnet "${@}")"
   echo "${subnet##*/}"
+}
+
+rdo_docker_network_rm() {
+  docker network rm "${@/#/rdo\/}"
 }
 
 rdo_docker_network_subnet() {
