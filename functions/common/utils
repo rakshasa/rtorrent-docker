@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header common.utils
+include_header common/utils
 
 utils::array_key_max_width() {
   local width=0
@@ -12,6 +12,23 @@ utils::array_key_max_width() {
     for key in "${!array[@]}"; do
       if (( ${#key} > ${width} )); then
         width=${#key}
+      fi
+    done
+  done
+
+  echo ${width}
+}
+
+utils::array_value_max_width() {
+  local width=0
+  local array
+  for array in "${@}"; do
+    declare -n array="${1:?Missing array argument.}"
+
+    local value
+    for value in "${array[@]}"; do
+      if (( ${#value} > ${width} )); then
+        width=${#value}
       fi
     done
   done

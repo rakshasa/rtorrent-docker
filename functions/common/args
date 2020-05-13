@@ -9,12 +9,12 @@ args::init_subcommand() {
   cat - <<EOF
   local args__root="${name}"
   local args__root_description="${description}"
-  declare -A args__options
+  declare -a args__options
   declare -A args__option_types
   declare -A args__option_flags
   declare -A args__option_descriptions
   declare -A args__option_blocks
-  declare -A args__commands
+  declare -a args__commands
   declare -A args__command_types
   declare -A args__command_descriptions
   declare -A args__command_blocks
@@ -23,7 +23,7 @@ EOF
 
 args::new_option() {
   local name="${1:?Missing name argument.}"
-  args__options[${name}]="${name}"
+  args__options+=("${name}")
   args__option_types[${name}]="${2:?Missing type argument.}"
   args__option_flags[${name}]="${3}"
   args__option_descriptions[${name}]="${4:?Missing description argument.}"
@@ -32,7 +32,7 @@ args::new_option() {
 
 args::new_command() {
   local name="${1:?Missing name argument.}"
-  args__commands[${name}]="${name}"
+  args__commands+=("${name}")
   args__command_types[${name}]="${2:?Missing type argument.}"
   args__command_descriptions[${name}]="${3:?Missing description argument.}"
   args__command_blocks[${name}]="${4:?Missing block argument.}"
@@ -46,7 +46,7 @@ EOF
 
   if (( ${#args__options[@]} != 0 )); then
     local name
-    for name in "${!args__options[@]}"; do
+    for name in "${args__options[@]}"; do
       cat - <<EOF
       --${name})
 EOF
@@ -109,7 +109,7 @@ EOF
 
   if (( ${#args__commands[@]} != 0 )); then
     local name
-    for name in "${!args__commands[@]}"; do
+    for name in "${args__commands[@]}"; do
       cat - <<EOF
     ${name})
 EOF
@@ -166,8 +166,8 @@ args::print_help() {
 EOF
 
   local options_width command_width justify_width
-  options_width=$(( $(utils::array_key_max_width "args__options") + 6 ))
-  command_width=$(utils::array_key_max_width "args__commands")
+  options_width=$(( $(utils::array_value_max_width "args__options") + 6 ))
+  command_width=$(utils::array_value_max_width "args__commands")
 
   if (( ${options_width} > ${command_width} )); then
     justify_width=${options_width}
@@ -182,7 +182,7 @@ EOF
 EOF
 
     local name justified_name
-    for name in "${!args__options[@]}"; do
+    for name in "${args__options[@]}"; do
       justified_name=$(utils::justify_string "$(( ${justify_width} - 6 ))" "${name}")
 
       if [[ -n "${args__option_flags[${name}]}" ]]; then
@@ -204,7 +204,7 @@ EOF
 EOF
 
     local name
-    for name in "${!args__commands[@]}"; do
+    for name in "${args__commands[@]}"; do
       cat - <<EOF
         echo "  $(utils::justify_string "${justify_width}" "${name}")   ${args__command_descriptions[${name}]}"
 EOF

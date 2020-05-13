@@ -3,6 +3,9 @@
 rdo_header stage
 
 rdo_stage() {
+  local project_path
+  project_path="$(get_project_path)"
+
   eval "$(args::init_subcommand "rdo stage" "Manage staging of environments")"
 
   args::new_command "clean" empty "Remove environment" \
@@ -14,9 +17,6 @@ rdo_stage() {
 
   args::new_command "test" empty "Stage test environment" \
                     'rdo_stage_test "${@}"'
-
-  local project_path
-  project_path="$(get_project_path)"
 
   eval "$(args::process_subcommand)"
 }

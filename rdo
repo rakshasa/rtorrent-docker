@@ -17,13 +17,13 @@ DATA_PATH="${PROJECT_PATH}/data"
 rdo() {
   source "${PROJECT_PATH}/functions/common/init"
   is_header_included common/args || source "${PROJECT_PATH}/functions/common/args"
+  is_header_included common/utils || source "${PROJECT_PATH}/functions/common/utils"
 
   is_header_included common.init || source "${PROJECT_PATH}/functions/common.init"
   is_header_included common.container || source "${PROJECT_PATH}/functions/common.container"
   is_header_included common.help || source "${PROJECT_PATH}/functions/common.help"
   is_header_included common.image || source "${PROJECT_PATH}/functions/common.image"
   is_header_included common.system || source "${PROJECT_PATH}/functions/common.system"
-  is_header_included common.utils || source "${PROJECT_PATH}/functions/common.utils"
 
   while true; do
     case "${1}" in
