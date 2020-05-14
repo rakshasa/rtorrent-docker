@@ -14,6 +14,8 @@ rdo_stage() {
                     'rdo_stage_init "${@}"'
   args::new_command "network" default "Add network" \
                     'rdo_stage_network "${@}"'
+  args::new_command "node" default "Add node" \
+                    'rdo_stage_node "${@}"'
 
   args::new_command "test" empty "Stage test environment" \
                     'rdo_stage_test "${@}"'
@@ -47,4 +49,19 @@ rdo_stage_network() {
   echo "$(rdo docker network subnet "${name}")" > "${path}/subnet"
   echo "$(rdo docker network address "${name}")" > "${path}/address"
   echo "$(rdo docker network prefix "${name}")" > "${path}/prefix"
+}
+
+rdo_stage_node() {
+  # local name="${1:?Missing name argument.}"
+  # local path="${project_path}/stage/node/${name}"
+
+  # mkdir -p "${path}"
+
+  eval "$(args::init_subcommand "rdo stage node" "Add node to staging of environments")"
+
+  args::new_command "clean" empty "Remove environment" \
+                    'rdo_stage_clean "${@}"'
+
+  eval "$(args::process_subcommand)"
+
 }
