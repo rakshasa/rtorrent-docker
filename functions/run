@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header run
+include_header run
 
 rdo_run() {
   local cmd="${1}"; shift || :

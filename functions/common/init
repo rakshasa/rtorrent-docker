@@ -1,4 +1,21 @@
 #!/usr/bin/env bash
+#
+# Copyright (C) 2020 by Jari Petter Sundell <sundell.software@gmail.com>
+#
+# Permission to use, copy, modify, and/or distribute this software for any purpose
+# with or without fee is hereby granted.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+# REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+# FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+# OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+# TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+# THIS SOFTWARE.
+
+COLOR_NC='\033[0m'
+COLOR_RED='\033[0;31m'
+COLOR_GREEN='\033[0;32m'
 
 declare -A __INCLUDED_HEADERS
 
@@ -21,6 +38,26 @@ include_header() {
 is_header_included() {
   local header_name="${1:?Missing header name argument.}"
   [[ -n "${__INCLUDED_HEADERS[${header_name}]}" ]]
+}
+
+print_normal() {
+  echo -e "${@}" >&2
+}
+
+print_progress() {
+  echo -e "${COLOR_GREEN}${@}${COLOR_NC}" >&2
+}
+
+print_error() {
+  echo -e "${COLOR_RED}${@}${COLOR_NC}" >&2
+}
+
+print_warning() {
+  echo -e "${COLOR_RED}${@}${COLOR_NC}" >&2
+}
+
+print_space() {
+  echo >&2
 }
 
 include_header common

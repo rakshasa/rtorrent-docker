@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header docker.network
+include_header docker.network
 
 rdo_docker_network() {
   eval "$(args::init_subcommand "rdo docker network" "Manage docker networks")"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header stage
+include_header stage
 
 rdo_stage() {
   local project_path

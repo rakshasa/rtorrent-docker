@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header common.system
+include_header common.system
 
 rdo__machine_cpu_count() {
   nproc --ignore 2

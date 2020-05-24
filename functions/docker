@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header docker
+include_header docker
 
 rdo_docker() {
   # eval "$(args::init_subcommand "rdo docker" "Manage docker.")"

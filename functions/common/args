@@ -1,4 +1,17 @@
 #!/usr/bin/env bash
+#
+# Copyright (C) 2020 by Jari Petter Sundell <sundell.software@gmail.com>
+#
+# Permission to use, copy, modify, and/or distribute this software for any purpose
+# with or without fee is hereby granted.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+# REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+# FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+# OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+# TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+# THIS SOFTWARE.
 
 include_header common/args
 
@@ -55,6 +68,13 @@ args::new_command() {
   args__command_types[${name}]="${2:?Missing type argument.}"
   args__command_descriptions[${name}]="${3:?Missing description argument.}"
   args__command_blocks[${name}]="${4:?Missing block argument.}"
+}
+
+args::verify_command_empty() {
+  if (( ${#} > 0 )); then
+    print_error "${args__root} ${args__cmd}: junk at end of input: ${@}"
+    exit 1
+  fi
 }
 
 args::process_options() {
@@ -132,6 +152,7 @@ EOF
 
 args::process_command() {
   cat - <<EOF
+  local args__root="${args__root}"
   local args__cmd="\${1}"
   shift || :
 
@@ -148,10 +169,7 @@ EOF
       case "${args__command_types[${name}]}" in
         empty)
           cat - <<EOF
-        if (( \${#} > 0 )); then
-          print_error "\${args__root} \${args__cmd}: junk at end of input: \${@}"
-          exit 1
-        fi
+        args::verify_command_empty "\${@}"
         ${args__command_blocks[${name}]}
 EOF
           ;;
