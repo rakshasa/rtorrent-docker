@@ -37,7 +37,7 @@ rdo_build() {
   args::new_command "rtorrent-dev" empty "Build rtorrent-dev" \
                     'rdo_build_rtorrent_dev "${@}"'
 
-  eval "$(args::process_subcommand)"
+  eval "$(args::process)"
 }
 
 rdo_build_all() {

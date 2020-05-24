@@ -3,45 +3,81 @@
 rdo_header machine
 
 rdo_machine() {
-  local cmd="${1}"; shift || :
+  # eval "$(args::init_subcommand "rdo machine" "Create and manage rtorrent-docker machines.")"
 
-  case "${cmd}" in
+  # args::new_command "create" default "Create the docker machine" \
+  #                   'rdo_machine_create "${@}"'
+  # args::new_command "current" default "Print the current docker machine name" \
+  #                   'rdo_machine_current "${@}"'
+  # args::new_command "destroy" default "Destroy the docker machine" \
+  #                   'rdo_machine_destroy "${@}"'
+  # args::new_command "start" default "Start the docker machine" \
+  #                   'rdo_machine_start "${@}"'
+  # args::new_command "status" default "Print the status of the docker machine" \
+  #                   'rdo_machine_status "${@}"'
+  # args::new_command "stop" default "Stop the docker machine" \
+  #                   'rdo_machine_stop "${@}"'
+
+  # eval "$(args::process_subcommand)"
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo machine COMMAND"
+        echo
+        echo "Create and manage rtorrent-docker machines."
+        echo
+        echo "Commands:"
+        echo "  create     the docker machine"
+        echo "  current   Print the current docker machine name"
+        echo "  destroy   Destroy the docker machine"
+        echo "  start     Start the docker machine"
+        echo "  status    Print the status of the docker machine"
+        echo "  stop      Stop the docker machine"
+        echo
+        echo "Run 'rdo machine COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
     create)
-      rdo_machine_create "${@}"
+        rdo_machine_create "${@}"
       ;;
     current)
-      rdo_machine_current_name "${@}"
+        rdo_machine_current "${@}"
       ;;
     destroy)
-      rdo_machine_destroy "${@}"
+        rdo_machine_destroy "${@}"
       ;;
     start)
-      rdo_machine_start "${@}"
+        rdo_machine_start "${@}"
       ;;
     status)
-      rdo_machine_status "${@}"
+        rdo_machine_status "${@}"
       ;;
     stop)
-      rdo_machine_stop "${@}"
+        rdo_machine_stop "${@}"
       ;;
-    --help|-h|'')
-      echo "Usage: rdo machine COMMAND"
-      echo
-      echo "Create and manage rtorrent-docker machines"
-      echo
-      echo "Commands"
-      echo "  create   Initalize the docker machine"
-      echo "  current  Print the current docker machine name"
-      echo "  destroy  Destroy the docker machine"
-      echo "  start    Start the docker machine"
-      echo "  status   Print the status of the docker machine"
-      echo "  stop     Stop the docker machine"
-      echo
-      echo "Run 'rdo machine COMMAND --help' for more information on a command."
+    __print_self)
+      args::process_subcommand
+      return
       ;;
     *)
-      print_error "rdo machine: unknown command: ${@}"
-      return 1
+      print_error "rdo machine: unknown command: ${args__cmd}"
+      exit 1
       ;;
   esac
 }
@@ -54,27 +90,12 @@ rdo_machine_create() {
 
   local create_args=()
 
-  while [[ -n "${1}" ]]; do
-    case "${1}" in
-      --docker-machine)
-        arg_docker_machine="${2:?Missing docker machine name.}"
-        shift 2 ;;
-      --help|-h)
-        echo "Usage: rdo machine create [OPTIONS]"
-        echo
-        echo "Create and manage rtorrent-docker environment"
-        echo
-        echo "Options:"
-        echo "      --docker-machine NAME  Set docker machine name"
-        echo
-        echo "Run 'rdo machine create --help' for more information on a command."
-        exit 1
-        ;;
-      *)
-        rdo__args__check_empty rdo_machine_create "${@}" && break || exit 1
-        ;;
-    esac
-  done
+  eval "$(args::init_options_empty "rdo machine create" "Create the docker machine")"
+
+  args::new_option "name" string "n" "Set the docker machine name" \
+                   'arg_docker_machine="${args__1}"'
+
+  eval "$(args::process)"
 
   rdo__args__check_valid_arg arg_cpu_count || exit 1
   rdo__args__check_valid_arg arg_docker_machine || exit 1
@@ -92,7 +113,7 @@ rdo_machine_create() {
 
   print_progress "creating docker machine '${arg_docker_machine}' (cpu:${arg_cpu_count} memory:${arg_memory} disk_size:${arg_disk_size})"
 
-  if [[ -f "${DATA_PATH}/env.machine" ]] && [[ -z "$(rdo_machine__current_name)" ]]; then
+  if [[ -f "${DATA_PATH}/env.machine" ]] && [[ -z "$(rdo_machine__current)" ]]; then
     print_error "removing invalid env.machine file"
     rm -f "${DATA_PATH}/env.machine"
   fi
@@ -116,7 +137,7 @@ rdo_machine_create() {
 }
 
 rdo_machine_destroy() {
-  local machine_name="$(rdo_machine__current_name)"
+  local machine_name="$(rdo_machine__current)"
 
   print_progress "destroying docker machine '${machine_name}'"
 
@@ -136,7 +157,7 @@ rdo_machine_destroy() {
 }
 
 rdo_machine_start() {
-  local machine_name="$(rdo_machine__current_name)"
+  local machine_name="$(rdo_machine__current)"
 
   if [[ -z "${machine_name}" ]]; then
     print_error "could not start docker machine, machine not defined"
@@ -148,12 +169,12 @@ rdo_machine_start() {
 }
 
 rdo_machine_status() {
-  local machine_name="${1:-$(rdo_machine__current_name)}"
+  local machine_name="${1:-$(rdo_machine__current)}"
   docker-machine status "${machine_name}"
 }
 
 rdo_machine_stop() {
-  local machine_name="$(rdo_machine__current_name)"
+  local machine_name="$(rdo_machine__current)"
 
   if [[ -z "${machine_name}" ]]; then
     print_warning "could not stop docker machine, machine not defined"
@@ -171,12 +192,12 @@ rdo_machine__has_env() {
 }
 
 rdo_machine__current() {
-  local machine_name="$(rdo_machine__current_name)"
+  local machine_name="$(rdo_machine__current)"
   [[ -z "${machine_name}" ]] && (print_progress "docker machine not initialized"; return 1)
   echo "${machine_name}"
 }
 
-rdo_machine__current_name() {
+rdo_machine__current() {
   [[ -f "${DATA_PATH}/env.machine" ]] || return
   sed -e '/DOCKER_MACHINE_NAME/!d; s/"//g; s/export DOCKER_MACHINE_NAME=//' "${DATA_PATH}/env.machine"
 }
@@ -232,7 +253,7 @@ rdo_machine__attempt_start() {
 }
 
 rdo_machine__verify() {
-  local machine_name="$(rdo_machine__current_name)"
+  local machine_name="$(rdo_machine__current)"
 
   if ! docker-machine active &> /dev/null; then
     print_error "docker machine command active failed"

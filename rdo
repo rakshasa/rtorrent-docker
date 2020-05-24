@@ -57,60 +57,7 @@ rdo() {
   # args::new_command "stage" default "." \
   #                   'rdo_stage "${@}"'
 
-  # eval "$(args::process_subcommand)"
-
-  #   run)
-  #     rdo_run "${@}"
-  #     ;;
-  #   tags)
-  #     source "${PROJECT_PATH}/functions/tags"
-  #     rdo_tags "${@}"
-  #     ;;
-
-  #   watch)
-  #     watch -n5 '
-  #       printf "rdo/build/stage:default layers: "
-  #       docker inspect --format "{{ \$length := len .RootFS.Layers }}{{ \$length }}" rdo/build/stage:default
-  #       echo
-  #       docker images |pr -t -2 -o 4 -w 260'
-  #     ;;
-  #   destroy)
-  #     source "${PROJECT_PATH}/functions/machine"
-  #     rdo_machine_destroy
-  #     [[ -f "${DATA_PATH}/"env.* ]] && rm "${DATA_PATH}/"env.*
-  #     ;;
-  #   prune)
-  #     prune_containers
-  #     prune_images
-  #     ;;
-  #   prune-containers)
-  #     prune_containers
-  #     ;;
-  #   prune-images)
-  #     prune_images
-  #     ;;
-  #   clone)
-  #     (
-  #       cd "${DATA_PATH}"
-  #       git clone git@github.com:rakshasa/libtorrent.git
-  #       git clone git@github.com:rakshasa/rtorrent.git
-  #     )
-  #     ;;
-  #   run-build)
-  #     rdo_machine__verify
-  #     main "build"
-  #     "${EXEC_PTY}" docker run --rm -it \
-  #                   --name "rtorrent.current" \
-  #                   rtorrent.build.compile
-  #     ;;
-  #   exec-build)
-  #     "${EXEC_PTY}" docker exec -it dreamy_gauss bash
-  #     ;;
-  #   *)
-  #     print_error "unknown command: ${@}"
-  #     return 1
-  #     ;;
-  # esac
+  # eval "$(args::process)"
 
   while true; do
     case "${1}" in
@@ -119,7 +66,6 @@ rdo() {
         set -x
         ;;
       --help|-h|'')
-        echo
         echo "Usage: rdo COMMAND"
         echo
         echo "Build project"
@@ -179,15 +125,65 @@ rdo() {
     stage)
         rdo_stage "${@}"
       ;;
-    __print_self)
-      args::process_subcommand
-      return
-      ;;
     *)
       print_error "rdo: unknown command: ${args__cmd}"
       exit 1
       ;;
   esac
+
+  #   run)
+  #     rdo_run "${@}"
+  #     ;;
+  #   tags)
+  #     source "${PROJECT_PATH}/functions/tags"
+  #     rdo_tags "${@}"
+  #     ;;
+
+  #   watch)
+  #     watch -n5 '
+  #       printf "rdo/build/stage:default layers: "
+  #       docker inspect --format "{{ \$length := len .RootFS.Layers }}{{ \$length }}" rdo/build/stage:default
+  #       echo
+  #       docker images |pr -t -2 -o 4 -w 260'
+  #     ;;
+  #   destroy)
+  #     source "${PROJECT_PATH}/functions/machine"
+  #     rdo_machine_destroy
+  #     [[ -f "${DATA_PATH}/"env.* ]] && rm "${DATA_PATH}/"env.*
+  #     ;;
+  #   prune)
+  #     prune_containers
+  #     prune_images
+  #     ;;
+  #   prune-containers)
+  #     prune_containers
+  #     ;;
+  #   prune-images)
+  #     prune_images
+  #     ;;
+  #   clone)
+  #     (
+  #       cd "${DATA_PATH}"
+  #       git clone git@github.com:rakshasa/libtorrent.git
+  #       git clone git@github.com:rakshasa/rtorrent.git
+  #     )
+  #     ;;
+  #   run-build)
+  #     rdo_machine__verify
+  #     main "build"
+  #     "${EXEC_PTY}" docker run --rm -it \
+  #                   --name "rtorrent.current" \
+  #                   rtorrent.build.compile
+  #     ;;
+  #   exec-build)
+  #     "${EXEC_PTY}" docker exec -it dreamy_gauss bash
+  #     ;;
+  #   *)
+  #     print_error "unknown command: ${@}"
+  #     return 1
+  #     ;;
+  # esac
+
 }
 
 prune_containers() {

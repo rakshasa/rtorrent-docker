@@ -3,12 +3,57 @@
 include_header env
 
 rdo_env() {
-  eval "$(args::init_subcommand "rdo env" "Manage system environment")"
+  # eval "$(args::init_subcommand "rdo env" "Manage system environment.")"
 
-  args::new_command "create" "Create environment file" \
-                    'rdo_env_create "${@}"'
+  # args::new_command "create" default "Create environment file" \
+  #                   'rdo_env_create "${@}"'
 
-  eval "$(args::process_subcommand)"
+  # eval "$(args::process)"
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo env COMMAND"
+        echo
+        echo "Manage system environment."
+        echo
+        echo "Commands:"
+        echo "  create   Create environment file"
+        echo
+        echo "Run 'rdo env COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      ---print-self)
+        args::process
+        return
+        ;;
+      *)
+        if [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    create)
+        rdo_env_create "${@}"
+      ;;
+    __print_self)
+      args::process
+      return
+      ;;
+    *)
+      print_error "rdo env: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
 }
 
 rdo_env_create() {
