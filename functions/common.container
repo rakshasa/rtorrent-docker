@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header common.container
+include_header common.container
 
 # TODO: Restrict to label.
 rdo__container_id__name() {

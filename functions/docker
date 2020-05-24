@@ -1,62 +1,129 @@
 #!/usr/bin/env bash
 
-rdo_header docker
+include_header docker
 
 rdo_docker() {
-  local cmd="${1}"; shift || :
+  # eval "$(args::init_subcommand "rdo docker" "Manage docker.")"
 
-  case "${cmd}" in
+  # args::new_command "args" empty "List all available build args" \
+  #                   'rdo_docker_args'
+  # args::new_command "build" default "Build an image" \
+  #                   'rdo_docker_build "${@}"'
+  # args::new_command "children" default "." \
+  #                   'rdo_docker_children "${@}"'
+  # args::new_command "clean" default "." \
+  #                   'rdo_docker_clean "${@}"'
+  # args::new_command "context" default "." \
+  #                   'rdo_docker_context "${@}"'
+  # args::new_command "images" empty "." \
+  #                   'rdo_docker_images'
+  # args::new_command "inspect" default "." \
+  #                   'rdo_docker_inspect "${@}"'
+  # args::new_command "network" default "." \
+  #                   'rdo_docker_network "${@}"'
+  # args::new_command "pull" default "." \
+  #                   'rdo_docker_pull "${@}"'
+  # args::new_command "stage" default "." \
+  #                   'rdo_docker_stage "${@}"'
+  # args::new_command "targets" empty "." \
+  #                   'rdo_docker_targets'
+
+  # eval "$(args::process)"
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo docker COMMAND"
+        echo
+        echo "Manage docker."
+        echo
+        echo "Commands:"
+        echo "  args       List all available build args"
+        echo "  build      Build an image"
+        echo "  children   ."
+        echo "  clean      ."
+        echo "  context    ."
+        echo "  images     ."
+        echo "  inspect    ."
+        echo "  network    ."
+        echo "  pull       ."
+        echo "  stage      ."
+        echo "  targets    ."
+        echo
+        echo "Run 'rdo docker COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      ---print-self)
+        args::process
+        return
+        ;;
+      *)
+        if [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
     args)
-      rdo__call_empty rdo_docker_args "${@}"
+        if (( ${#} > 0 )); then
+          print_error "${args__root} ${args__cmd}: junk at end of input: ${@}"
+          exit 1
+        fi
+        rdo_docker_args
       ;;
     build)
-      rdo_docker_build "${@}"
+        rdo_docker_build "${@}"
       ;;
     children)
-      rdo_docker_children "${@}"
+        rdo_docker_children "${@}"
       ;;
     clean)
-      rdo_included docker.clean || source "${PROJECT_PATH}/functions/docker.clean"
-      rdo_docker_clean "${@}"
+        rdo_docker_clean "${@}"
       ;;
     context)
-      rdo_included docker.context || source "${PROJECT_PATH}/functions/docker.context"
-      rdo_docker_context "${@}"
+        rdo_docker_context "${@}"
       ;;
     images)
-      rdo__call_empty rdo_docker_images "${@}"
+        if (( ${#} > 0 )); then
+          print_error "${args__root} ${args__cmd}: junk at end of input: ${@}"
+          exit 1
+        fi
+        rdo_docker_images
       ;;
     inspect)
-      rdo_docker_inspect "${@}"
+        rdo_docker_inspect "${@}"
       ;;
     network)
-      rdo_included docker.network || source "${PROJECT_PATH}/functions/docker.network"
-      rdo_docker_network "${@}"
+        rdo_docker_network "${@}"
       ;;
     pull)
-      rdo_docker_pull "${@}"
+        rdo_docker_pull "${@}"
       ;;
     stage)
-      rdo_docker_stage "${@}"
+        rdo_docker_stage "${@}"
       ;;
     targets)
-      rdo__call_empty rdo_docker_targets "${@}"
+        if (( ${#} > 0 )); then
+          print_error "${args__root} ${args__cmd}: junk at end of input: ${@}"
+          exit 1
+        fi
+        rdo_docker_targets
       ;;
-    --help|-h|'')
-      echo "Usage: do docker COMMAND"
-      echo
-      echo "Docker commands"
-      echo
-      echo "Commands"
-      echo "  args      List all args in build targets"
-      echo "  build     Build a container"
-      echo "  targets   List all build targets"
-      echo
-      echo "Run 'do docker COMMAND --help' for more information on a command."
+    __print_self)
+      args::process
+      return
       ;;
     *)
-      print_error "unknown docker command: ${@}"
-      return 1
+      print_error "rdo docker: unknown command: ${args__cmd}"
+      exit 1
       ;;
   esac
 }

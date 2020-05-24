@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header common.image
+include_header common.image
 
 # TODO: Add lookup that only take tags or id's
 rdo__image_id() {

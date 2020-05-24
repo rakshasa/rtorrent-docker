@@ -3,16 +3,80 @@
 rdo_header init
 
 rdo_init() {
-  eval "$(args::init_subcommand "rdo init" "Initialize rtorrent docker test environment")"
+  # eval "$(args::init_subcommand "rdo init" "Initialize rtorrent docker test environment.")"
 
-  args::new_command "default" empty "Initialize default docker environment" \
-                    'rdo_init_default "${@}"'
-  args::new_command "machine" empty "Initialize docker-machine environment" \
-                    'rdo_init_machine "${@}"'
-  args::new_command "verify" empty "Verify environment" \
-                    'rdo_init_verify "${@}"'
+  # args::new_command "default" empty "Initialize default docker environment" \
+  #                   'rdo_init_default "${@}"'
+  # args::new_command "machine" empty "Initialize docker-machine environment" \
+  #                   'rdo_init_machine "${@}"'
+  # args::new_command "verify" empty "Verify environment" \
+  #                   'rdo_init_verify "${@}"'
 
-  eval "$(args::process_subcommand)"
+  # eval "$(args::process_subcommand)"
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo init COMMAND"
+        echo
+        echo "Initialize rtorrent docker test environment."
+        echo
+        echo "Commands:"
+        echo "  default   Initialize default docker environment"
+        echo "  machine   Initialize docker-machine environment"
+        echo "  verify    Verify environment"
+        echo
+        echo "Run 'rdo init COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    default)
+        if (( ${#} > 0 )); then
+          print_error "${args__root} ${args__cmd}: junk at end of input: ${@}"
+          exit 1
+        fi
+
+        rdo_init_default "${@}"
+      ;;
+    machine)
+        if (( ${#} > 0 )); then
+          print_error "${args__root} ${args__cmd}: junk at end of input: ${@}"
+          exit 1
+        fi
+
+        rdo_init_machine "${@}"
+      ;;
+    verify)
+        if (( ${#} > 0 )); then
+          print_error "${args__root} ${args__cmd}: junk at end of input: ${@}"
+          exit 1
+        fi
+
+        rdo_init_verify "${@}"
+      ;;
+    __print_self)
+      args::process_subcommand
+      return
+      ;;
+    *)
+      print_error "rdo init: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
 }
 
 rdo_init_default() {
@@ -37,7 +101,7 @@ rdo_init_machine() {
   local machine_args=()
 
   env_args+=("--docker-machine" "rtorrent-machine")
-  machine_args+=("--docker-machine" "rtorrent-machine")
+  machine_args+=("--name" "rtorrent-machine")
 
   rm -f "${DATA_PATH}/env" &> /dev/null || :
 

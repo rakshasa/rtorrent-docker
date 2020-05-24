@@ -1,12 +1,26 @@
 #!/usr/bin/env bash
+#
+# Copyright (C) 2020 by Jari Petter Sundell <sundell.software@gmail.com>
+#
+# Permission to use, copy, modify, and/or distribute this software for any purpose
+# with or without fee is hereby granted.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+# REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+# FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+# OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+# TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+# THIS SOFTWARE.
 
 include_header common/args
 
-args::init_subcommand() {
+args::__init() {
   local name="${1:?Missing root argument.}"
   local description="${2:?Missing description argument.}"
 
   cat - <<EOF
+  local args__is_processing=yes
   local args__root="${name}"
   local args__root_description="${description}"
   declare -a args__options
@@ -18,6 +32,24 @@ args::init_subcommand() {
   declare -A args__command_types
   declare -A args__command_descriptions
   declare -A args__command_blocks
+EOF
+}
+
+args::init_subcommand() {
+  args::__init "${@}"
+  cat - <<EOF
+  local args__has_commands=yes
+  local args__has_options=yes
+  local args__extra_args=default
+EOF
+}
+
+args::init_options_empty() {
+  args::__init "${@}"
+  cat - <<EOF
+  local args__has_commands=no
+  local args__has_options=yes
+  local args__extra_args=empty
 EOF
 }
 
@@ -36,6 +68,13 @@ args::new_command() {
   args__command_types[${name}]="${2:?Missing type argument.}"
   args__command_descriptions[${name}]="${3:?Missing description argument.}"
   args__command_blocks[${name}]="${4:?Missing block argument.}"
+}
+
+args::verify_command_empty() {
+  if (( ${#} > 0 )); then
+    print_error "${args__root} ${args__cmd}: junk at end of input: ${@}"
+    exit 1
+  fi
 }
 
 args::process_options() {
@@ -61,7 +100,7 @@ EOF
         string)
           cat - <<EOF
         local args__1="\${2:?Missing argument for '\${1}'.}"
-        shift  
+        shift 2
         ${args__option_blocks[${name}]}
 EOF
           ;;
@@ -86,6 +125,18 @@ EOF
   cat - <<EOF
         exit 0
         ;;
+EOF
+
+  if [[ "${args__is_processing}" == "yes" ]]; then
+    cat - <<EOF
+      ---print-self)
+        args::print_process
+        return
+        ;;
+EOF
+  fi
+
+  cat - <<EOF
       *)
         if [[ -z "\${1##-*}" ]]; then
           print_error "\${args__root}: unknown flag: \${1}"
@@ -101,6 +152,7 @@ EOF
 
 args::process_command() {
   cat - <<EOF
+  local args__root="${args__root}"
   local args__cmd="\${1}"
   shift || :
 
@@ -117,11 +169,7 @@ EOF
       case "${args__command_types[${name}]}" in
         empty)
           cat - <<EOF
-        if (( \${#} > 0 )); then
-          print_error "\${args__root} \${args__cmd}: junk at end of input: \${@}"
-          exit 1
-        fi
-
+        args::verify_command_empty "\${@}"
         ${args__command_blocks[${name}]}
 EOF
           ;;
@@ -142,6 +190,15 @@ EOF
     done
   fi
 
+  if [[ "${args__is_processing}" == "yes" ]]; then
+    cat - <<EOF
+    __print_self)
+      args::print_process
+      return
+      ;;
+EOF
+  fi
+
   cat - <<EOF
     *)
       print_error "${args__root}: unknown command: \${args__cmd}"
@@ -151,15 +208,8 @@ EOF
 EOF
 }
 
-args::process_subcommand() {
-  args::process_options
-  echo
-  args::process_command
-}
-
 args::print_help() {
   cat - <<EOF
-        echo
         echo "Usage: ${args__root} COMMAND"
         echo
         echo "${args__root_description}"
@@ -215,4 +265,27 @@ EOF
         echo
         echo "Run '${args__root} COMMAND --help' for more information on a command."
 EOF
+}
+
+args::process() {
+  local args__need_seperator=no
+
+  if [[ "${args__has_options}" == "yes" ]]; then
+    args::process_options
+    args__need_seperator=yes
+  fi
+
+  if [[ "${args__has_commands}" == "yes" ]]; then
+    if [[ "${args__need_seperator}" == "yes" ]]; then
+      echo
+    fi
+
+    args::process_command
+    args__need_seperator=yes
+  fi
+}
+
+args::print_process() {
+  local args__is_processing=no
+  args::process
 }

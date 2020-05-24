@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header docker.clean
+include_header docker.clean
 
 rdo_docker_clean() {
   local cmd="${1}"; shift || :

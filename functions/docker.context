@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header docker.context
+include_header docker.context
 
 DOCKER_CONTEXT_TYPES=(
   ancestor

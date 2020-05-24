@@ -2,26 +2,6 @@
 
 include_header common.init
 
-print_normal() {
-  echo -e "${@}" >&2
-}
-
-print_progress() {
-  echo -e "${COLOR_GREEN}${@}${COLOR_NC}" >&2
-}
-
-print_error() {
-  echo -e "${COLOR_RED}${@}${COLOR_NC}" >&2
-}
-
-print_warning() {
-  echo -e "${COLOR_RED}${@}${COLOR_NC}" >&2
-}
-
-print_space() {
-  echo >&2
-}
-
 get_project_path() {
   if [[ -z "${PROJECT_PATH}" ]]; then
     print_error "cd_project_path: PROJECT_PATH variable not set"
@@ -59,35 +39,6 @@ rdo_bash() {
 #
 # Refactor:
 #
-
-rdo_header() {
-  include_header "${@}"
-}
-
-rdo_included() {
-  is_header_included "${@}"
-}
-
-# rdo__exit__unknown_command "${cmd}"
-rdo__exit__unknown_command() {
-  local namespace="${FUNCNAME[1]}"
-
-  print_error "${namespace//_/ }: unknown command: ${@}"
-  exit 1
-}
-
-# - function "${@}"
-rdo__call_empty() {
-  local arg_function="${1:?Missing function argument.}"
-  shift
-
-  if [[ -n "${*}" ]]; then
-    print_error "${arg_function//_/ }: junk at end of input: ${@}"
-    exit 1
-  fi
-
-  eval "${arg_function}" "${@}"
-}
 
 rdo__compare_id__file_image() {
   local file_name="${1:?Missing file argument.}"
