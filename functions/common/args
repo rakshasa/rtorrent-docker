@@ -169,13 +169,13 @@ EOF
       case "${args__command_types[${name}]}" in
         empty)
           cat - <<EOF
-        args::verify_command_empty "\${@}"
-        ${args__command_blocks[${name}]}
+      args::verify_command_empty "\${@}"
+      ${args__command_blocks[${name}]}
 EOF
           ;;
         default)
           cat - <<EOF
-        ${args__command_blocks[${name}]}
+      ${args__command_blocks[${name}]}
 EOF
           ;;
         *)

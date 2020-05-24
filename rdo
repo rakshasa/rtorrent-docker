@@ -24,6 +24,7 @@ is_header_included common.system || source "${PROJECT_PATH}/functions/common.sys
 is_header_included build || source "${PROJECT_PATH}/functions/build"
 is_header_included docker || source "${PROJECT_PATH}/functions/docker"
 is_header_included docker.clean || source "${PROJECT_PATH}/functions/docker.clean"
+is_header_included docker.container || source "${PROJECT_PATH}/functions/docker.container"
 is_header_included docker.context || source "${PROJECT_PATH}/functions/docker.context"
 is_header_included docker.network || source "${PROJECT_PATH}/functions/docker.network"
 is_header_included run || source "${PROJECT_PATH}/functions/run"

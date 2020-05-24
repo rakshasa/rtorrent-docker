@@ -3,24 +3,83 @@
 include_header docker.network
 
 rdo_docker_network() {
-  eval "$(args::init_subcommand "rdo docker network" "Manage docker networks")"
+  # eval "$(args::init_subcommand "rdo docker network" "Manage docker networks.")"
 
-  args::new_command "address" default "Get network address" \
-                    'rdo_docker_network_address "${@}"'
-  args::new_command "clean" empty "Remove all networks" \
-                    'rdo_docker_network_clean "${@}"'
-  args::new_command "create" default "Create a network" \
-                    'rdo_docker_network_create "${@}"'
-  args::new_command "ls" default "List networks" \
-                    'rdo_docker_network_ls "${@}"'
-  args::new_command "prefix" default "Get network prefix" \
-                    'rdo_docker_network_prefix "${@}"'
-  args::new_command "rm" default "Remove one or more networks" \
-                    'rdo_docker_network_rm "${@}"'
-  args::new_command "subnet" default "Get network subnet" \
-                    'rdo_docker_network_subnet "${@}"'
+  # args::new_command "address" default "Get network address" \
+  #                   'rdo_docker_network_address "${@}"'
+  # args::new_command "clean" empty "Remove all networks" \
+  #                   'rdo_docker_network_clean "${@}"'
+  # args::new_command "create" default "Create a network" \
+  #                   'rdo_docker_network_create "${@}"'
+  # args::new_command "ls" default "List networks" \
+  #                   'rdo_docker_network_ls "${@}"'
+  # args::new_command "prefix" default "Get network prefix" \
+  #                   'rdo_docker_network_prefix "${@}"'
+  # # args::new_command "rm" default "Remove one or more networks" \
+  # #                   'rdo_docker_network_rm "${@}"'
+  # args::new_command "subnet" default "Get network subnet" \
+  #                   'rdo_docker_network_subnet "${@}"'
 
-  eval "$(args::process_subcommand)"
+  # eval "$(args::process)"
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo docker network COMMAND"
+        echo
+        echo "Manage docker networks."
+        echo
+        echo "Commands:"
+        echo "  address   Get network address"
+        echo "  clean     Remove all networks"
+        echo "  create    Create a network"
+        echo "  ls        List networks"
+        echo "  prefix    Get network prefix"
+        echo "  subnet    Get network subnet"
+        echo
+        echo "Run 'rdo docker network COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo docker network"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    address)
+      rdo_docker_network_address "${@}"
+      ;;
+    clean)
+      args::verify_command_empty "${@}"
+      rdo_docker_network_clean "${@}"
+      ;;
+    create)
+      rdo_docker_network_create "${@}"
+      ;;
+    ls)
+      rdo_docker_network_ls "${@}"
+      ;;
+    prefix)
+      rdo_docker_network_prefix "${@}"
+      ;;
+    subnet)
+      rdo_docker_network_subnet "${@}"
+      ;;
+    *)
+      print_error "rdo docker network: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
 }
 
 rdo_docker_network_address() {
@@ -40,11 +99,11 @@ rdo_docker_network_clean() {
 
 rdo_docker_network_create() {
   local name="${1:?Missing name argument.}"
-  docker network create "rdo/${name}"
+  docker network create --label "project=rdo" "${name}"
 }
 
 rdo_docker_network_ls() {
-  docker network ls --filter "name=^rdo/" "${@}"
+  docker network ls --filter "label=project=rdo" "${@}"
 }
 
 rdo_docker_network_prefix() {
@@ -53,11 +112,7 @@ rdo_docker_network_prefix() {
   echo "${subnet##*/}"
 }
 
-rdo_docker_network_rm() {
-  docker network rm "${@/#/rdo\/}"
-}
-
 rdo_docker_network_subnet() {
   local name="${1:?Missing name argument.}"
-  docker network inspect --format '{{ (index .IPAM.Config 0).Subnet }}' "rdo/${name}"
+  docker network inspect --format '{{ (index .IPAM.Config 0).Subnet }}' "${name}"
 }

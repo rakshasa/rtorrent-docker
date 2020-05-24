@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+include_header docker.container
+
+rdo_docker_container() {
+  eval "$(args::init_subcommand "rdo docker container" "Manage docker containers.")"
+
+  args::new_command "clean" empty "Remove all containers" \
+                    'rdo_docker_container_clean "${@}"'
+  args::new_command "create" default "Create a container" \
+                    'rdo_docker_container_create "${@}"'
+  args::new_command "ls" default "List containers" \
+                    'rdo_docker_container_ls "${@}"'
+  # args::new_command "rm" default "Remove one or more containers" \
+  #                   'rdo_docker_container_rm "${@}"'
+
+  eval "$(args::process)"
+}
+
+rdo_docker_container_clean() {
+  local containers
+  mapfile -t containers < <(rdo_docker_container_ls --quiet --no-trunc)
+
+  if (( ${#containers[@]} > 0 )); then
+    docker container rm "${containers[@]}"
+  fi
+}
+
+rdo_docker_container_create() {
+  local name="${1:?Missing name argument.}"
+  docker container create --label "project=rdo" "${name}"
+}
+
+rdo_docker_container_ls() {
+  docker container ls --filter "label=project=rdo" "${@}"
+}
