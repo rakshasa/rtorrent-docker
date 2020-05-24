@@ -15,11 +15,15 @@ PROJECT_ABSOLUTE_PATH=
 DATA_PATH="${PROJECT_PATH}/data"
 
 rdo() {
-  rdo_included common || source "${PROJECT_PATH}/functions/common"
-  rdo_included common.args || source "${PROJECT_PATH}/functions/common.args"
-  rdo_included common.container || source "${PROJECT_PATH}/functions/common.container"
-  rdo_included common.image || source "${PROJECT_PATH}/functions/common.image"
-  rdo_included common.system || source "${PROJECT_PATH}/functions/common.system"
+  source "${PROJECT_PATH}/functions/common/init"
+  is_header_included common/args || source "${PROJECT_PATH}/functions/common/args"
+  is_header_included common/utils || source "${PROJECT_PATH}/functions/common/utils"
+
+  is_header_included common.init || source "${PROJECT_PATH}/functions/common.init"
+  is_header_included common.container || source "${PROJECT_PATH}/functions/common.container"
+  is_header_included common.help || source "${PROJECT_PATH}/functions/common.help"
+  is_header_included common.image || source "${PROJECT_PATH}/functions/common.image"
+  is_header_included common.system || source "${PROJECT_PATH}/functions/common.system"
 
   while true; do
     case "${1}" in
@@ -54,36 +58,40 @@ rdo() {
 
   case "${cmd}" in
     bash)
-      rdo_included machine || source "${PROJECT_PATH}/functions/machine"
+      is_header_included machine || source "${PROJECT_PATH}/functions/machine"
       rdo_bash "${@}"
       ;;
     build)
-      rdo_included build || source "${PROJECT_PATH}/functions/build"
+      is_header_included build || source "${PROJECT_PATH}/functions/build"
       rdo_build "${@}"
       ;;
     docker)
-      rdo_included docker || source "${PROJECT_PATH}/functions/docker"
+      is_header_included docker || source "${PROJECT_PATH}/functions/docker"
       rdo_docker "${@}"
       ;;
     env)
-      rdo_included env || source "${PROJECT_PATH}/functions/env"
+      is_header_included env || source "${PROJECT_PATH}/functions/env"
       rdo_env "${@}"
       ;;
     git)
-      rdo_included git || source "${PROJECT_PATH}/functions/git"
+      is_header_included git || source "${PROJECT_PATH}/functions/git"
       do_git "${@}"
       ;;
     init)
-      rdo_included init || source "${PROJECT_PATH}/functions/init"
+      is_header_included init || source "${PROJECT_PATH}/functions/init"
       rdo_init "${@}"
       ;;
     machine)
-      rdo_included machine || source "${PROJECT_PATH}/functions/machine"
+      is_header_included machine || source "${PROJECT_PATH}/functions/machine"
       rdo_machine "${@}"
       ;;
     run)
-      rdo_included run || source "${PROJECT_PATH}/functions/run"
+      is_header_included run || source "${PROJECT_PATH}/functions/run"
       rdo_run "${@}"
+      ;;
+    stage)
+      is_header_included stage || source "${PROJECT_PATH}/functions/stage"
+      rdo_stage "${@}"
       ;;
     tags)
       source "${PROJECT_PATH}/functions/tags"
@@ -136,27 +144,6 @@ rdo() {
   esac
 }
 
-# Print to stderr.
-print_normal() {
-  echo -e "${@}" >&2
-}
-
-print_progress() {
-  echo -e "${COLOR_GREEN}${@}${COLOR_NC}" >&2
-}
-
-print_error() {
-  echo -e "${COLOR_RED}${@}${COLOR_NC}" >&2
-}
-
-print_warning() {
-  echo -e "${COLOR_RED}${@}${COLOR_NC}" >&2
-}
-
-print_space() {
-  echo >&2
-}
-
 prune_containers() {
   docker container prune --force --filter 'ancestor=rtorrent.ancestor'
 }
@@ -167,58 +154,6 @@ prune_images() {
   else
     print_progress "no dangling images"
   fi
-}
-
-get_project_path() {
-  if [[ -z "${PROJECT_PATH}" ]]; then
-    print_error "cd_project_path: PROJECT_PATH variable not set"
-    exit 1
-  fi
-
-  local project_path="$(cd "${PROJECT_PATH}" &> /dev/null && pwd -P)"
-
-  if [[ "${project_path}" == "/" ]]; then
-    print_error "cd_project_path: path is root"
-    exit 1
-  fi
-
-  if [[ -z "${project_path}" ]]; then
-    print_error "cd_project_path: failed to enter directory '${PROJECT_PATH}'"
-    exit 1
-  fi
-
-  echo "${project_path}"
-}
-
-rdo_bash() {
-  cd "${PROJECT_PATH}"
-
-  if ! [[ -f "${DATA_PATH}/env.bash" ]]; then
-    print_error "rdo bash: environment not initialized, could not find '${DATA_PATH}/env.bash'"
-    exit 1
-  fi
-
-  print_progress "entering custom bash session"
-  /usr/bin/env bash --init-file "${DATA_PATH}/env.bash"
-  print_warning "exiting custom bash session"
-}
-
-declare -A INCLUDED_HEADERS
-
-rdo_header() {
-  local header_name="${1:?Missing header name argument.}"
-
-  if [[ -n "${INCLUDED_HEADERS[${header_name}]}" ]]; then
-    echo "rdo_${header_name} already included"
-    exit 1
-  fi
-
-  INCLUDED_HEADERS[${header_name}]="yes"
-}
-
-rdo_included() {
-  local header_name="${1:?Missing header name argument.}"
-  [[ -n "${INCLUDED_HEADERS[${header_name}]}" ]]
 }
 
 rdo "${@}"

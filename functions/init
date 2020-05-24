@@ -3,35 +3,16 @@
 rdo_header init
 
 rdo_init() {
-  local cmd="${1}"; shift || :
+  eval "$(args::init_subcommand "rdo init" "Initialize rtorrent docker test environment")"
 
-  case "${cmd}" in
-    default)
-      rdo_init_default "${@}"
-      ;;
-    machine)
-      rdo_init_machine "${@}"
-      ;;
-    verify)
-      rdo_init_verify "${@}"
-      ;;
-    --help|-h|'')
-      echo "Usage: rdo init COMMAND"
-      echo
-      echo "Initialize environment commands"
-      echo
-      echo "Commands"
-      echo "  default  Use default docker engine"
-      echo "  machine  Use docker machine"
-      echo
-      echo "Run 'rdo init COMMAND --help' for more information on a command."
-      exit 1
-      ;;
-    *)
-      print_error "rdo docker context: unknown command: ${@}"
-      return 1
-      ;;
-  esac
+  args::new_command "default" empty "Initialize default docker environment" \
+                    'rdo_init_default "${@}"'
+  args::new_command "machine" empty "Initialize docker-machine environment" \
+                    'rdo_init_machine "${@}"'
+  args::new_command "verify" empty "Verify environment" \
+                    'rdo_init_verify "${@}"'
+
+  eval "$(args::process_subcommand)"
 }
 
 rdo_init_default() {

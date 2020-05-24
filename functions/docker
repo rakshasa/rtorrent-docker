@@ -29,6 +29,10 @@ rdo_docker() {
     inspect)
       rdo_docker_inspect "${@}"
       ;;
+    network)
+      rdo_included docker.network || source "${PROJECT_PATH}/functions/docker.network"
+      rdo_docker_network "${@}"
+      ;;
     pull)
       rdo_docker_pull "${@}"
       ;;

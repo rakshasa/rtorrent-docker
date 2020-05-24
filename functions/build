@@ -3,81 +3,41 @@
 rdo_header build
 
 rdo_build() {
+  eval "$(args::init_subcommand "rdo build" "Build project")"
+
+  args::new_option "compiler" string "c" "Select the compiler to use" \
+                   'build_args+=("--build-arg" "COMPILER=${args__1}"); shift'
+  args::new_option "dry-run" empty "" "Do not actually build the container" \
+                   'build_args+=("--dry-run")'
+  args::new_option "rebuild" empty "" "Rebuild all base images" \
+                   'build_args+=("--rebuild"); arg_rebuild="yes"'
+
+  args::new_command "all" empty "Build all" \
+                    'rdo_build_all "${@}"'
+  args::new_command "check" empty "Build check" \
+                    'rdo_build_check "${@}"'
+  args::new_command "compile" empty "Build compile" \
+                    'rdo_build_compile "${@}"'
+
+  args::new_command "libtorrent" empty "Build libtorrent" \
+                    'rdo_build__libtorrent "${@}"'
+  args::new_command "libtorrent-compile" empty "Build libtorrent-compile" \
+                    'rdo_build__libtorrent_compile "${@}"'
+  args::new_command "libtorrent-dev" empty "Build libtorrent-dev" \
+                    'rdo_build_libtorrent_dev "${@}"'
+  args::new_command "rtorrent" empty "Build rtorrent" \
+                    'rdo_build__rtorrent "${@}"'
+  args::new_command "rtorrent-compile" empty "Build rtorrent-compile" \
+                    'rdo_build__rtorrent_compile "${@}"'
+  args::new_command "rtorrent-dev" empty "Build rtorrent-dev" \
+                    'rdo_build_rtorrent_dev "${@}"'
+
   local build_args=()
   local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
   local arg_rebuild=
   local arg_tag_append=
 
-  while true; do
-    case "${1}" in
-      --compiler|-c)
-        build_args+=("--build-arg" "COMPILER=${2:?Missing compiler argument.}")
-        shift 2 ;;
-      --dry-run)
-        build_args+=("--dry-run")
-        shift ;;
-      --rebuild)
-        build_args+=("--rebuild")
-        arg_rebuild="yes"
-        shift ;;
-      --help|-h|'')
-        echo "Usage: rdo build COMMAND"
-        echo
-        echo "Build commands"
-        echo
-        echo "Options:"
-        echo "  -c, --compiler  Select the compiler to use"
-        echo "      --dry-run   Do not actually build the container"
-        echo "      --rebuild   Rebuild all base images"
-        echo
-        echo "Commands"
-        echo "  all             Compile everything"
-        echo "  check           Compile tests"
-        echo "  compile         Compile client"
-        echo
-        echo "Run 'rdo build COMMAND --help' for more information on a command."
-        return
-        ;;
-      *)
-        rdo__args__check_unknown_flag rdo_build "${@}" && break || exit 1 ;;
-    esac
-  done
-
-  local cmd="${1}"; shift || :
-
-  case "${cmd}" in
-    all)
-      rdo__call_empty rdo_build_all "${@}"
-      ;;
-    check)
-      rdo__call_empty rdo_build_check "${@}"
-      ;;
-    compile)
-      rdo__call_empty rdo_build_compile "${@}"
-      ;;
-    libtorrent)
-      rdo__call_empty rdo_build__libtorrent "${@}"
-      ;;
-    libtorrent-compile)
-      rdo__call_empty rdo_build__libtorrent_compile "${@}"
-      ;;
-    libtorrent-dev)
-      rdo__call_empty rdo_build_libtorrent_dev "${@}"
-      ;;
-    rtorrent-check)
-      rdo__call_empty rdo_build__rtorrent_check "${@}"
-      ;;
-    rtorrent-compile)
-      rdo__call_empty rdo_build__rtorrent_compile "${@}"
-      ;;
-    rtorrent-dev)
-      rdo__call_empty rdo_build_rtorrent_dev "${@}"
-      ;;
-    *)
-      print_error "rdo build: unknown command: ${cmd}"
-      return 1
-      ;;
-  esac
+  eval "$(args::process_subcommand)"
 }
 
 rdo_build_all() {

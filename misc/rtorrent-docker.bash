@@ -88,7 +88,18 @@ _rtorrent_docker__rdo_build() {
 
 _rtorrent_docker__rdo_docker() {
   if [[ "${word}" != -* ]]; then
-    commands=(args build children clean context images inspect stage targets)
+    commands=(
+      args
+      build
+      children
+      clean
+      context
+      images
+      inspect
+      network
+      stage
+      targets
+    )
     arg_funcs=(
       children##rdo_docker_images
     )
@@ -131,7 +142,11 @@ _rtorrent_docker__rdo_docker_clean() {
 
 _rtorrent_docker__rdo_docker_context() {
   if [[ "${word}" != -* ]]; then
-    commands=(build clean types)
+    commands=(
+      build
+      clean
+      types
+    )
     arg_funcs=(
       init##rdo_docker_context_types
     )
@@ -155,6 +170,20 @@ _rtorrent_docker__rdo_docker_context_build() {
 
 _rtorrent_docker__rdo_docker_inspect() {
   flags=(--id --help)
+}
+
+_rtorrent_docker__rdo_docker_network() {
+  if [[ "${word}" != -* ]]; then
+    commands=(
+      address
+      clean
+      create
+      ls
+      prefix
+      rm
+      subnet
+    )
+  fi
 }
 
 _rtorrent_docker__rdo_docker_stage() {

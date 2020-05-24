@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+include_header common/utils
+
+utils::array_key_max_width() {
+  local width=0
+  local array
+  for array in "${@}"; do
+    declare -n array="${1:?Missing array argument.}"
+
+    local key
+    for key in "${!array[@]}"; do
+      if (( ${#key} > ${width} )); then
+        width=${#key}
+      fi
+    done
+  done
+
+  echo ${width}
+}
+
+utils::array_value_max_width() {
+  local width=0
+  local array
+  for array in "${@}"; do
+    declare -n array="${1:?Missing array argument.}"
+
+    local value
+    for value in "${array[@]}"; do
+      if (( ${#value} > ${width} )); then
+        width=${#value}
+      fi
+    done
+  done
+
+  echo ${width}
+}
+
+utils::justify_string() {
+  local width="${1:?Missing width argument.}"
+  local string="${2:?Missing string argument.}"
+
+  echo -n "${string}"
+
+  local i
+  for (( i=${#string}; i < ${width}; i++ )); do
+    echo -n " "
+  done
+}
