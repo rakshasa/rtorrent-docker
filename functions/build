@@ -43,7 +43,7 @@ rdo_build() {
     case "${1}" in
       --compiler)
         local args__1="${2:?Missing argument for '${1}'.}"
-        shift
+        shift 2
         build_args+=("--build-arg" "COMPILER=${args__1}")
         ;;
       --dry-run)
@@ -57,7 +57,7 @@ rdo_build() {
       --help|-h|'')
         echo "Usage: rdo build COMMAND"
         echo
-        echo "Build project"
+        echo "Build project."
         echo
         echo "Options:"
         echo "  -c, --compiler       Select the compiler to use"

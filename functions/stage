@@ -20,7 +20,7 @@ rdo_stage() {
   args::new_command "test" empty "Stage test environment" \
                     'rdo_stage_test "${@}"'
 
-  eval "$(args::process_subcommand)"
+  eval "$(args::process)"
 }
 
 rdo_stage_test() {

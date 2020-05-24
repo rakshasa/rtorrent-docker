@@ -178,7 +178,6 @@ rdo() {
   #     return 1
   #     ;;
   # esac
-
 }
 
 prune_containers() {

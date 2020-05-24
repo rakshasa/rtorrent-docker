@@ -100,7 +100,7 @@ EOF
         string)
           cat - <<EOF
         local args__1="\${2:?Missing argument for '\${1}'.}"
-        shift  
+        shift 2
         ${args__option_blocks[${name}]}
 EOF
           ;;
