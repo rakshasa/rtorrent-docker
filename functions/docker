@@ -3,62 +3,30 @@
 rdo_header docker
 
 rdo_docker() {
-  local cmd="${1}"; shift || :
+  eval "$(args::init_subcommand "rdo docker" "Manage docker")"
 
-  case "${cmd}" in
-    args)
-      rdo__call_empty rdo_docker_args "${@}"
-      ;;
-    build)
-      rdo_docker_build "${@}"
-      ;;
-    children)
-      rdo_docker_children "${@}"
-      ;;
-    clean)
-      rdo_included docker.clean || source "${PROJECT_PATH}/functions/docker.clean"
-      rdo_docker_clean "${@}"
-      ;;
-    context)
-      rdo_included docker.context || source "${PROJECT_PATH}/functions/docker.context"
-      rdo_docker_context "${@}"
-      ;;
-    images)
-      rdo__call_empty rdo_docker_images "${@}"
-      ;;
-    inspect)
-      rdo_docker_inspect "${@}"
-      ;;
-    network)
-      rdo_included docker.network || source "${PROJECT_PATH}/functions/docker.network"
-      rdo_docker_network "${@}"
-      ;;
-    pull)
-      rdo_docker_pull "${@}"
-      ;;
-    stage)
-      rdo_docker_stage "${@}"
-      ;;
-    targets)
-      rdo__call_empty rdo_docker_targets "${@}"
-      ;;
-    --help|-h|'')
-      echo "Usage: do docker COMMAND"
-      echo
-      echo "Docker commands"
-      echo
-      echo "Commands"
-      echo "  args      List all args in build targets"
-      echo "  build     Build a container"
-      echo "  targets   List all build targets"
-      echo
-      echo "Run 'do docker COMMAND --help' for more information on a command."
-      ;;
-    *)
-      print_error "unknown docker command: ${@}"
-      return 1
-      ;;
-  esac
+  args::new_command "args" empty "List all available build args" \
+                    'rdo_docker_args'
+  args::new_command "build" default "Build an image" \
+                    'rdo_docker_build "${@}"'
+  args::new_command "children" default "." \
+                    'rdo_docker_children "${@}"'
+  args::new_command "clean" default "." \
+                    'rdo_docker_clean "${@}"'
+  args::new_command "images" empty "." \
+                    'rdo_docker_images'
+  args::new_command "inspect" default "." \
+                    'rdo_docker_inspect "${@}"'
+  args::new_command "network" default "." \
+                    'rdo_docker_network "${@}"'
+  args::new_command "pull" default "." \
+                    'rdo_docker_pull "${@}"'
+  args::new_command "stage" default "." \
+                    'rdo_docker_stage "${@}"'
+  args::new_command "targets" empty "." \
+                    'rdo_docker_targets'
+
+  eval "$(args::process_subcommand)"
 }
 
 rdo_docker_args() {

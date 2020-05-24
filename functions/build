@@ -3,10 +3,15 @@
 rdo_header build
 
 rdo_build() {
+  local build_args=()
+  local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
+  local arg_rebuild=
+  local arg_tag_append=
+
   eval "$(args::init_subcommand "rdo build" "Build project")"
 
   args::new_option "compiler" string "c" "Select the compiler to use" \
-                   'build_args+=("--build-arg" "COMPILER=${args__1}"); shift'
+                   'build_args+=("--build-arg" "COMPILER=${args__1}")'
   args::new_option "dry-run" empty "" "Do not actually build the container" \
                    'build_args+=("--dry-run")'
   args::new_option "rebuild" empty "" "Rebuild all base images" \
@@ -31,11 +36,6 @@ rdo_build() {
                     'rdo_build__rtorrent_compile "${@}"'
   args::new_command "rtorrent-dev" empty "Build rtorrent-dev" \
                     'rdo_build_rtorrent_dev "${@}"'
-
-  local build_args=()
-  local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
-  local arg_rebuild=
-  local arg_tag_append=
 
   eval "$(args::process_subcommand)"
 }

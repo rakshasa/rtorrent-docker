@@ -143,6 +143,10 @@ EOF
   fi
 
   cat - <<EOF
+    __print_self)
+      args::process_subcommand
+      return
+      ;;
     *)
       print_error "${args__root}: unknown command: \${args__cmd}"
       exit 1
@@ -151,15 +155,8 @@ EOF
 EOF
 }
 
-args::process_subcommand() {
-  args::process_options
-  echo
-  args::process_command
-}
-
 args::print_help() {
   cat - <<EOF
-        echo
         echo "Usage: ${args__root} COMMAND"
         echo
         echo "${args__root_description}"
@@ -215,4 +212,10 @@ EOF
         echo
         echo "Run '${args__root} COMMAND --help' for more information on a command."
 EOF
+}
+
+args::process_subcommand() {
+  args::process_options
+  echo
+  args::process_command
 }

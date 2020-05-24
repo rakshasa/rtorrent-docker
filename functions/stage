@@ -57,11 +57,14 @@ rdo_stage_node() {
 
   # mkdir -p "${path}"
 
-  eval "$(args::init_subcommand "rdo stage node" "Add node to staging of environments")"
+  local networks=()
 
-  args::new_command "clean" empty "Remove environment" \
-                    'rdo_stage_clean "${@}"'
+  eval "$(args::init_subcommand "rdo stage node NAME" "Add node to staging of environments")"
+
+  args::new_option "network" string "n" "Connect node to network" \
+                   'networks+=("${args__1}")'
 
   eval "$(args::process_subcommand)"
 
+  
 }
