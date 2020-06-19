@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header machine
+include_header machine
 
 rdo_machine() {
   # eval "$(args::init_subcommand "rdo machine" "Create and manage rtorrent-docker machines.")"

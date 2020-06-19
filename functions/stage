@@ -6,53 +6,113 @@ rdo_stage() {
   local project_path
   project_path="$(get_project_path)"
 
-  eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
+  # eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
 
-  args::new_command "clean" empty "Remove environment" \
-                    'rdo_stage_clean "${@}"'
-  args::new_command "init" empty "Initialize new environment for staging" \
-                    'rdo_stage_init "${@}"'
-  args::new_command "network" default "Add network" \
-                    'rdo_stage_network "${@}"'
-  args::new_command "node" default "Add node" \
-                    'rdo_stage_node "${@}"'
+  # args::new_command "clean" empty "Remove environment" \
+  #                   'rdo_stage_clean "${@}"'
+  # args::new_command "init" empty "Initialize new environment for staging" \
+  #                   'rdo_stage_init "${@}"'
+  # args::new_command "network" default "Add network" \
+  #                   'rdo_stage_network "${@}"'
+  # args::new_command "node" default "Add node" \
+  #                   'rdo_stage_node "${@}"'
+  # args::new_command "test" empty "Stage test environment" \
+  #                   'rdo_stage_test "${@}"'
 
-  args::new_command "test" empty "Stage test environment" \
-                    'rdo_stage_test "${@}"'
+  # eval "$(args::process)"
 
-  eval "$(args::process)"
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo stage COMMAND"
+        echo
+        echo "Manage staging of environments."
+        echo
+        echo "Commands:"
+        echo "  clean     Remove environment"
+        echo "  init      Initialize new environment for staging"
+        echo "  network   Add network"
+        echo "  node      Add node"
+        echo "  test      Stage test environment"
+        echo
+        echo "Run 'rdo stage COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo stage"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    clean)
+      args::verify_command_empty "${@}"
+      rdo_stage_clean "${@}"
+      ;;
+    init)
+      args::verify_command_empty "${@}"
+      rdo_stage_init "${@}"
+      ;;
+    network)
+      rdo_stage_network "${@}"
+      ;;
+    node)
+      rdo_stage_node "${@}"
+      ;;
+    test)
+      args::verify_command_empty "${@}"
+      rdo_stage_test "${@}"
+      ;;
+    *)
+      print_error "rdo stage: unknown command: ${args__cmd}"
+      exit 1
+      ;;      
+  esac
 }
 
 rdo_stage_test() {
   rdo_stage_init
-  rdo_stage_network "network-1"
+  rdo_stage_network "rt-network-1"
+  rdo_stage_node --network "rt-network-1" "rt-node-1"
 }
 
 rdo_stage_clean() {
-  rdo_docker_network clean > /dev/null
-  rm -rf "${project_path}/stage"
+  rdo_docker_container_clean > /dev/null
+  rdo_docker_network_clean > /dev/null
+  rm -rf "./stage"
 }
 
 rdo_stage_init() {
   rdo_stage_clean
-  mkdir -p "${project_path}/stage/"{network,node}
+  mkdir -p "./stage/"{networks,nodes}
 }
 
 rdo_stage_network() {
-  local name="${1:?Missing name argument.}"
-  local path="${project_path}/stage/network/${name}"
+  eval "$(args::init_options_string "rdo stage network NAME" "Add network to staging of environments.")"
+  eval "$(args::process)"
 
+  local path="./stage/networks/${args__1}"
   mkdir -p "${path}"
 
-  rdo_docker_network create "${name}" > /dev/null
+  rdo_docker_network create "${args__1}" > /dev/null
 
-  echo "$(rdo_docker_network subnet "${name}")" > "${path}/subnet"
-  echo "$(rdo_docker_network address "${name}")" > "${path}/address"
-  echo "$(rdo_docker_network prefix "${name}")" > "${path}/prefix"
+  echo "$(rdo_docker_network subnet "${args__1}")" > "${path}/subnet"
+  echo "$(rdo_docker_network address "${args__1}")" > "${path}/address"
+  echo "$(rdo_docker_network prefix "${args__1}")" > "${path}/prefix"
 }
 
 rdo_stage_node() {
   local networks=()
+  local create_args=()
 
   eval "$(args::init_options_string "rdo stage node NAME" "Add node to staging of environments.")"
 
@@ -61,8 +121,23 @@ rdo_stage_node() {
 
   eval "$(args::process)"
 
-  # local name="${1:?Missing name argument.}"
-  # local path="${project_path}/stage/node/${name}"
+  local path="./stage/nodes/${args__1}"
+  mkdir -p "${path}/"interfaces
 
-  # mkdir -p "${path}"
+  create_args+=(
+    --name "${args__1}"
+    --tty
+    --network "none"
+    --mount "type=bind,source=$(project_absolute_unix_path)/stage/nodes/${args__1}/,target=/stage/self/"
+  )  
+
+  rdo_docker_container_create "${create_args[@]}" "rdo/run/rtorrent:default"
+
+  docker network disconnect "none" "${args__1}"
+
+  for network in "${networks[@]}"; do
+    docker network connect "${network}" "${args__1}"
+  done
+
+  docker start "${args__1}"  
 }

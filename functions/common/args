@@ -53,6 +53,15 @@ args::init_options_empty() {
 EOF
 }
 
+args::init_options_string() {
+  args::__init "${@}"
+  cat - <<EOF
+  local args__has_commands=no
+  local args__has_options=yes
+  local args__extra_args=string
+EOF
+}
+
 args::new_option() {
   local name="${1:?Missing name argument.}"
   args__options+=("${name}")
@@ -116,9 +125,15 @@ EOF
     done
   fi
 
-  cat - <<EOF
+  if [[ "${args__has_commands}" == "yes" ]]; then
+    cat - <<EOF
       --help|-h|'')
 EOF
+  else
+    cat - <<EOF
+      --help|-h)
+EOF
+  fi
 
   args::print_help
 
@@ -138,7 +153,7 @@ EOF
 
   cat - <<EOF
       *)
-        if [[ -z "\${1##-*}" ]]; then
+        if [[ -n "${1}" ]] && [[ -z "\${1##-*}" ]]; then
           print_error "\${args__root}: unknown flag: \${1}"
           return 1
         fi
@@ -283,6 +298,33 @@ args::process() {
     args::process_command
     args__need_seperator=yes
   fi
+
+  case "${args__extra_args}" in
+    empty|default)
+      :
+      ;;
+    string)
+      cat - <<EOF
+
+  if (( \${#} > 1 )); then
+    print_error "${args__root}: too many arguments"
+    exit 1
+  fi
+
+  if (( \${#} == 0 )) || [[ -z "\${1}" ]]; then
+    print_error "${args__root}: missing or empty argument"
+    exit 1
+  fi
+
+  local args__1="\${1}"
+  shift
+EOF
+      ;;
+    *)
+      print_error "${args__root}: invalid extra args type: ${args__extra_args}"
+      exit 1
+      ;;
+  esac
 }
 
 args::print_process() {

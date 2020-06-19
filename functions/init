@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rdo_header init
+include_header init
 
 rdo_init() {
   # eval "$(args::init_subcommand "rdo init" "Initialize rtorrent docker test environment.")"

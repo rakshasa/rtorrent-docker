@@ -52,7 +52,19 @@ _rtorrent_docker__rdo() {
   if [[ "${word}" == -* ]]; then
     flags=(--debug#-d --help)
   else
-    commands=(bash build destroy docker env git init machine tags watch)
+    commands=(
+      bash
+      build
+      destroy
+      docker
+      env
+      git
+      init
+      machine
+      stage
+      tags
+      watch
+    )
   fi
 }
 
@@ -230,6 +242,17 @@ _rtorrent_docker__rdo_machine() {
   fi
 }
 
+# completion do env layer
+
+_rtorrent_docker__rdo_stage() {
+  commands=(
+    clean
+    init
+    network
+    node
+    test
+  )
+}
 # completion do tags layer
 
 _rtorrent_docker__rdo_tags() {

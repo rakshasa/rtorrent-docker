@@ -6,29 +6,30 @@
 
 set -e
 
-PROJECT_PATH="${BASH_SOURCE[0]%/*}"
-PROJECT_ABSOLUTE_PATH=
-DATA_PATH="${PROJECT_PATH}/data"
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
-source "${PROJECT_PATH}/functions/common/init"
-is_header_included common/args || source "${PROJECT_PATH}/functions/common/args"
-is_header_included common/utils || source "${PROJECT_PATH}/functions/common/utils"
+PROJECT_PATH="."
+DATA_PATH="./data"
 
-is_header_included common.init || source "${PROJECT_PATH}/functions/common.init"
-is_header_included common.container || source "${PROJECT_PATH}/functions/common.container"
-is_header_included common.image || source "${PROJECT_PATH}/functions/common.image"
-is_header_included common.system || source "${PROJECT_PATH}/functions/common.system"
+source "./functions/common/init"
+is_header_included common/args || source "./functions/common/args"
+is_header_included common/utils || source "./functions/common/utils"
+
+is_header_included common.init || source "./functions/common.init"
+is_header_included common.container || source "./functions/common.container"
+is_header_included common.image || source "./functions/common.image"
+is_header_included common.system || source "./functions/common.system"
 
 # Preload any headers for commands that are likely to be executed
 # multiple times.
-is_header_included build || source "${PROJECT_PATH}/functions/build"
-is_header_included docker || source "${PROJECT_PATH}/functions/docker"
-is_header_included docker.clean || source "${PROJECT_PATH}/functions/docker.clean"
-is_header_included docker.container || source "${PROJECT_PATH}/functions/docker.container"
-is_header_included docker.context || source "${PROJECT_PATH}/functions/docker.context"
-is_header_included docker.network || source "${PROJECT_PATH}/functions/docker.network"
-is_header_included run || source "${PROJECT_PATH}/functions/run"
-is_header_included stage || source "${PROJECT_PATH}/functions/stage"
+is_header_included build || source "./functions/build"
+is_header_included docker || source "./functions/docker"
+is_header_included docker.clean || source "./functions/docker.clean"
+is_header_included docker.container || source "./functions/docker.container"
+is_header_included docker.context || source "./functions/docker.context"
+is_header_included docker.network || source "./functions/docker.network"
+is_header_included run || source "./functions/run"
+is_header_included stage || source "./functions/stage"
 
 rdo() {
   # eval "$(args::init_subcommand "rdo" "Build project")"
@@ -37,19 +38,19 @@ rdo() {
   #                  'set -x'
 
   # args::new_command "bash" default "Start custom bash session" \
-  #                   'is_header_included machine || source "${PROJECT_PATH}/functions/machine"; rdo_bash "${@}"'
+  #                   'is_header_included machine || source "./functions/machine"; rdo_bash "${@}"'
   # args::new_command "build" default "Build projects" \
   #                   'rdo_build "${@}"'
   # args::new_command "docker" default "Manage docker" \
   #                   'rdo_docker "${@}"'
   # args::new_command "env" default "." \
-  #                   'is_header_included env || source "${PROJECT_PATH}/functions/env"; rdo_env "${@}"'
+  #                   'is_header_included env || source "./functions/env"; rdo_env "${@}"'
   # args::new_command "git" default "." \
-  #                   'is_header_included git || source "${PROJECT_PATH}/functions/git"; do_git "${@}"'
+  #                   'is_header_included git || source "./functions/git"; do_git "${@}"'
   # args::new_command "init" default "Initalize the environment and optional docker machine" \
-  #                   'is_header_included init || source "${PROJECT_PATH}/functions/init"; rdo_init "${@}"'
+  #                   'is_header_included init || source "./functions/init"; rdo_init "${@}"'
   # args::new_command "machine" default "Manage docker machines" \
-  #                   'is_header_included machine || source "${PROJECT_PATH}/functions/machine"; rdo_machine "${@}"'
+  #                   'is_header_included machine || source "./functions/machine"; rdo_machine "${@}"'
   # args::new_command "stage" default "." \
   #                   'rdo_stage "${@}"'
 
@@ -98,7 +99,7 @@ rdo() {
 
   case "${args__cmd}" in
     bash)
-        is_header_included machine || source "${PROJECT_PATH}/functions/machine"; rdo_bash "${@}"
+        is_header_included machine || source "./functions/machine"; rdo_bash "${@}"
       ;;
     build)
         rdo_build "${@}"
@@ -107,16 +108,16 @@ rdo() {
         rdo_docker "${@}"
       ;;
     env)
-        is_header_included env || source "${PROJECT_PATH}/functions/env"; rdo_env "${@}"
+        is_header_included env || source "./functions/env"; rdo_env "${@}"
       ;;
     git)
-        is_header_included git || source "${PROJECT_PATH}/functions/git"; do_git "${@}"
+        is_header_included git || source "./functions/git"; do_git "${@}"
       ;;
     init)
-        is_header_included init || source "${PROJECT_PATH}/functions/init"; rdo_init "${@}"
+        is_header_included init || source "./functions/init"; rdo_init "${@}"
       ;;
     machine)
-        is_header_included machine || source "${PROJECT_PATH}/functions/machine"; rdo_machine "${@}"
+        is_header_included machine || source "./functions/machine"; rdo_machine "${@}"
       ;;
     stage)
         rdo_stage "${@}"
@@ -131,7 +132,7 @@ rdo() {
   #     rdo_run "${@}"
   #     ;;
   #   tags)
-  #     source "${PROJECT_PATH}/functions/tags"
+  #     source "./functions/tags"
   #     rdo_tags "${@}"
   #     ;;
 
@@ -143,7 +144,7 @@ rdo() {
   #       docker images |pr -t -2 -o 4 -w 260'
   #     ;;
   #   destroy)
-  #     source "${PROJECT_PATH}/functions/machine"
+  #     source "./functions/machine"
   #     rdo_machine_destroy
   #     [[ -f "${DATA_PATH}/"env.* ]] && rm "${DATA_PATH}/"env.*
   #     ;;
