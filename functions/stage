@@ -80,21 +80,26 @@ rdo_stage() {
 }
 
 rdo_stage_test() {
+  print_progress "staging test"
   rdo_stage_init
   rdo_stage_network "rt-network-1"
-  rdo_stage_node --network "rt-network-1" "rt-node-1"
+  rdo_stage_network "rt-network-2"
+  rdo_stage_node --network "rt-network-1" --network "rt-network-2" "rt-node-1"
+  print_progress "staged test"
 }
 
 rdo_stage_clean() {
   rdo_node_clean > /dev/null
   rdo_network_clean > /dev/null
   rm -rf "./stage"
+  print_progress "stage cleaned"
 }
 
 rdo_stage_init() {
   # TODO: Add state, don't allow calls when not in initialize.
   rdo_stage_clean
   mkdir -p "./stage/"{networks,nodes}
+  print_progress "stage initialized"
 }
 
 rdo_stage_network() {
@@ -104,21 +109,23 @@ rdo_stage_network() {
   local path="./stage/networks/${name}"
   mkdir -p "${path}"
 
-  docker network create --label "project=rdo" "${name}"
+  docker network create --label "project=rdo" "${name}" > /dev/null
 
   echo "$(rdo_network subnet "${name}")" > "${path}/subnet"
   echo "$(rdo_network address "${name}")" > "${path}/address"
   echo "$(rdo_network prefix "${name}")" > "${path}/prefix"
+
+  echo "${name}"
 }
 
 rdo_stage_node() {
   local networks=()
   local create_args=()
 
-  eval "$(args::init_options_string "rdo stage node NAME" "Add node to staging of environments.")"
+  eval "$(args::init_options_string "rdo stage node NAME" "name" "Add node to staging of environments.")"
 
   args::new_option "network" string "n" "Connect node to network" \
-                   'networks+=("${name}")'
+                   'networks+=("${args__1}")'
 
   eval "$(args::process)"
 
@@ -132,13 +139,41 @@ rdo_stage_node() {
     --mount "type=bind,source=$(project_absolute_unix_path)/stage/nodes/${name}/,target=/stage/self/"
   )  
 
-  rdo_node_create "${create_args[@]}" "rdo/run/rtorrent:default"
-
+  docker container create --label "project=rdo" "${create_args[@]}" "rdo/run/rtorrent:default" > /dev/null
   docker network disconnect "none" "${name}"
 
   for network in "${networks[@]}"; do
     docker network connect "${network}" "${name}"
   done
 
-  docker start "${name}"
+  docker start "${name}" > /dev/null
+
+  rdo_stage__update_network
+
+  echo "${name}"
+}
+
+# Helper functions
+
+rdo_stage__update_network() {
+  local node_path="./stage/nodes/${name}"
+
+  rm -rf "${node_path}/interfaces"
+
+  local line
+  while IFS= read -r line; do
+    if ! [[ "${line}" =~ ^network:([^ ]*)\ mac:([^ ]*)\ inet:([^ ]*)\ inet6:([^ ]*)$ ]]; then
+      print_error "invalid output from 'rdo node network '${name}'"
+      continue
+    fi
+
+    local network="${BASH_REMATCH[1]:?Missing network name.}"
+    local interface_path="${node_path}/interfaces/${network}"
+    mkdir -p "${interface_path}"
+
+    [[ -z "${BASH_REMATCH[2]}" ]] || echo "${BASH_REMATCH[2]}" > "${interface_path}/mac"
+    [[ -z "${BASH_REMATCH[3]}" ]] || echo "${BASH_REMATCH[3]}" > "${interface_path}/inet"
+    [[ -z "${BASH_REMATCH[4]}" ]] || echo "${BASH_REMATCH[4]}" > "${interface_path}/inet6"
+
+  done <<< "$(rdo_node_network "${name}")"
 }

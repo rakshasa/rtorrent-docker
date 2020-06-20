@@ -61,6 +61,8 @@ _rtorrent_docker__rdo() {
       git
       init
       machine
+      network
+      node
       stage
       tags
       watch
@@ -108,7 +110,6 @@ _rtorrent_docker__rdo_docker() {
       context
       images
       inspect
-      network
       stage
       targets
     )
@@ -184,20 +185,6 @@ _rtorrent_docker__rdo_docker_inspect() {
   flags=(--id --help)
 }
 
-_rtorrent_docker__rdo_docker_network() {
-  if [[ "${word}" != -* ]]; then
-    commands=(
-      address
-      clean
-      create
-      ls
-      prefix
-      rm
-      subnet
-    )
-  fi
-}
-
 _rtorrent_docker__rdo_docker_stage() {
   if [[ "${word}" != -* ]]; then
     commands=($("${words[0]}" docker targets))
@@ -242,6 +229,34 @@ _rtorrent_docker__rdo_machine() {
   fi
 }
 
+# completion do network layer
+
+_rtorrent_docker__rdo_network() {
+  if [[ "${word}" != -* ]]; then
+    commands=(
+      address
+      clean
+      ls
+      prefix
+      rm
+      subnet
+    )
+  fi
+}
+
+# completion do node layer
+
+_rtorrent_docker__rdo_node() {
+  if [[ "${word}" != -* ]]; then
+    commands=(
+      clean
+      ls
+      network
+      rm
+    )
+  fi
+}
+
 # completion do env layer
 
 _rtorrent_docker__rdo_stage() {
@@ -253,6 +268,7 @@ _rtorrent_docker__rdo_stage() {
     test
   )
 }
+
 # completion do tags layer
 
 _rtorrent_docker__rdo_tags() {

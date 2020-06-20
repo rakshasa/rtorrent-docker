@@ -93,6 +93,13 @@ args::verify_command_empty() {
   fi
 }
 
+args::verify_command_string() {
+  if (( ${#} != 1 )) || [[ -z "${1}" ]]; then
+    print_error "${args__root} ${args__cmd}: argument must be a single string: ${@}"
+    exit 1
+  fi
+}
+
 args::process_options() {
   cat - <<EOF
 while true; do
@@ -102,9 +109,15 @@ EOF
   if (( ${#args__options[@]} != 0 )); then
     local name
     for name in "${args__options[@]}"; do
-      cat - <<EOF
+      if [[ -n "${args__option_flags[${name}]}" ]]; then
+        cat - <<EOF
+    --${name}|-${args__option_flags[${name}]})
+EOF
+      else
+        cat - <<EOF
     --${name})
 EOF
+      fi
 
       case "${args__option_types[${name}]}" in
         empty)
@@ -200,8 +213,14 @@ EOF
     ${args__command_blocks[${name}]}
 EOF
           ;;
+        string)
+          cat - <<EOF
+    args::verify_command_string "\${@}"
+    ${args__command_blocks[${name}]}
+EOF
+          ;;
         *)
-          print_error "${args__root}: invalid type for '--${name}'"
+          print_error "${args__root}: invalid type for '${name}'"
           exit 1
           ;;
       esac
@@ -323,7 +342,7 @@ if (( \${#} == 0 )) || [[ -z "\${1}" ]]; then
   exit 1
 fi
 
-local args__1="\${1}"
+local ${args__arg_name:?Missing arg name.}="\${1}"
 shift
 EOF
       ;;

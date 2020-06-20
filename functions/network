@@ -3,81 +3,22 @@
 include_header network
 
 rdo_network() {
-  # eval "$(args::init_subcommand "rdo network" "Manage networks.")"
+  eval "$(args::init_subcommand "rdo network" "Manage networks.")"
 
-  # args::new_command "address" default "Get network address" \
-  #                   'rdo_network_address "${@}"'
-  # args::new_command "clean" empty "Remove all networks" \
-  #                   'rdo_network_clean "${@}"'
-  # args::new_command "ls" default "List networks" \
-  #                   'rdo_network_ls "${@}"'
-  # args::new_command "prefix" default "Get network prefix" \
-  #                   'rdo_network_prefix "${@}"'
-  # # args::new_command "rm" default "Remove one or more networks" \
-  # #                   'rdo_network_rm "${@}"'
-  # args::new_command "subnet" default "Get network subnet" \
-  #                   'rdo_network_subnet "${@}"'
+  args::new_command "address" default "Get network address" \
+                    'rdo_network_address "${@}"'
+  args::new_command "clean" empty "Remove all networks" \
+                    'rdo_network_clean "${@}"'
+  args::new_command "ls" default "List networks" \
+                    'rdo_network_ls "${@}"'
+  args::new_command "prefix" default "Get network prefix" \
+                    'rdo_network_prefix "${@}"'
+  # args::new_command "rm" default "Remove one or more networks" \
+  #                   'rdo_network_rm "${@}"'
+  args::new_command "subnet" default "Get network subnet" \
+                    'rdo_network_subnet "${@}"'
 
-  # eval "$(args::process)"
-
-  while true; do
-    case "${1}" in
-      --help|-h|'')
-        echo "Usage: rdo network COMMAND"
-        echo
-        echo "Manage networks."
-        echo
-        echo "Commands:"
-        echo "  address   Get network address"
-        echo "  clean     Remove all networks"
-        echo "  create    Create a network"
-        echo "  ls        List networks"
-        echo "  prefix    Get network prefix"
-        echo "  subnet    Get network subnet"
-        echo
-        echo "Run 'rdo network COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  local args__root="rdo network"
-  local args__cmd="${1}"
-  shift || :
-
-  case "${args__cmd}" in
-    address)
-      rdo_network_address "${@}"
-      ;;
-    clean)
-      args::verify_command_empty "${@}"
-      rdo_network_clean "${@}"
-      ;;
-    create)
-      rdo_network_create "${@}"
-      ;;
-    ls)
-      rdo_network_ls "${@}"
-      ;;
-    prefix)
-      rdo_network_prefix "${@}"
-      ;;
-    subnet)
-      rdo_network_subnet "${@}"
-      ;;
-    *)
-      print_error "rdo network: unknown command: ${args__cmd}"
-      exit 1
-      ;;
-  esac
+  eval "$(args::process)"
 }
 
 rdo_network_address() {

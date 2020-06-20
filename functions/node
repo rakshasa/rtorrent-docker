@@ -3,69 +3,18 @@
 include_header node
 
 rdo_node() {
-  # eval "$(args::init_subcommand "rdo node" "Manage nodes.")"
+  eval "$(args::init_subcommand "rdo node" "Manage nodes.")"
 
-  # args::new_command "clean" empty "Remove all nodes" \
-  #                   'rdo_node_clean "${@}"'
-  # args::new_command "create" default "Create a node" \
-  #                   'rdo_node_create "${@}"'
-  # args::new_command "ls" default "List nodes" \
-  #                   'rdo_node_ls "${@}"'
-  # args::new_command "rm" default "Remove one or more nodes" \
-  #                   'rdo_node_rm "${@}"'
+  args::new_command "clean" empty "Remove all nodes" \
+                    'rdo_node_clean "${@}"'
+  args::new_command "ls" default "List nodes" \
+                    'rdo_node_ls "${@}"'
+  args::new_command "network" string "Show networks" \
+                    'rdo_node_network "${@}"'
+  args::new_command "rm" default "Remove one or more nodes" \
+                    'rdo_node_rm "${@}"'
 
-  # eval "$(args::process)"
-
-  while true; do
-    case "${1}" in
-      --help|-h|'')
-        echo "Usage: rdo node COMMAND"
-        echo
-        echo "Manage nodes."
-        echo
-        echo "Commands:"
-        echo "  clean    Remove all nodes"
-        echo "  create   Create a node"
-        echo "  ls       List nodes"
-        echo "  rm       Remove one or more nodes"
-        echo
-        echo "Run 'rdo node COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -n "" ]] && [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  local args__root="rdo node"
-  local args__cmd="${1}"
-  shift || :
-
-  case "${args__cmd}" in
-    clean)
-      args::verify_command_empty "${@}"
-      rdo_node_clean "${@}"
-      ;;
-    create)
-      rdo_node_create "${@}"
-      ;;
-    ls)
-      rdo_node_ls "${@}"
-      ;;
-    rm)
-      rdo_node_rm "${@}"
-      ;;
-    *)
-      print_error "rdo node: unknown command: ${args__cmd}"
-      exit 1
-      ;;      
-  esac
+  eval "$(args::process)"
 }
 
 rdo_node_clean() {
@@ -77,8 +26,12 @@ rdo_node_clean() {
   fi
 }
 
-rdo_node_create() {
-  docker container create --label "project=rdo" "${@}"
+rdo_node_network() {
+  echo "$(docker inspect --format '
+    {{- range $key, $value := .NetworkSettings.Networks }}
+      {{- printf "network:%s mac:%s inet:%s inet6:%s\n" $key $value.MacAddress $value.IPAddress $value.GlobalIPv6Address }}
+    {{- end -}}
+    ' "${1}")"
 }
 
 rdo_node_ls() {
