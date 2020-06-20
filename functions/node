@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+
+include_header node
+
+rdo_node() {
+  # eval "$(args::init_subcommand "rdo node" "Manage nodes.")"
+
+  # args::new_command "clean" empty "Remove all nodes" \
+  #                   'rdo_node_clean "${@}"'
+  # args::new_command "create" default "Create a node" \
+  #                   'rdo_node_create "${@}"'
+  # args::new_command "ls" default "List nodes" \
+  #                   'rdo_node_ls "${@}"'
+  # args::new_command "rm" default "Remove one or more nodes" \
+  #                   'rdo_node_rm "${@}"'
+
+  # eval "$(args::process)"
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo node COMMAND"
+        echo
+        echo "Manage nodes."
+        echo
+        echo "Commands:"
+        echo "  clean    Remove all nodes"
+        echo "  create   Create a node"
+        echo "  ls       List nodes"
+        echo "  rm       Remove one or more nodes"
+        echo
+        echo "Run 'rdo node COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo node"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    clean)
+      args::verify_command_empty "${@}"
+      rdo_node_clean "${@}"
+      ;;
+    create)
+      rdo_node_create "${@}"
+      ;;
+    ls)
+      rdo_node_ls "${@}"
+      ;;
+    rm)
+      rdo_node_rm "${@}"
+      ;;
+    *)
+      print_error "rdo node: unknown command: ${args__cmd}"
+      exit 1
+      ;;      
+  esac
+}
+
+rdo_node_clean() {
+  local nodes
+  mapfile -t nodes < <(rdo_node_ls --all --quiet --no-trunc)
+
+  if (( ${#nodes[@]} > 0 )); then
+    docker container rm --force "${nodes[@]}"
+  fi
+}
+
+rdo_node_create() {
+  docker container create --label "project=rdo" "${@}"
+}
+
+rdo_node_ls() {
+  docker container ls --filter "label=project=rdo" "${@}"
+}

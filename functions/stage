@@ -86,28 +86,29 @@ rdo_stage_test() {
 }
 
 rdo_stage_clean() {
-  rdo_docker_container_clean > /dev/null
-  rdo_docker_network_clean > /dev/null
+  rdo_node_clean > /dev/null
+  rdo_network_clean > /dev/null
   rm -rf "./stage"
 }
 
 rdo_stage_init() {
+  # TODO: Add state, don't allow calls when not in initialize.
   rdo_stage_clean
   mkdir -p "./stage/"{networks,nodes}
 }
 
 rdo_stage_network() {
-  eval "$(args::init_options_string "rdo stage network NAME" "Add network to staging of environments.")"
+  eval "$(args::init_options_string "rdo stage network NAME" "name" "Add network to staging of environments.")"
   eval "$(args::process)"
 
-  local path="./stage/networks/${args__1}"
+  local path="./stage/networks/${name}"
   mkdir -p "${path}"
 
-  rdo_docker_network create "${args__1}" > /dev/null
+  docker network create --label "project=rdo" "${name}"
 
-  echo "$(rdo_docker_network subnet "${args__1}")" > "${path}/subnet"
-  echo "$(rdo_docker_network address "${args__1}")" > "${path}/address"
-  echo "$(rdo_docker_network prefix "${args__1}")" > "${path}/prefix"
+  echo "$(rdo_network subnet "${name}")" > "${path}/subnet"
+  echo "$(rdo_network address "${name}")" > "${path}/address"
+  echo "$(rdo_network prefix "${name}")" > "${path}/prefix"
 }
 
 rdo_stage_node() {
@@ -117,27 +118,27 @@ rdo_stage_node() {
   eval "$(args::init_options_string "rdo stage node NAME" "Add node to staging of environments.")"
 
   args::new_option "network" string "n" "Connect node to network" \
-                   'networks+=("${args__1}")'
+                   'networks+=("${name}")'
 
   eval "$(args::process)"
 
-  local path="./stage/nodes/${args__1}"
+  local path="./stage/nodes/${name}"
   mkdir -p "${path}/"interfaces
 
   create_args+=(
-    --name "${args__1}"
+    --name "${name}"
     --tty
     --network "none"
-    --mount "type=bind,source=$(project_absolute_unix_path)/stage/nodes/${args__1}/,target=/stage/self/"
+    --mount "type=bind,source=$(project_absolute_unix_path)/stage/nodes/${name}/,target=/stage/self/"
   )  
 
-  rdo_docker_container_create "${create_args[@]}" "rdo/run/rtorrent:default"
+  rdo_node_create "${create_args[@]}" "rdo/run/rtorrent:default"
 
-  docker network disconnect "none" "${args__1}"
+  docker network disconnect "none" "${name}"
 
   for network in "${networks[@]}"; do
-    docker network connect "${network}" "${args__1}"
+    docker network connect "${network}" "${name}"
   done
 
-  docker start "${args__1}"  
+  docker start "${name}"
 }
