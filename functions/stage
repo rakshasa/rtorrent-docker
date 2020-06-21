@@ -6,77 +6,22 @@ rdo_stage() {
   local project_path
   project_path="$(get_project_path)"
 
-  # eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
+  eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
 
-  # args::new_command "clean" empty "Remove environment" \
-  #                   'rdo_stage_clean "${@}"'
-  # args::new_command "init" empty "Initialize new environment for staging" \
-  #                   'rdo_stage_init "${@}"'
-  # args::new_command "network" default "Add network" \
-  #                   'rdo_stage_network "${@}"'
-  # args::new_command "node" default "Add node" \
-  #                   'rdo_stage_node "${@}"'
-  # args::new_command "test" empty "Stage test environment" \
-  #                   'rdo_stage_test "${@}"'
+  args::new_command "clean" empty "Remove environment" \
+                    'rdo_stage_clean'
+  args::new_command "deploy" empty "Deploy environment" \
+                    'rdo_stage_deploy'
+  args::new_command "init" empty "Initialize new environment for staging" \
+                    'rdo_stage_init'
+  args::new_command "network" default "Add network" \
+                    'rdo_stage_network "${@}"'
+  args::new_command "node" default "Add node" \
+                    'rdo_stage_node "${@}"'
+  args::new_command "test" empty "Stage test environment" \
+                    'rdo_stage_test'
 
-  # eval "$(args::process)"
-
-  while true; do
-    case "${1}" in
-      --help|-h|'')
-        echo "Usage: rdo stage COMMAND"
-        echo
-        echo "Manage staging of environments."
-        echo
-        echo "Commands:"
-        echo "  clean     Remove environment"
-        echo "  init      Initialize new environment for staging"
-        echo "  network   Add network"
-        echo "  node      Add node"
-        echo "  test      Stage test environment"
-        echo
-        echo "Run 'rdo stage COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -n "" ]] && [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  local args__root="rdo stage"
-  local args__cmd="${1}"
-  shift || :
-
-  case "${args__cmd}" in
-    clean)
-      args::verify_command_empty "${@}"
-      rdo_stage_clean "${@}"
-      ;;
-    init)
-      args::verify_command_empty "${@}"
-      rdo_stage_init "${@}"
-      ;;
-    network)
-      rdo_stage_network "${@}"
-      ;;
-    node)
-      rdo_stage_node "${@}"
-      ;;
-    test)
-      args::verify_command_empty "${@}"
-      rdo_stage_test "${@}"
-      ;;
-    *)
-      print_error "rdo stage: unknown command: ${args__cmd}"
-      exit 1
-      ;;      
-  esac
+  eval "$(args::process)"
 }
 
 rdo_stage_test() {
@@ -84,7 +29,8 @@ rdo_stage_test() {
   rdo_stage_init
   rdo_stage_network "rt-network-1"
   rdo_stage_network "rt-network-2"
-  rdo_stage_node --network "rt-network-1" --network "rt-network-2" "rt-node-1"
+  rdo_stage_node --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-node-1"
+  rdo_stage_node --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-node-2"
   print_progress "staged test"
 }
 
@@ -93,6 +39,17 @@ rdo_stage_clean() {
   rdo_network_clean > /dev/null
   rm -rf "./stage"
   print_progress "stage cleaned"
+}
+
+rdo_stage_deploy() {
+  local node_list=()
+  mapfile -t node_list < <(ls "./stage/nodes/")
+
+  for node in "${node_list[@]}"; do
+    echo "deploy" > "./stage/nodes/${node}/signal"
+  done
+
+  print_progress "stage deployed"
 }
 
 rdo_stage_init() {
@@ -119,18 +76,25 @@ rdo_stage_network() {
 }
 
 rdo_stage_node() {
-  local networks=()
   local create_args=()
+  local networks=()
+  local run_template=
 
   eval "$(args::init_options_string "rdo stage node NAME" "name" "Add node to staging of environments.")"
 
   args::new_option "network" string "n" "Connect node to network" \
                    'networks+=("${args__1}")'
+  args::new_option "run-template" string "r" "Use template to create run script" \
+                   'run_template=("${args__1}")'
 
   eval "$(args::process)"
 
-  local path="./stage/nodes/${name}"
-  mkdir -p "${path}/"interfaces
+  : "${run_template:?Missing run template argument.}"
+
+  local node_path="./stage/nodes/${name}"
+  mkdir -p "${node_path}/"interfaces
+
+  echo "stage" > "${node_path}/signal"
 
   create_args+=(
     --name "${name}"
@@ -149,6 +113,9 @@ rdo_stage_node() {
   docker start "${name}" > /dev/null
 
   rdo_stage__update_network
+
+  "./templates/run/${run_template}" > "${node_path}/run"
+  chmod a+x "${node_path}/run"
 
   echo "${name}"
 }

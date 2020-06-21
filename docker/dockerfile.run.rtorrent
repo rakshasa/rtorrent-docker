@@ -13,16 +13,6 @@ WORKDIR /var/run/rtorrent
 
 ENV PATH="/prefix/bin:${PATH}"
 
-RUN \
---mount=type=tmpfs,target=/var/cache/apk \
---mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
-\
-pkg-add curl \
-        musl \
-        ncurses \
-        openssl \
-        zlib
-
 COPY --from=stage /deploy/prefix/ /prefix/
 COPY bash_profile /root/
 COPY entry-point.sh /

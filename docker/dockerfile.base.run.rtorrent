@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:experimental
 
 ARG REPOSITORY
-ARG TAG_APPEND
 
 FROM "${REPOSITORY}/ancestor:global"
 
@@ -9,8 +8,7 @@ RUN \
 --mount=type=tmpfs,target=/var/cache/apk \
 --mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
 \
-pkg-add cppunit \
-        curl \
+pkg-add curl \
         musl \
         ncurses \
         openssl \
