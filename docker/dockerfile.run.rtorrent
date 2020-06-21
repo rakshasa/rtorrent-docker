@@ -9,7 +9,7 @@ FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
 
 FROM "${REPOSITORY}/base/run/rtorrent:${TAG_APPEND}"
 
-WORKDIR /var/run/rtorrent
+WORKDIR /run/rtorrent
 
 ENV PATH="/prefix/bin:${PATH}"
 
