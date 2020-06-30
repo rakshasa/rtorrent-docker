@@ -15,6 +15,7 @@ ARG ANCESTOR_PROJECT
 ARG REPOSITORY
 ARG TAG_APPEND
 
+LABEL project_name="rdo"
 LABEL ancestor_project="${ANCESTOR_PROJECT}"
 
 # TODO: Consider adding the timestamp to current directory.

@@ -20,6 +20,8 @@ rdo_stage() {
                     'rdo_stage_node "${@}"'
   args::new_command "test" empty "Stage test environment" \
                     'rdo_stage_test'
+  args::new_command "torrent" default "Add torrent" \
+                    'rdo_stage_torrent "${@}"'
 
   eval "$(args::process)"
 }
@@ -37,16 +39,16 @@ rdo_stage_test() {
 rdo_stage_clean() {
   rdo_node_clean > /dev/null
   rdo_network_clean > /dev/null
-  rm -rf "./run"
+  rm -rf "./run/current"
   print_progress "stage cleaned"
 }
 
 rdo_stage_deploy() {
   local node_list=()
-  mapfile -t node_list < <(ls "./run/nodes/")
+  mapfile -t node_list < <(ls "./run/current/nodes/")
 
   for node in "${node_list[@]}"; do
-    echo "deploy" > "./run/nodes/${node}/signal"
+    echo "deploy" > "./run/current/nodes/${node}/signal"
   done
 
   print_progress "stage deployed"
@@ -55,7 +57,7 @@ rdo_stage_deploy() {
 rdo_stage_init() {
   # TODO: Add state, don't allow calls when not in initialize.
   rdo_stage_clean
-  mkdir -p "./run/"{networks,nodes}
+  mkdir -p "./run/current/"{networks,nodes}
   print_progress "stage initialized"
 }
 
@@ -63,7 +65,7 @@ rdo_stage_network() {
   eval "$(args::init_options_string "rdo stage network NAME" "name" "Add network to staging of environments.")"
   eval "$(args::process)"
 
-  local path="./run/networks/${name}"
+  local path="./run/current/networks/${name}"
   mkdir -p "${path}"
 
   docker network create --label "project=rdo" "${name}" > /dev/null
@@ -91,7 +93,7 @@ rdo_stage_node() {
 
   : "${run_template:?Missing run template argument.}"
 
-  local node_path="./run/nodes/${name}"
+  local node_path="./run/current/nodes/${name}"
   mkdir -p "${node_path}/"interfaces
 
   echo "stage" > "${node_path}/signal"
@@ -100,7 +102,7 @@ rdo_stage_node() {
     --name "${name}"
     --tty
     --network "none"
-    --mount "type=bind,source=$(project_absolute_unix_path)/run/nodes/${name}/,target=/run/self/"
+    --mount "type=bind,source=$(project_absolute_unix_path)/run/current/nodes/${name}/,target=/run/self/"
   )  
 
   docker container create --label "project=rdo" "${create_args[@]}" "rdo/run/rtorrent:default" > /dev/null
@@ -123,7 +125,7 @@ rdo_stage_node() {
 # Helper functions
 
 rdo_stage__update_network() {
-  local node_path="./run/nodes/${name}"
+  local node_path="./run/current/nodes/${name}"
 
   rm -rf "${node_path}/interfaces"
 

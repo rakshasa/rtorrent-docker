@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+include_header torrent
+
+rdo_torrent() {
+  local project_path
+  project_path="$(get_project_path)"
+
+  eval "$(args::init_subcommand "rdo torrent" "Manage staging of environments.")"
+
+  args::new_command "create" default "Create a torrent" \
+                    'rdo_torrent_create'
+
+  eval "$(args::process)"
+}
+
+rdo_torrent_create() {
+}
+
+# Helper methods:
+
+rdo_torrent__init() {
+}

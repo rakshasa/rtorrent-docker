@@ -262,6 +262,7 @@ _rtorrent_docker__rdo_node() {
 _rtorrent_docker__rdo_stage() {
   commands=(
     clean
+    deploy
     init
     network
     node

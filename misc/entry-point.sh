@@ -2,10 +2,9 @@
 
 echo "staging" > "/run/self/state"
 
-SECONDS=0
-
+TIMEOUT=$(( SECONDS + 600 ))
 while true; do
-  if (( ${SECONDS} > 600 )); then
+  if (( SECONDS > TIMEOUT )); then
     echo "error" > "/run/self/state"
     echo "staging_timeout" > "/run/self/error"
     exit 0
