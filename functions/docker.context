@@ -11,35 +11,16 @@ DOCKER_CONTEXT_TYPES=(
 )
 
 rdo_docker_context() {
-  local cmd="${1}"; shift || :
+  eval "$(args::init_subcommand "rdo docker context" "Build docker images with a build context.")"
 
-  case "${cmd}" in
-    build)
-      rdo_docker_context_build "${@}"
-      ;;
-    clean)
-      rdo_docker_context_clean "${@}"
-      ;;
-    types)
-      rdo_docker_context_types "${@}"
-      ;;
-    --help|-h|'')
-      echo "Usage: rdo docker context COMMAND"
-      echo
-      echo "Docker context commands"
-      echo
-      echo "Commands"
-      echo "  clean     Clean all context types"
-      echo "  build     Build image in context"
-      echo "  types     List all build types"
-      echo
-      echo "Run 'rdo docker context COMMAND --help' for more information on a command."
-      ;;
-    *)
-      print_error "rdo docker context: unknown command: ${cmd}"
-      return 1
-      ;;
-  esac
+  args::new_command "build" default "Build image with a context" \
+                    'rdo_docker_context_build "${@}"'
+  args::new_command "clean" empty "Clean all contexts" \
+                    'rdo_docker_context_clean'
+  args::new_command "types" empty "List all context types" \
+                    'rdo_docker_context_types'
+
+  eval "$(args::process)"
 }
 
 rdo_docker_context_build() {
@@ -144,7 +125,7 @@ rdo_docker_context_types() {
 
 rdo_docker_context__pre_ancestor() {
   local context_name="${1:?Missing ancestor name argument.}"
-  local context_path="$./context/${context_name}"
+  local context_path="./context/${context_name}"
   local tag_full="${2:?Missing tag argument.}"
 
   rm -r "${context_path}/bin" 2> /dev/null || :
