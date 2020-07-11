@@ -9,16 +9,15 @@
 # /prefix - install resulting builds here
 # /stage  - initially copy docker context here
 
+ARG CACHE_IMAGE="rdo/cache/apk:global"
+
+
+FROM "${CACHE_IMAGE}" as cache
+
+RUN mkdir -p /deploy
+
+
 FROM "alpine"
-
-ARG ANCESTOR_PROJECT
-ARG REPOSITORY
-ARG TAG_APPEND
-
-LABEL ancestor_project_root="rdo"
-LABEL ancestor_project="${ANCESTOR_PROJECT}"
-
-# TODO: Consider adding the timestamp to current directory.
 
 ENV RDO_RSYNC_ADD_ARGS="-rlpgoD -muc -t"
 ENV RDO_RSYNC_UPDATE_ARGS="-rlpgoD -muc -t --delete-after"
@@ -39,10 +38,15 @@ COPY bin/* /usr/bin/
 
 RUN \
 --mount=type=tmpfs,target=/var/cache/apk \
---mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
+--mount=type=bind,from=cache,source=/deploy,target=/var/cache/apk-stage \
 \
 pkg-add bash \
         coreutils \
         diffutils \
         findutils \
         tar
+
+ARG ANCESTOR_PROJECT
+
+LABEL ancestor_project_root="rdo"
+LABEL ancestor_project="${ANCESTOR_PROJECT}"

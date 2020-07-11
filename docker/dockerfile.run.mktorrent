@@ -4,7 +4,7 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/ancestor:global"
+FROM "${REPOSITORY}/ancestor/utils:global"
 
 WORKDIR /run/rtorrent
 

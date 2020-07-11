@@ -21,19 +21,17 @@ rdo_build() {
                     'rdo_build_all "${@}"'
   args::new_command "check" empty "Build check" \
                     'rdo_build_check "${@}"'
+  args::new_command "clean" empty "Clean all build images" \
+                    'rdo_build_clean "${@}"'
   args::new_command "compile" empty "Build compile" \
                     'rdo_build_compile "${@}"'
 
   args::new_command "libtorrent" empty "Build libtorrent" \
                     'rdo_build__libtorrent "${@}"'
-  args::new_command "libtorrent-compile" empty "Build libtorrent-compile" \
-                    'rdo_build__libtorrent_compile "${@}"'
   args::new_command "libtorrent-dev" empty "Build libtorrent-dev" \
                     'rdo_build_libtorrent_dev "${@}"'
   args::new_command "rtorrent" empty "Build rtorrent" \
                     'rdo_build__rtorrent "${@}"'
-  args::new_command "rtorrent-compile" empty "Build rtorrent-compile" \
-                    'rdo_build__rtorrent_compile "${@}"'
   args::new_command "rtorrent-dev" empty "Build rtorrent-dev" \
                     'rdo_build_rtorrent_dev "${@}"'
 
@@ -44,37 +42,38 @@ rdo_build() {
 }
 
 rdo_build_all() {
-  rdo init verify
+  rdo_init verify
   rdo_build__init
-  rdo_build__libtorrent_configure
-  rdo_build__libtorrent_compile
-  rdo_build__rtorrent_configure
-  rdo_build__rtorrent_compile
-  rdo_build__rtorrent_run
+  rdo_build__libtorrent
+  rdo_build__rtorrent
 }
 
 rdo_build_check() {
-  rdo init verify
+  rdo_init verify
   rdo_build__libtorrent_check "${@}"
   rdo_build__rtorrent_check "${@}"
 }
 
+rdo_build_clean() {
+  rdo_init verify
+  rdo_docker_clean build
+}
+
 rdo_build_compile() {
-  rdo init verify
-  rdo_build__libtorrent_compile "${@}"
-  rdo_build__rtorrent_compile "${@}"
-  rdo_build__rtorrent_run
+  rdo_init verify
+  rdo_build__libtorrent "${@}"
+  rdo_build__rtorrent "${@}"
 }
 
 rdo_build_libtorrent_dev() {
-  rdo init verify
+  rdo_init verify
 
   local image_tag="${arg_repository}/build/libtorrent-stage:default"
   local container_name="rdo-build-libtorrent"
 
   if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__running_container_id__name "${container_name}")" ]]; then
     rdo_build__init
-    rdo_build__libtorrent_configure
+    rdo_build__libtorrent
     print_space
     rdo run init --rebuild "${image_tag}" "${container_name}"
     print_space
@@ -84,16 +83,15 @@ rdo_build_libtorrent_dev() {
 }
 
 rdo_build_rtorrent_dev() {
-  rdo init verify
+  rdo_init verify
 
   local image_tag="${arg_repository}/build/rtorrent-stage:default"
   local container_name="rdo-build-rtorrent"
 
   if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__container_id__name "${container_name}")" ]]; then
     rdo_build__init
-    rdo_build__libtorrent_configure
-    rdo_build__libtorrent_compile
-    rdo_build__rtorrent_configure
+    rdo_build__libtorrent
+    rdo_build__rtorrent
     print_space
     rdo run init --rebuild "${image_tag}" "${container_name}"
     print_space
@@ -154,10 +152,12 @@ rdo_build__check_compile() {
 rdo_build__init() {
   rdo docker pull "docker/dockerfile:experimental" "alpine:latest"
 
-  rdo_build__build --context-type "ancestor" --context-name "ancestor" --no-rebuild --ancestor-project "rdo-pkg-cache" "ancestor/cache:global"
+  rdo_build__build --context-type "ancestor" --no-rebuild --filename "ancestor" --ancestor-project "pkg-cache" --build-arg "CACHE_IMAGE=alpine" "ancestor/cache:global"
   rdo_build__build --empty --no-rebuild "cache/apk:global"
 
-  rdo_build__build --context-type "ancestor" --context-name "ancestor" --cache --no-rebuild --ancestor-project "rdo-project" "ancestor:global"
+  rdo_build__build --context-type "ancestor" --cache --no-rebuild --filename "ancestor" --ancestor-project "build" "ancestor/build:global"
+  rdo_build__build --context-type "ancestor" --cache --no-rebuild --filename "ancestor" --ancestor-project "run" "ancestor/run:global"
+
   rdo_build__build --empty --no-rebuild "stage:global"
   rdo_build__build --empty --cache "base/build/compiler"
   rdo_build__build --empty --cache "base/build/rtorrent"
@@ -166,27 +166,15 @@ rdo_build__init() {
   rdo_build__build --context-type "autogen" --filename "build.autogen" "build/rtorrent"
 }
 
-ordo_build__libtorrent() {
-  rdo_build__libtorrent_configure
-  rdo_build__libtorrent_compile
-}
-
-rdo_build__libtorrent_configure() {
-  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.configure" "build/rtorrent"
-}
-
-rdo_build__libtorrent_compile() {
-  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=yes" "build/rtorrent"
+rdo_build__libtorrent() {
+  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent" --build-arg "IGNORE_BUILD_ERROR=yes" "build/rtorrent"
   rdo_build__check_compile "libtorrent"
 }
 
-rdo_build__rtorrent_configure() {
-  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.configure" "build/rtorrent"
-}
-
-rdo_build__rtorrent_compile() {
-  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=yes" "build/rtorrent"
+rdo_build__rtorrent() {
+  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent" --build-arg "IGNORE_BUILD_ERROR=yes" "build/rtorrent"
   rdo_build__check_compile "rtorrent"
+  rdo_build__rtorrent_run
 }
 
 rdo_build__rtorrent_run() {
@@ -194,15 +182,14 @@ rdo_build__rtorrent_run() {
 }
 
 rdo_build__libtorrent_check() {
-  rdo init verify
+  rdo_init verify
 
   local image_tag="${arg_repository}/build/libtorrent-stage:default"
   local container_name="rdo-check-libtorrent"
 
   if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__running_container_id__name "${container_name}")" ]]; then
     rdo_build__init
-    rdo_build__libtorrent_configure
-    rdo_build__libtorrent_compile
+    rdo_build__libtorrent
     print_space
     rdo run init --rebuild "${image_tag}" "${container_name}"
     print_space
@@ -212,17 +199,15 @@ rdo_build__libtorrent_check() {
 }
 
 rdo_build__rtorrent_check() {
-  rdo init verify
+  rdo_init verify
 
   local image_tag="${arg_repository}/build/rtorrent-stage:default"
   local container_name="rdo-check-rtorrent"
 
   if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__running_container_id__name "${container_name}")" ]]; then
     rdo_build__init
-    rdo_build__libtorrent_configure
-    rdo_build__libtorrent_compile
-    rdo_build__rtorrent_configure
-    rdo_build__rtorrent_compile
+    rdo_build__libtorrent
+    rdo_build__rtorrent
     print_space
     rdo run init --rebuild "${image_tag}" "${container_name}"
     print_space

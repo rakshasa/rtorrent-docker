@@ -1,0 +1,124 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/build/rtorrent:${TAG_APPEND}" AS stage.configure
+
+COPY /rtorrent.tar.gz /stage/rtorrent.tar.gz
+
+RUN tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
+  --directory '/deploy/rtorrent/source' \
+  --wildcards '*.am' \
+  --wildcards '*.m4' \
+  --no-wildcards './configure.ac'
+
+
+FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS build.configure
+
+WORKDIR "/build/rtorrent/output"
+
+COPY --from=stage.configure /deploy/prefix/lib/pkgconfig/libtorrent.pc /prefix/lib/pkgconfig/libtorrent.pc
+COPY --from=stage.configure /deploy/rtorrent/source/ /build/rtorrent/source/
+
+RUN set -xe; \
+\
+source /env.configure; \
+\
+eval ${RDO_TIMESTAMP_LS} "/build/rtorrent/source/src"; \
+eval ${RDO_TIMESTAMP_UPDATE}; \
+\
+/build/rtorrent/source/configure --prefix=/prefix --disable-backtrace; \
+\
+eval ${RDO_TIMESTAMP_LS} "."; \
+\
+rdo-find-move --replace "." "/deploy/output" \
+  "( \
+   -not -type d -and \
+   -not -name *.Po -and \
+   -not -name *.Plo -and \
+   -not -name *.log -and \
+   -newer ${RDO_TIMESTAMP_PATH} \
+   )"
+
+
+FROM "${REPOSITORY}/build/rtorrent:${TAG_APPEND}" AS stage.compile
+
+COPY --from=build.configure /deploy/output/ /stage/output/
+
+RUN set -xe; \
+\
+rdo-find-move "/stage/output" "/deploy/rtorrent/output" "-not -type d"; \
+eval ${RDO_TIMESTAMP_LS} "/deploy/rtorrent/output/src"
+
+COPY /rtorrent.tar.gz /stage/rtorrent.tar.gz
+
+RUN tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
+  --directory '/deploy/rtorrent/source' \
+  --wildcards '*.am' \
+  --wildcards '*.m4' \
+  --wildcards '*.cc' \
+  --wildcards '*.h' \
+  --no-wildcards './configure.ac'
+
+
+FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS build.compile
+
+COPY --from=stage.compile /deploy/rtorrent/source/ /build/rtorrent/source/
+COPY --from=stage.compile /deploy/prefix/ /prefix/
+
+ARG IGNORE_BUILD_ERROR=no
+
+RUN \
+--mount=type=bind,rw,from=stage.compile,source=/deploy/rtorrent/output,target=/build/rtorrent/output \
+\
+set -xe; cd /build/rtorrent/output; \
+\
+eval ${RDO_TIMESTAMP_LS} "/build/rtorrent/source/src"; \
+eval ${RDO_TIMESTAMP_LS} "/build/rtorrent/output/src"; \
+eval ${RDO_TIMESTAMP_UPDATE}; \
+\
+rm -f ./status.{success,failure}; \
+\
+#if make -j12 && make -j12 install && make -j12 check TESTS=; then \
+if make -j12 && make -j12 install; then \
+  touch ./status.success; \
+else \
+  touch ./status.failure; \
+\
+  if [ "${IGNORE_BUILD_ERROR}" != "yes" ]; then \
+    exit 1; \
+  fi \
+fi; \
+\
+rdo-find-move "." "/deploy/output" \
+  "( \
+   -not -type d -and \
+   -not -name *.log -and \
+   -newer ${RDO_TIMESTAMP_PATH} \
+   )"; \
+\
+rdo-find-move "/prefix" "/deploy/prefix" \
+  "( \
+   -not -type d -and \
+   -newer ${RDO_TIMESTAMP_PATH} \
+   )"
+
+
+FROM "${REPOSITORY}/build/rtorrent:${TAG_APPEND}" AS stage.output
+
+
+FROM "${REPOSITORY}/stage:global"
+
+COPY --from=stage.output /deploy/ /deploy/
+
+COPY --from=build.compile /deploy/prefix/ /stage/prefix/
+RUN rdo-find-move "/stage/prefix" "/deploy/prefix" "-not -type d"
+
+COPY --from=build.compile /deploy/output/ /stage/output/
+RUN rdo-find-move "/stage/output" "/deploy/rtorrent/output" "-not -type d"
+
+RUN \
+eval ${RDO_TIMESTAMP_LS} "/deploy/rtorrent/output/src" || : ; \
+eval ${RDO_TIMESTAMP_LS} "/deploy/prefix/include/torrent" || :

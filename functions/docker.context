@@ -92,7 +92,7 @@ rdo_docker_context_build() {
     exit 1
   fi
 
-  if [[ " autogen empty " =~ " ${arg_context_type} " ]]; then
+  if [[ " ancestor autogen empty " =~ " ${arg_context_type} " ]]; then
     arg_context_name="${arg_context_type}"
   fi
 

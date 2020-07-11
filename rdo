@@ -26,6 +26,7 @@ is_header_included build || source "./functions/build"
 is_header_included docker || source "./functions/docker"
 is_header_included docker.clean || source "./functions/docker.clean"
 is_header_included docker.context || source "./functions/docker.context"
+is_header_included init || source "./functions/init"
 is_header_included network || source "./functions/network"
 is_header_included node || source "./functions/node"
 is_header_included run || source "./functions/run"
@@ -49,7 +50,7 @@ rdo() {
   args::new_command "git" default "." \
                     'is_header_included git || source "./functions/git"; do_git "${@}"'
   args::new_command "init" default "Initalize the environment" \
-                    'is_header_included init || source "./functions/init"; rdo_init "${@}"'
+                    'rdo_init "${@}"'
   args::new_command "machine" default "Manage docker machines" \
                     'is_header_included machine || source "./functions/machine"; rdo_machine "${@}"'
   args::new_command "network" default "Manage networks" \
@@ -67,11 +68,7 @@ rdo() {
 }
 
 rdo_watch() {
-  watch -n5 '
-    printf "rdo/build/stage:default layers: "
-    docker inspect --format "{{ \$length := len .RootFS.Layers }}{{ \$length }}" rdo/build/stage:default
-    echo
-    docker images | pr -t -2 -o 4 -w 260'
+  watch -n5 'docker images --filter "label=ancestor_project_root=rdo" | pr -t -2 -o 4 -w 260'
 }
 
 prune_containers() {

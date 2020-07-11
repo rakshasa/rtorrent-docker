@@ -2,7 +2,7 @@
 
 ARG REPOSITORY
 
-FROM "${REPOSITORY}/ancestor:global"
+FROM "${REPOSITORY}/ancestor/run:global"
 
 # TODO: Remove libcppunit dependency.
 
