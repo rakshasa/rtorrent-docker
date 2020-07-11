@@ -87,8 +87,9 @@ _rtorrent_docker__rdo_build() {
   else
     commands=(
       all
-      check
       clean
+      init
+      check
       compile
       libtorrent
       libtorrent-dev

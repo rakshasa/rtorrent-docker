@@ -18,5 +18,5 @@ rdo_torrent_create() {
 # Helper methods:
 
 rdo_torrent__init() {
-  rdo_build mktorrent
+  rdo docker context build --empty --cache --no-rebuild --ancestor-project "utils" "run/mktorrent:global"
 }
