@@ -20,36 +20,52 @@ args::__init() {
   local description="${2:?Missing description argument.}"
 
   cat - <<EOF
-  local args__is_processing=yes
-  local args__root="${name}"
-  local args__root_description="${description}"
-  declare -a args__options
-  declare -A args__option_types
-  declare -A args__option_flags
-  declare -A args__option_descriptions
-  declare -A args__option_blocks
-  declare -a args__commands
-  declare -A args__command_types
-  declare -A args__command_descriptions
-  declare -A args__command_blocks
+local args__is_processing=yes
+local args__root="${name}"
+local args__root_description="${description}"
+local args__arg_name=
+local args__extra_args=
+local args__has_commands=
+local args__has_options=
+declare -a args__options
+declare -A args__option_types
+declare -A args__option_flags
+declare -A args__option_descriptions
+declare -A args__option_blocks
+declare -a args__commands
+declare -A args__command_types
+declare -A args__command_descriptions
+declare -A args__command_blocks
 EOF
 }
 
 args::init_subcommand() {
   args::__init "${@}"
   cat - <<EOF
-  local args__has_commands=yes
-  local args__has_options=yes
-  local args__extra_args=default
+local args__has_commands=yes
+local args__has_options=yes
+local args__extra_args=default
 EOF
 }
 
 args::init_options_empty() {
   args::__init "${@}"
   cat - <<EOF
-  local args__has_commands=no
-  local args__has_options=yes
-  local args__extra_args=empty
+local args__has_commands=no
+local args__has_options=yes
+local args__extra_args=empty
+EOF
+}
+
+args::init_options_string() {
+  local arg_name="${2:?Missing arg name argument.}"
+
+  args::__init "${1}" "${@:3}"
+  cat - <<EOF
+local args__arg_name="${arg_name}"
+local args__has_commands=no
+local args__has_options=yes
+local args__extra_args=string
 EOF
 }
 
@@ -77,31 +93,44 @@ args::verify_command_empty() {
   fi
 }
 
+args::verify_command_string() {
+  if (( ${#} != 1 )) || [[ -z "${1}" ]]; then
+    print_error "${args__root} ${args__cmd}: argument must be a single string: ${@}"
+    exit 1
+  fi
+}
+
 args::process_options() {
   cat - <<EOF
-  while true; do
-    case "\${1}" in
+while true; do
+  case "\${1}" in
 EOF
 
   if (( ${#args__options[@]} != 0 )); then
     local name
     for name in "${args__options[@]}"; do
-      cat - <<EOF
-      --${name})
+      if [[ -n "${args__option_flags[${name}]}" ]]; then
+        cat - <<EOF
+    --${name}|-${args__option_flags[${name}]})
 EOF
+      else
+        cat - <<EOF
+    --${name})
+EOF
+      fi
 
       case "${args__option_types[${name}]}" in
         empty)
           cat - <<EOF
-        shift
-        ${args__option_blocks[${name}]}
+      shift
+      ${args__option_blocks[${name}]}
 EOF
           ;;
         string)
           cat - <<EOF
-        local args__1="\${2:?Missing argument for '\${1}'.}"
-        shift 2
-        ${args__option_blocks[${name}]}
+      local args__1="\${2:?Missing argument for '\${1}'.}"
+      shift 2
+      ${args__option_blocks[${name}]}
 EOF
           ;;
         *)
@@ -111,88 +140,31 @@ EOF
       esac
 
       cat - <<EOF
-        ;;
-EOF
-    done
-  fi
-
-  cat - <<EOF
-      --help|-h|'')
-EOF
-
-  args::print_help
-
-  cat - <<EOF
-        exit 0
-        ;;
-EOF
-
-  if [[ "${args__is_processing}" == "yes" ]]; then
-    cat - <<EOF
-      ---print-self)
-        args::print_process
-        return
-        ;;
-EOF
-  fi
-
-  cat - <<EOF
-      *)
-        if [[ -z "\${1##-*}" ]]; then
-          print_error "\${args__root}: unknown flag: \${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-EOF
-}
-
-args::process_command() {
-  cat - <<EOF
-  local args__root="${args__root}"
-  local args__cmd="\${1}"
-  shift || :
-
-  case "\${args__cmd}" in
-EOF
-
-  if (( ${#args__commands[@]} != 0 )); then
-    local name
-    for name in "${args__commands[@]}"; do
-      cat - <<EOF
-    ${name})
-EOF
-
-      case "${args__command_types[${name}]}" in
-        empty)
-          cat - <<EOF
-        args::verify_command_empty "\${@}"
-        ${args__command_blocks[${name}]}
-EOF
-          ;;
-        default)
-          cat - <<EOF
-        ${args__command_blocks[${name}]}
-EOF
-          ;;
-        *)
-          print_error "${args__root}: invalid type for '--${name}'"
-          exit 1
-          ;;
-      esac
-
-          cat - <<EOF
       ;;
 EOF
     done
   fi
 
+  if [[ "${args__has_commands}" == "yes" ]]; then
+    cat - <<EOF
+    --help|-h|'')
+EOF
+  else
+    cat - <<EOF
+    --help|-h)
+EOF
+  fi
+
+  args::print_help
+
+  cat - <<EOF
+      exit 0
+      ;;
+EOF
+
   if [[ "${args__is_processing}" == "yes" ]]; then
     cat - <<EOF
-    __print_self)
+    ---print-self)
       args::print_process
       return
       ;;
@@ -201,18 +173,87 @@ EOF
 
   cat - <<EOF
     *)
-      print_error "${args__root}: unknown command: \${args__cmd}"
-      exit 1
-      ;;      
+      if [[ -n "${1}" ]] && [[ -z "\${1##-*}" ]]; then
+        print_error "\${args__root}: unknown flag: \${1}"
+        return 1
+      fi
+
+      break
+      ;;
   esac
+done
+EOF
+}
+
+args::process_command() {
+  cat - <<EOF
+local args__root="${args__root}"
+local args__cmd="\${1}"
+shift || :
+
+case "\${args__cmd}" in
+EOF
+
+  if (( ${#args__commands[@]} != 0 )); then
+    local name
+    for name in "${args__commands[@]}"; do
+      cat - <<EOF
+  ${name})
+EOF
+
+      case "${args__command_types[${name}]}" in
+        empty)
+          cat - <<EOF
+    args::verify_command_empty "\${@}"
+    ${args__command_blocks[${name}]}
+EOF
+          ;;
+        default)
+          cat - <<EOF
+    ${args__command_blocks[${name}]}
+EOF
+          ;;
+        string)
+          cat - <<EOF
+    args::verify_command_string "\${@}"
+    ${args__command_blocks[${name}]}
+EOF
+          ;;
+        *)
+          print_error "${args__root}: invalid type for '${name}'"
+          exit 1
+          ;;
+      esac
+
+          cat - <<EOF
+    ;;
+EOF
+    done
+  fi
+
+  if [[ "${args__is_processing}" == "yes" ]]; then
+    cat - <<EOF
+  __print_self)
+    args::print_process
+    return
+    ;;
+EOF
+  fi
+
+  cat - <<EOF
+  *)
+    print_error "${args__root}: unknown command: \${args__cmd}"
+    exit 1
+    ;;
+esac
 EOF
 }
 
 args::print_help() {
   cat - <<EOF
-        echo "Usage: ${args__root} COMMAND"
-        echo
-        echo "${args__root_description}"
+      echo "Usage: ${args__root} COMMAND"
+      echo
+      echo "${args__root_description}"
 EOF
 
   local options_width command_width justify_width
@@ -227,8 +268,8 @@ EOF
 
   if (( ${#args__options[@]} != 0 )); then
     cat - <<EOF
-        echo
-        echo "Options:"
+      echo
+      echo "Options:"
 EOF
 
     local name justified_name
@@ -242,28 +283,28 @@ EOF
       fi
 
       cat - <<EOF
-        echo "  ${justified_name}   ${args__option_descriptions[${name}]}"
+      echo "  ${justified_name}   ${args__option_descriptions[${name}]}"
 EOF
     done
   fi
 
   if (( ${#args__commands[@]} != 0 )); then
       cat - <<EOF
-        echo
-        echo "Commands:"
+      echo
+      echo "Commands:"
 EOF
 
     local name
     for name in "${args__commands[@]}"; do
       cat - <<EOF
-        echo "  $(utils::justify_string "${justify_width}" "${name}")   ${args__command_descriptions[${name}]}"
+      echo "  $(utils::justify_string "${justify_width}" "${name}")   ${args__command_descriptions[${name}]}"
 EOF
     done
   fi
 
   cat - <<EOF
-        echo
-        echo "Run '${args__root} COMMAND --help' for more information on a command."
+      echo
+      echo "Run '${args__root} COMMAND --help' for more information on a command."
 EOF
 }
 
@@ -283,9 +324,37 @@ args::process() {
     args::process_command
     args__need_seperator=yes
   fi
+
+  case "${args__extra_args}" in
+    empty|default)
+      :
+      ;;
+    string)
+      cat - <<EOF
+
+if (( \${#} > 1 )); then
+  print_error "${args__root}: too many arguments"
+  exit 1
+fi
+
+if (( \${#} == 0 )) || [[ -z "\${1}" ]]; then
+  print_error "${args__root}: missing or empty argument"
+  exit 1
+fi
+
+local ${args__arg_name:?Missing arg name.}="\${1}"
+shift
+EOF
+      ;;
+    *)
+      print_error "${args__root}: invalid extra args type: ${args__extra_args}"
+      exit 1
+      ;;
+  esac
 }
 
 args::print_process() {
   local args__is_processing=no
-  args::process
+  local args__indent="${1:-2}"
+  args::process | utils::prepend_output "$(printf "%${args__indent}s" ' ')"
 }

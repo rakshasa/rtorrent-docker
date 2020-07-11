@@ -1,0 +1,20 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+
+FROM "${REPOSITORY}/ancestor:global"
+
+# TODO: Remove libcppunit dependency.
+
+RUN \
+--mount=type=tmpfs,target=/var/cache/apk \
+--mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
+\
+pkg-add curl \
+        cppunit \
+        libgcc \
+        libstdc++ \
+        musl \
+        ncurses \
+        openssl \
+        zlib

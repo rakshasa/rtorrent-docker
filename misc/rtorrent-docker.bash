@@ -52,7 +52,22 @@ _rtorrent_docker__rdo() {
   if [[ "${word}" == -* ]]; then
     flags=(--debug#-d --help)
   else
-    commands=(bash build destroy docker env git init machine tags watch)
+    commands=(
+      bash
+      build
+      destroy
+      docker
+      env
+      git
+      init
+      machine
+      network
+      node
+      stage
+      tags
+      torrent
+      watch
+    )
   fi
 }
 
@@ -80,6 +95,7 @@ _rtorrent_docker__rdo_build() {
       rtorrent-check
       rtorrent-compile
       rtorrent-dev
+      mktorrent
     )
   fi
 }
@@ -96,7 +112,6 @@ _rtorrent_docker__rdo_docker() {
       context
       images
       inspect
-      network
       stage
       targets
     )
@@ -172,20 +187,6 @@ _rtorrent_docker__rdo_docker_inspect() {
   flags=(--id --help)
 }
 
-_rtorrent_docker__rdo_docker_network() {
-  if [[ "${word}" != -* ]]; then
-    commands=(
-      address
-      clean
-      create
-      ls
-      prefix
-      rm
-      subnet
-    )
-  fi
-}
-
 _rtorrent_docker__rdo_docker_stage() {
   if [[ "${word}" != -* ]]; then
     commands=($("${words[0]}" docker targets))
@@ -230,6 +231,47 @@ _rtorrent_docker__rdo_machine() {
   fi
 }
 
+# completion do network layer
+
+_rtorrent_docker__rdo_network() {
+  if [[ "${word}" != -* ]]; then
+    commands=(
+      address
+      clean
+      ls
+      prefix
+      rm
+      subnet
+    )
+  fi
+}
+
+# completion do node layer
+
+_rtorrent_docker__rdo_node() {
+  if [[ "${word}" != -* ]]; then
+    commands=(
+      clean
+      ls
+      network
+      rm
+    )
+  fi
+}
+
+# completion do env layer
+
+_rtorrent_docker__rdo_stage() {
+  commands=(
+    clean
+    deploy
+    init
+    network
+    node
+    test
+  )
+}
+
 # completion do tags layer
 
 _rtorrent_docker__rdo_tags() {
@@ -237,6 +279,16 @@ _rtorrent_docker__rdo_tags() {
     flags=(--help)
   else
     commands=(docker libtorrent rtorrent)
+  fi
+}
+
+# completion do torrent layer
+
+_rtorrent_docker__rdo_torrent() {
+  if [[ "${word}" == -* ]]; then
+    flags=(--help)
+  else
+    commands=(create)
   fi
 }
 

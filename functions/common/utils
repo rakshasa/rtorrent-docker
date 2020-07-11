@@ -60,3 +60,15 @@ utils::justify_string() {
     echo -n " "
   done
 }
+
+utils::prepend_output() {
+  local prepend="${@}"
+  local line
+  while IFS= read -r line; do
+    if [[ -n "${line}" ]]; then
+      echo "${prepend}${line}"
+    else
+      echo
+    fi
+  done
+}

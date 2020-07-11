@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+include_header network
+
+rdo_network() {
+  eval "$(args::init_subcommand "rdo network" "Manage networks.")"
+
+  args::new_command "address" default "Get network address" \
+                    'rdo_network_address "${@}"'
+  args::new_command "clean" empty "Remove all networks" \
+                    'rdo_network_clean "${@}"'
+  args::new_command "ls" default "List networks" \
+                    'rdo_network_ls "${@}"'
+  args::new_command "prefix" default "Get network prefix" \
+                    'rdo_network_prefix "${@}"'
+  # args::new_command "rm" default "Remove one or more networks" \
+  #                   'rdo_network_rm "${@}"'
+  args::new_command "subnet" default "Get network subnet" \
+                    'rdo_network_subnet "${@}"'
+
+  eval "$(args::process)"
+}
+
+rdo_network_address() {
+  local subnet
+  subnet="$(rdo_network_subnet "${@}")"
+  echo "${subnet%%/*}"
+}
+
+rdo_network_clean() {
+  local networks
+  mapfile -t networks < <(rdo_network_ls --quiet --no-trunc)
+
+  if (( ${#networks[@]} > 0 )); then
+    docker network rm "${networks[@]}"
+  fi
+}
+
+rdo_network_ls() {
+  docker network ls --filter "label=project=rdo" "${@}"
+}
+
+rdo_network_prefix() {
+  local subnet
+  subnet="$(rdo_network_subnet "${@}")"
+  echo "${subnet##*/}"
+}
+
+rdo_network_subnet() {
+  local name="${1:?Missing name argument.}"
+  docker network inspect --format '{{ (index .IPAM.Config 0).Subnet }}' "${name}"
+}

@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+include_header node
+
+rdo_node() {
+  eval "$(args::init_subcommand "rdo node" "Manage nodes.")"
+
+  args::new_command "clean" empty "Remove all nodes" \
+                    'rdo_node_clean "${@}"'
+  args::new_command "ls" default "List nodes" \
+                    'rdo_node_ls "${@}"'
+  args::new_command "network" string "Show networks" \
+                    'rdo_node_network "${@}"'
+  args::new_command "rm" default "Remove one or more nodes" \
+                    'rdo_node_rm "${@}"'
+
+  eval "$(args::process)"
+}
+
+rdo_node_clean() {
+  local nodes
+  mapfile -t nodes < <(rdo_node_ls --all --quiet --no-trunc)
+
+  if (( ${#nodes[@]} > 0 )); then
+    docker container rm --force "${nodes[@]}"
+  fi
+}
+
+rdo_node_network() {
+  echo "$(docker inspect --format '
+    {{- range $key, $value := .NetworkSettings.Networks }}
+      {{- printf "network:%s mac:%s inet:%s inet6:%s\n" $key $value.MacAddress $value.IPAddress $value.GlobalIPv6Address }}
+    {{- end -}}
+    ' "${1}")"
+}
+
+rdo_node_ls() {
+  docker container ls --filter "label=project=rdo" "${@}"
+}

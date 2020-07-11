@@ -6,65 +6,143 @@ rdo_stage() {
   local project_path
   project_path="$(get_project_path)"
 
-  eval "$(args::init_subcommand "rdo stage" "Manage staging of environments")"
+  eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
 
   args::new_command "clean" empty "Remove environment" \
-                    'rdo_stage_clean "${@}"'
+                    'rdo_stage_clean'
+  args::new_command "deploy" empty "Deploy environment" \
+                    'rdo_stage_deploy'
   args::new_command "init" empty "Initialize new environment for staging" \
-                    'rdo_stage_init "${@}"'
+                    'rdo_stage_init'
   args::new_command "network" default "Add network" \
                     'rdo_stage_network "${@}"'
   args::new_command "node" default "Add node" \
                     'rdo_stage_node "${@}"'
-
   args::new_command "test" empty "Stage test environment" \
-                    'rdo_stage_test "${@}"'
+                    'rdo_stage_test'
+  args::new_command "torrent" default "Add torrent" \
+                    'rdo_stage_torrent "${@}"'
 
   eval "$(args::process)"
 }
 
 rdo_stage_test() {
+  print_progress "staging test"
   rdo_stage_init
-  rdo_stage_network "default"
+  rdo_stage_network "rt-network-1"
+  rdo_stage_network "rt-network-2"
+  rdo_stage_node --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-node-1"
+  rdo_stage_node --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-node-2"
+  print_progress "staged test"
 }
 
 rdo_stage_clean() {
-  rdo docker network clean > /dev/null
-  rm -rf "${project_path}/stage"
+  rdo_node_clean > /dev/null
+  rdo_network_clean > /dev/null
+  rm -rf "./run/current"
+  print_progress "stage cleaned"
+}
+
+rdo_stage_deploy() {
+  local node_list=()
+  mapfile -t node_list < <(ls "./run/current/nodes/")
+
+  for node in "${node_list[@]}"; do
+    echo "deploy" > "./run/current/nodes/${node}/signal"
+  done
+
+  print_progress "stage deployed"
 }
 
 rdo_stage_init() {
+  # TODO: Add state, don't allow calls when not in initialize.
   rdo_stage_clean
-  mkdir -p "${project_path}/stage/"{network,node}
+  mkdir -p "./run/current/"{networks,nodes}
+  print_progress "stage initialized"
 }
 
 rdo_stage_network() {
-  local name="${1:?Missing name argument.}"
-  local path="${project_path}/stage/network/${name}"
+  eval "$(args::init_options_string "rdo stage network NAME" "name" "Add network to staging of environments.")"
+  eval "$(args::process)"
 
+  local path="./run/current/networks/${name}"
   mkdir -p "${path}"
 
-  rdo docker network create "${name}" > /dev/null
+  docker network create --label "project=rdo" "${name}" > /dev/null
 
-  echo "$(rdo docker network subnet "${name}")" > "${path}/subnet"
-  echo "$(rdo docker network address "${name}")" > "${path}/address"
-  echo "$(rdo docker network prefix "${name}")" > "${path}/prefix"
+  echo "$(rdo_network subnet "${name}")" > "${path}/subnet"
+  echo "$(rdo_network address "${name}")" > "${path}/address"
+  echo "$(rdo_network prefix "${name}")" > "${path}/prefix"
+
+  echo "${name}"
 }
 
 rdo_stage_node() {
-  # local name="${1:?Missing name argument.}"
-  # local path="${project_path}/stage/node/${name}"
-
-  # mkdir -p "${path}"
-
+  local create_args=()
   local networks=()
+  local run_template=
 
-  eval "$(args::init_subcommand "rdo stage node NAME" "Add node to staging of environments")"
+  eval "$(args::init_options_string "rdo stage node NAME" "name" "Add node to staging of environments.")"
 
   args::new_option "network" string "n" "Connect node to network" \
                    'networks+=("${args__1}")'
+  args::new_option "run-template" string "r" "Use template to create run script" \
+                   'run_template=("${args__1}")'
 
-  eval "$(args::process_subcommand)"
+  eval "$(args::process)"
 
-  
+  : "${run_template:?Missing run template argument.}"
+
+  local node_path="./run/current/nodes/${name}"
+  mkdir -p "${node_path}/"interfaces
+
+  echo "stage" > "${node_path}/signal"
+
+  create_args+=(
+    --name "${name}"
+    --tty
+    --network "none"
+    --mount "type=bind,source=$(project_absolute_unix_path)/run/current/nodes/${name}/,target=/run/self/"
+  )  
+
+  docker container create --label "project=rdo" "${create_args[@]}" "rdo/run/rtorrent:default" > /dev/null
+  docker network disconnect "none" "${name}"
+
+  for network in "${networks[@]}"; do
+    docker network connect "${network}" "${name}"
+  done
+
+  docker start "${name}" > /dev/null
+
+  rdo_stage__update_network
+
+  "./templates/run/${run_template}" > "${node_path}/run"
+  chmod a+x "${node_path}/run"
+
+  echo "${name}"
+}
+
+# Helper functions
+
+rdo_stage__update_network() {
+  local node_path="./run/current/nodes/${name}"
+
+  rm -rf "${node_path}/interfaces"
+
+  local line
+  while IFS= read -r line; do
+    if ! [[ "${line}" =~ ^network:([^ ]*)\ mac:([^ ]*)\ inet:([^ ]*)\ inet6:([^ ]*)$ ]]; then
+      print_error "invalid output from 'rdo node network '${name}'"
+      continue
+    fi
+
+    local network="${BASH_REMATCH[1]:?Missing network name.}"
+    local interface_path="${node_path}/interfaces/${network}"
+    mkdir -p "${interface_path}"
+
+    [[ -z "${BASH_REMATCH[2]}" ]] || echo "${BASH_REMATCH[2]}" > "${interface_path}/mac"
+    [[ -z "${BASH_REMATCH[3]}" ]] || echo "${BASH_REMATCH[3]}" > "${interface_path}/inet"
+    [[ -z "${BASH_REMATCH[4]}" ]] || echo "${BASH_REMATCH[4]}" > "${interface_path}/inet6"
+
+  done <<< "$(rdo_node_network "${name}")"
 }
