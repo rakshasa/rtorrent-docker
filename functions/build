@@ -8,133 +8,39 @@ rdo_build() {
   local arg_rebuild=
   local arg_tag_append=
 
-  # eval "$(args::init_subcommand "rdo build" "Build project.")"
+  eval "$(args::init_subcommand "rdo build" "Build project.")"
 
-  # args::new_option "compiler" string "c" "Select the compiler to use" \
-  #                  'build_args+=("--build-arg" "COMPILER=${args__1}")'
-  # args::new_option "dry-run" empty "" "Do not actually build the container" \
-  #                  'build_args+=("--dry-run")'
-  # args::new_option "rebuild" empty "" "Rebuild all base images" \
-  #                  'build_args+=("--rebuild"); arg_rebuild="yes"'
+  args::new_option "compiler" string "c" "Select the compiler to use" \
+                   'build_args+=("--build-arg" "COMPILER=${args__1}")'
+  args::new_option "dry-run" empty "" "Do not actually build the container" \
+                   'build_args+=("--dry-run")'
+  args::new_option "rebuild" empty "" "Rebuild all base images" \
+                   'build_args+=("--rebuild"); arg_rebuild="yes"'
 
-  # args::new_command "all" empty "Build all" \
-  #                   'rdo_build_all "${@}"'
-  # args::new_command "check" empty "Build check" \
-  #                   'rdo_build_check "${@}"'
-  # args::new_command "compile" empty "Build compile" \
-  #                   'rdo_build_compile "${@}"'
+  args::new_command "all" empty "Build all" \
+                    'rdo_build_all "${@}"'
+  args::new_command "check" empty "Build check" \
+                    'rdo_build_check "${@}"'
+  args::new_command "compile" empty "Build compile" \
+                    'rdo_build_compile "${@}"'
 
-  # args::new_command "libtorrent" empty "Build libtorrent" \
-  #                   'rdo_build__libtorrent "${@}"'
-  # args::new_command "libtorrent-compile" empty "Build libtorrent-compile" \
-  #                   'rdo_build__libtorrent_compile "${@}"'
-  # args::new_command "libtorrent-dev" empty "Build libtorrent-dev" \
-  #                   'rdo_build_libtorrent_dev "${@}"'
-  # args::new_command "rtorrent" empty "Build rtorrent" \
-  #                   'rdo_build__rtorrent "${@}"'
-  # args::new_command "rtorrent-compile" empty "Build rtorrent-compile" \
-  #                   'rdo_build__rtorrent_compile "${@}"'
-  # args::new_command "rtorrent-dev" empty "Build rtorrent-dev" \
-  #                   'rdo_build_rtorrent_dev "${@}"'
+  args::new_command "libtorrent" empty "Build libtorrent" \
+                    'rdo_build__libtorrent "${@}"'
+  args::new_command "libtorrent-compile" empty "Build libtorrent-compile" \
+                    'rdo_build__libtorrent_compile "${@}"'
+  args::new_command "libtorrent-dev" empty "Build libtorrent-dev" \
+                    'rdo_build_libtorrent_dev "${@}"'
+  args::new_command "rtorrent" empty "Build rtorrent" \
+                    'rdo_build__rtorrent "${@}"'
+  args::new_command "rtorrent-compile" empty "Build rtorrent-compile" \
+                    'rdo_build__rtorrent_compile "${@}"'
+  args::new_command "rtorrent-dev" empty "Build rtorrent-dev" \
+                    'rdo_build_rtorrent_dev "${@}"'
 
-  # eval "$(args::process)"
+  args::new_command "mktorrent" empty "Build mktorrent" \
+                    'rdo_build_mktorrent "${@}"'
 
-  while true; do
-    case "${1}" in
-      --compiler)
-        local args__1="${2:?Missing argument for '${1}'.}"
-        shift 2
-        build_args+=("--build-arg" "COMPILER=${args__1}")
-        ;;
-      --dry-run)
-        shift
-        build_args+=("--dry-run")
-        ;;
-      --rebuild)
-        shift
-        build_args+=("--rebuild"); arg_rebuild="yes"
-        ;;
-      --help|-h|'')
-        echo "Usage: rdo build COMMAND"
-        echo
-        echo "Build project."
-        echo
-        echo "Options:"
-        echo "  -c, --compiler       Select the compiler to use"
-        echo "      --dry-run        Do not actually build the container"
-        echo "      --rebuild        Rebuild all base images"
-        echo
-        echo "Commands:"
-        echo "  all                  Build all"
-        echo "  check                Build check"
-        echo "  compile              Build compile"
-        echo "  libtorrent           Build libtorrent"
-        echo "  libtorrent-compile   Build libtorrent-compile"
-        echo "  libtorrent-dev       Build libtorrent-dev"
-        echo "  rtorrent             Build rtorrent"
-        echo "  rtorrent-compile     Build rtorrent-compile"
-        echo "  rtorrent-dev         Build rtorrent-dev"
-        echo
-        echo "Run 'rdo build COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  local args__root="rdo build"
-  local args__cmd="${1}"
-  shift || :
-
-  case "${args__cmd}" in
-    all)
-        args::verify_command_empty "${@}"
-        rdo_build_all "${@}"
-      ;;
-    check)
-        args::verify_command_empty "${@}"
-        rdo_build_check "${@}"
-      ;;
-    compile)
-        args::verify_command_empty "${@}"
-        rdo_build_compile "${@}"
-      ;;
-    libtorrent)
-        args::verify_command_empty "${@}"
-        rdo_build__libtorrent "${@}"
-      ;;
-    libtorrent-compile)
-        args::verify_command_empty "${@}"
-        rdo_build__libtorrent_compile "${@}"
-      ;;
-    libtorrent-dev)
-        args::verify_command_empty "${@}"
-        rdo_build_libtorrent_dev "${@}"
-      ;;
-    rtorrent)
-        args::verify_command_empty "${@}"
-        rdo_build__rtorrent "${@}"
-      ;;
-    rtorrent-compile)
-        args::verify_command_empty "${@}"
-        rdo_build__rtorrent_compile "${@}"
-      ;;
-    rtorrent-dev)
-        args::verify_command_empty "${@}"
-        rdo_build_rtorrent_dev "${@}"
-      ;;
-    *)
-      print_error "rdo build: unknown command: ${args__cmd}"
-      exit 1
-      ;;
-  esac
+  eval "$(args::process)"
 }
 
 rdo_build_all() {
@@ -194,6 +100,10 @@ rdo_build_rtorrent_dev() {
   fi
 
   docker exec "${container_name}" build-all rtorrent
+}
+
+rdo_build_mktorrent() {
+  rdo_build__build --empty --cache --no-rebuild --ancestor-project "rdo-utils" "run/mktorrent:global"
 }
 
 # Helper functions

@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:experimental
-
 ARG REPOSITORY
 ARG TAG_APPEND
 
@@ -14,7 +12,7 @@ WORKDIR /run/rtorrent
 ENV PATH="/prefix/bin:${PATH}"
 
 COPY --from=stage /deploy/prefix/ /prefix/
-COPY bash_profile /root/
+COPY bash_profile /root/.bash_profile
 COPY entry-point.sh /
 
 ENTRYPOINT /entry-point.sh rtorrent -o system.daemon.set=true

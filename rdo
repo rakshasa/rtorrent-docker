@@ -30,6 +30,7 @@ is_header_included network || source "./functions/network"
 is_header_included node || source "./functions/node"
 is_header_included run || source "./functions/run"
 is_header_included stage || source "./functions/stage"
+is_header_included torrent || source "./functions/torrent"
 
 rdo() {
   eval "$(args::init_subcommand "rdo" "RTorrent docker test environment")"
@@ -57,6 +58,8 @@ rdo() {
                     'rdo_node "${@}"'
   args::new_command "stage" default "Stage environments" \
                     'rdo_stage "${@}"'
+  args::new_command "torrent" default "Manage torrents" \
+                    'rdo_torrent "${@}"'
   args::new_command "watch" empty "Watch docker images" \
                     'rdo_watch "${@}"'
 

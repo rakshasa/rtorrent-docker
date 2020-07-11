@@ -65,6 +65,7 @@ _rtorrent_docker__rdo() {
       node
       stage
       tags
+      torrent
       watch
     )
   fi
@@ -94,6 +95,7 @@ _rtorrent_docker__rdo_build() {
       rtorrent-check
       rtorrent-compile
       rtorrent-dev
+      mktorrent
     )
   fi
 }
@@ -277,6 +279,16 @@ _rtorrent_docker__rdo_tags() {
     flags=(--help)
   else
     commands=(docker libtorrent rtorrent)
+  fi
+}
+
+# completion do torrent layer
+
+_rtorrent_docker__rdo_torrent() {
+  if [[ "${word}" == -* ]]; then
+    flags=(--help)
+  else
+    commands=(create)
   fi
 }
 
