@@ -88,6 +88,7 @@ _rtorrent_docker__rdo_build() {
     commands=(
       all
       check
+      clean
       compile
       libtorrent
       libtorrent-dev
@@ -152,7 +153,13 @@ _rtorrent_docker__rdo_docker_build() {
 }
 
 _rtorrent_docker__rdo_docker_clean() {
-  commands=(all pkg)
+  commands=(
+    all
+    build
+    dangling
+    pkg-cache
+    run
+  )
 }
 
 _rtorrent_docker__rdo_docker_context() {

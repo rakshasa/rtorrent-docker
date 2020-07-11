@@ -2,7 +2,7 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
+FROM "${REPOSITORY}/build/rtorrent:${TAG_APPEND}" AS stage
 
 
 FROM "${REPOSITORY}/base/run/rtorrent:${TAG_APPEND}"

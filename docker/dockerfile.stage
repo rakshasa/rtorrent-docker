@@ -12,8 +12,6 @@
 
 ARG REPOSITORY
 
-FROM "${REPOSITORY}/ancestor:global"
-
-LABEL "stage__ancestor"="yes"
+FROM "${REPOSITORY}/ancestor/build:global"
 
 WORKDIR /stage

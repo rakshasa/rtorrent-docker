@@ -39,3 +39,5 @@ set +x
 if [[ ! -e '${DST_DIR}/{}' ]] || ! diff -q '${SRC_DIR}/{}' '${DST_DIR}/{}'; then
   mv -v '${SRC_DIR}/{}' '${DST_DIR}/{}';
 fi" \;
+
+rm -rf "${SRC_DIR}"

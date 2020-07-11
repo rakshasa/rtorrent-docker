@@ -3,38 +3,39 @@
 include_header docker.clean
 
 rdo_docker_clean() {
-  local cmd="${1}"; shift || :
+  eval "$(args::init_subcommand "rdo build" "Build project.")"
 
-  case "${cmd}" in
-    all)
-      rdo__call_empty rdo_docker_clean_all "${@}"
-      ;;
-    pkg)
-      rdo__call_empty rdo_docker_clean_pkg "${@}"
-      ;;
-    --help|-h|'')
-      echo "Usage: rdo docker clean COMMAND"
-      echo
-      echo "Docker clean commands"
-      echo
-      echo "Commands"
-      echo "  all   Clean all build targets"
-      echo
-      echo "Run 'rdo docker clean COMMAND --help' for more information on a command."
-      ;;
-    *)
-      print_error "rdo docker clean: unknown command: ${@}"
-      return 1
-      ;;
-  esac
+  args::new_command "all" empty "Clean all project images" \
+                    'rdo_docker_clean_all'
+  args::new_command "build" empty "Clean build project images" \
+                    'rdo_docker_clean_build'
+  args::new_command "dangling" empty "Clean dangling project images" \
+                    'rdo_docker_clean_dangling'
+  args::new_command "pkg-cache" empty "Clean package cache project images" \
+                    'rdo_docker_clean_pkg_cache'
+  args::new_command "run" empty "Clean run project images" \
+                    'rdo_docker_clean_run'
+
+  eval "$(args::process)"
 }
 
 rdo_docker_clean_all() {
-  rdo_docker_clean__rm_filter "label=ancestor_project=rdo-project"
+  rdo_docker_clean__rm_filter "label=ancestor_project_root=rdo"
 }
 
-rdo_docker_clean_pkg() {
-  rdo_docker_clean__rm_filter "label=ancestor_project=rdo-pkg-cache"
+rdo_docker_clean_build() {
+  rdo_docker_clean__rm_filter "label=ancestor_project_root=rdo" "label=ancestor_project=build"
+}
+
+rdo_docker_clean_dangling() {
+  rdo_docker_clean__rm_filter "label=ancestor_project_root=rdo" "dangling=true"
+}
+rdo_docker_clean_pkg_cache() {
+  rdo_docker_clean__rm_filter "label=ancestor_project_root=rdo" "label=ancestor_project=pkg-cache"
+}
+
+rdo_docker_clean_run() {
+  rdo_docker_clean__rm_filter "label=ancestor_project_root=rdo" "label=ancestor_project=run"
 }
 
 # Helper functions

@@ -5,7 +5,7 @@
 
 ARG REPOSITORY
 
-FROM "${REPOSITORY}/ancestor:global"
+FROM "${REPOSITORY}/ancestor/build:global"
 
 WORKDIR /build
 
