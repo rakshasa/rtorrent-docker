@@ -42,14 +42,15 @@ rdo-find-move --replace "./" "/deploy/output/" \
    -newer ${RDO_TIMESTAMP_PATH} \
    )"
 
-FROM "${REPOSITORY}/build/stage:${TAG_APPEND}"
 
-ARG CONTEXT_TYPE
-ARG CONTEXT_NAME
+FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.result
 
-LABEL "rdo__stage__${CONTEXT_TYPE}__${CONTEXT_NAME}"="yes"
 
+FROM "${REPOSITORY}/stage:global"
+
+COPY --from=stage.result /deploy/ /deploy/
 COPY --from=build /deploy/output/ /stage/output/
+
 RUN rdo-find-move "/stage/output" "/deploy/rtorrent/output" "-not -type d"
 
 RUN eval ${RDO_TIMESTAMP_LS} "/deploy/rtorrent/output/src"
