@@ -143,7 +143,7 @@ rdo_build__compile_status() {
 rdo_build__check_compile() {
   local context_name="${1:?Missing context name argument.}"
 
-  if [[ "$(rdo_build__compile_status "libtorrent" "build/stage")" == "success" ]]; then
+  if [[ "$(rdo_build__compile_status "libtorrent" "build/rtorrent")" == "success" ]]; then
     print_progress "compile success"
   else
     print_warning "compile failed"
@@ -163,7 +163,7 @@ rdo_build__init() {
   rdo_build__build --empty --cache "base/build/rtorrent"
   rdo_build__build --empty "base/run/rtorrent"
 
-  rdo_build__build --context-type "autogen" --filename "build.autogen" "build/stage"
+  rdo_build__build --context-type "autogen" --filename "build.autogen" "build/rtorrent"
 }
 
 ordo_build__libtorrent() {
@@ -172,20 +172,20 @@ ordo_build__libtorrent() {
 }
 
 rdo_build__libtorrent_configure() {
-  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.configure" "build/stage"
+  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.configure" "build/rtorrent"
 }
 
 rdo_build__libtorrent_compile() {
-  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=yes" "build/stage"
+  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=yes" "build/rtorrent"
   rdo_build__check_compile "libtorrent"
 }
 
 rdo_build__rtorrent_configure() {
-  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.configure" "build/stage"
+  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.configure" "build/rtorrent"
 }
 
 rdo_build__rtorrent_compile() {
-  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=yes" "build/stage"
+  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent.compile" --build-arg "IGNORE_BUILD_ERROR=yes" "build/rtorrent"
   rdo_build__check_compile "rtorrent"
 }
 

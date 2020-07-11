@@ -4,7 +4,7 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage
+FROM "${REPOSITORY}/build/rtorrent:${TAG_APPEND}" AS stage
 
 COPY /rtorrent.tar.gz /stage/rtorrent.tar.gz
 
@@ -43,12 +43,12 @@ rdo-find-move --replace "./" "/deploy/output/" \
    )"
 
 
-FROM "${REPOSITORY}/build/stage:${TAG_APPEND}" AS stage.result
+FROM "${REPOSITORY}/build/rtorrent:${TAG_APPEND}" AS output
 
 
 FROM "${REPOSITORY}/stage:global"
 
-COPY --from=stage.result /deploy/ /deploy/
+COPY --from=output /deploy/ /deploy/
 COPY --from=build /deploy/output/ /stage/output/
 
 RUN rdo-find-move "/stage/output" "/deploy/rtorrent/output" "-not -type d"
