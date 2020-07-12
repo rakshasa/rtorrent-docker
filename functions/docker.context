@@ -30,43 +30,20 @@ rdo_docker_context_build() {
   local arg_context_name=
   local arg_context_type=
 
-  while [[ -n "${1}" ]]; do
-    case "${1}" in
-      --cache)
-        context_build_args+=(--post-exec "rdo_docker_context__post_cache")
-        shift ;;
-      --context-args)
-        arg_context_args="${2:?Missing context args argument.}"
-        shift 2 ;;
-      --context-name)
-        arg_context_name="${2:?Missing context name argument.}"
-        shift 2 ;;
-      --context-type)
-        arg_context_type="${2:?Missing context type argument.}"
-        shift 2 ;;
-      --empty)
-        arg_context_type="empty"
-        shift ;;
-      --help|-h)
-        echo "Usage: rdo docker context build [OPTIONS]"
-        echo
-        echo "Build docker container with a custom context"
-        echo
-        echo "Options:"
-        echo "      --cache         Empty context"
-        echo "      --context-args  Args of the context"
-        echo "      --context-name  Name of the context"
-        echo "      --context-type  Type of the context"
-        echo "      --empty         Build in an empty context"
-        echo
-        echo "Run 'rdo env create --help' for more information on a command."
-        exit 1
-        ;;
-      *)
-        break
-        ;;
-    esac
-  done
+  eval "$(args::init_options_default_skip_unknown "rdo docker context build" "Build image with a context.")"
+
+  args::new_option "cache" empty "" "Build uses package cache" \
+                   'context_build_args+=(--post-exec "rdo_docker_context__post_cache")'
+  args::new_option "context-args" string "" "Set context arguments" \
+                   'arg_context_args="${args__1}"'
+  args::new_option "context-name" string "" "Set context name" \
+                   'arg_context_name="${args__1}"'
+  args::new_option "context-type" string "" "Set context type" \
+                   'arg_context_type="${args__1}"'
+  args::new_option "empty" empty "" "Build empty context" \
+                   'arg_context_type="empty"'
+
+  eval "$(args::process)"
 
   if [[ -z "${arg_context_type}" ]]; then
     print_error "rdo docker context build: missing context type argument"
