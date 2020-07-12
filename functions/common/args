@@ -27,6 +27,7 @@ local args__arg_name=
 local args__extra_args=
 local args__has_commands=
 local args__has_options=
+local args__skip_unknown=
 declare -a args__options
 declare -A args__option_types
 declare -A args__option_flags
@@ -45,6 +46,25 @@ args::init_subcommand() {
 local args__has_commands=yes
 local args__has_options=yes
 local args__extra_args=default
+EOF
+}
+
+args::init_options_default() {
+  args::__init "${@}"
+  cat - <<EOF
+local args__has_commands=no
+local args__has_options=yes
+local args__extra_args=default
+EOF
+}
+
+args::init_options_default_skip_unknown() {
+  args::__init "${@}"
+  cat - <<EOF
+local args__has_commands=no
+local args__has_options=yes
+local args__extra_args=default
+local args__skip_unknown=yes
 EOF
 }
 
@@ -173,11 +193,19 @@ EOF
 
   cat - <<EOF
     *)
-      if [[ -n "${1}" ]] && [[ -z "\${1##-*}" ]]; then
+EOF
+
+  if [[ "${args__skip_unknown}" != "yes" ]]; then
+    cat - <<EOF
+      if [[ -n "\${1}" ]] && [[ -z "\${1##-*}" ]]; then
         print_error "\${args__root}: unknown flag: \${1}"
         return 1
       fi
 
+EOF
+  fi
+
+  cat - <<EOF
       break
       ;;
   esac
