@@ -6,17 +6,53 @@ rdo_torrent() {
   eval "$(args::init_subcommand "rdo torrent" "Manage staging of environments.")"
 
   args::new_command "create" default "Create a torrent" \
-                    'rdo_torrent_create'
+                    'time rdo_torrent_create'
 
   eval "$(args::process)"
 }
 
 rdo_torrent_create() {
   rdo_torrent__init
+
+  local torrent_name="test"
+  local torrent_path="./run/torrents/${torrent_name}"
+
+  rm -rf "${torrent_path}"{,.torrent}
+  mkdir -p "${torrent_path}"
+
+  head -c "$(( 5 * 1024 * 1024 ))" < <(head -c 8000 /dev/urandom; while true; do cat "${torrent_path}/file"; done) > "${torrent_path}/file"
+
+  local create_args=(
+    -a "http://example.com:1234/announce.php"
+    -n "${torrent_name}"
+    -o "/torrents/${torrent_name}.torrent"
+  )
+
+  create_args+=("/torrents/${torrent_name}")
+
+  docker exec -t "rdo-utils-mktorrent" mktorrent "${create_args[@]}"
 }
 
 # Helper methods:
 
 rdo_torrent__init() {
-  rdo docker context build --empty --cache --no-rebuild --ancestor-project "utils" "run/mktorrent:global"
+  if [[ -n "$(rdo__running_container_id__name "rdo-utils-mktorrent")" ]]; then
+    return
+  fi
+
+  if [[ -n "$(rdo__container_id__name "rdo-utils-mktorrent")" ]]; then
+    docker rm "rdo-utils-mktorrent"
+  fi
+
+  rdo_docker context build --empty --cache --no-rebuild --ancestor-project "utils" "run/mktorrent:global"
+
+  mkdir -p "./run/torrents"
+
+  docker run \
+         --name "rdo-utils-mktorrent" \
+         --rm \
+         --detach \
+         --network none \
+         --mount "type=bind,src=$(get_project_path)/run/torrents/,dst=/torrents" \
+         "rdo/run/mktorrent:global"
 }
