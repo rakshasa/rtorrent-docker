@@ -22,6 +22,8 @@ rdo_stage() {
                     'rdo_stage_test'
   args::new_command "torrent" default "Add torrent" \
                     'rdo_stage_torrent "${@}"'
+  args::new_command "tracker" default "Add tracker" \
+                    'rdo_stage_tracker "${@}"'
 
   eval "$(args::process)"
 }
@@ -31,9 +33,12 @@ rdo_stage_test() {
   rdo_stage_init
   rdo_stage_network "rt-network-1"
   rdo_stage_network "rt-network-2"
+  rdo_stage_tracker --run-template "tracker-default" --network "rt-network-1" --network "rt-network-2" "rt-tracker-1"
   rdo_stage_node --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-node-1"
   rdo_stage_node --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-node-2"
-  print_progress "staged test"
+  print_progress "deploying test"
+  rdo_stage_deploy
+  print_progress "deployed test"
 }
 
 rdo_stage_clean() {
@@ -93,10 +98,10 @@ rdo_stage_node() {
 
   : "${run_template:?Missing run template argument.}"
 
-  local node_path="./run/current/nodes/${name}"
-  mkdir -p "${node_path}/"interfaces
+  local self_path="./run/current/nodes/${name}"
+  mkdir -p "${self_path}/"interfaces
 
-  echo "stage" > "${node_path}/signal"
+  echo "stage" > "${self_path}/signal"
 
   create_args+=(
     --name "${name}"
@@ -116,8 +121,54 @@ rdo_stage_node() {
 
   rdo_stage__update_network
 
-  "./templates/run/${run_template}" > "${node_path}/run"
-  chmod a+x "${node_path}/run"
+  "./templates/run/${run_template}" > "${self_path}/run"
+  chmod a+x "${self_path}/run"
+
+  echo "${name}"
+}
+
+rdo_stage_tracker() {
+  local create_args=()
+  local networks=()
+
+  eval "$(args::init_options_string "rdo stage tracker NAME" "name" "Add tracker to staging of environments.")"
+
+  args::new_option "network" string "n" "Connect tracker to network" \
+                   'networks+=("${args__1}")'
+  args::new_option "run-template" string "r" "Use template to create run script" \
+                   'run_template=("${args__1}")'
+
+  eval "$(args::process)"
+
+  : "${run_template:?Missing run template argument.}"
+
+  local self_path="./run/current/trackers/${name}"
+  mkdir -p "${self_path}/"interfaces
+
+  echo "stage" > "${self_path}/signal"
+
+  create_args+=(
+    --name "${name}"
+    --tty
+    --network "none"
+    --publish 6969:6969/udp
+    --publish 6969:6969
+    --mount "type=bind,source=$(project_absolute_unix_path)/run/current/trackers/${name}/,target=/run/self/"
+  )
+
+  docker container create --label "project=rdo" "${create_args[@]}" "rdo/run/opentracker:global" > /dev/null
+  docker network disconnect "none" "${name}"
+
+  for network in "${networks[@]}"; do
+    docker network connect "${network}" "${name}"
+  done
+
+  docker start "${name}" > /dev/null
+
+  rdo_stage__update_network
+
+  "./templates/run/${run_template}" > "${self_path}/run"
+  chmod a+x "${self_path}/run"
 
   echo "${name}"
 }
@@ -125,9 +176,7 @@ rdo_stage_node() {
 # Helper functions
 
 rdo_stage__update_network() {
-  local node_path="./run/current/nodes/${name}"
-
-  rm -rf "${node_path}/interfaces"
+  rm -rf "${self_path}/interfaces"
 
   local line
   while IFS= read -r line; do
@@ -137,7 +186,7 @@ rdo_stage__update_network() {
     fi
 
     local network="${BASH_REMATCH[1]:?Missing network name.}"
-    local interface_path="${node_path}/interfaces/${network}"
+    local interface_path="${self_path}/interfaces/${network}"
     mkdir -p "${interface_path}"
 
     [[ -z "${BASH_REMATCH[2]}" ]] || echo "${BASH_REMATCH[2]}" > "${interface_path}/mac"
