@@ -89,40 +89,16 @@ rdo_stage_node() {
 
   eval "$(args::init_options_string "rdo stage node NAME" "name" "Add node to staging of environments.")"
 
-  args::new_option "network" string "n" "Connect node to network" \
-                   'networks+=("${args__1}")'
-  args::new_option "run-template" string "r" "Use template to create run script" \
-                   'run_template=("${args__1}")'
+  rdo_stage__container__default_args
 
   eval "$(args::process)"
 
-  : "${run_template:?Missing run template argument.}"
+  local self_type="nodes"
+  local image_name="rdo/run/rtorrent:default"
 
-  local self_path="./run/current/nodes/${name}"
-  mkdir -p "${self_path}/"interfaces
-
-  echo "stage" > "${self_path}/signal"
-
-  create_args+=(
-    --name "${name}"
-    --tty
-    --network "none"
-    --mount "type=bind,source=$(project_absolute_unix_path)/run/current/nodes/${name}/,target=/run/self/"
-  )  
-
-  docker container create --label "project=rdo" "${create_args[@]}" "rdo/run/rtorrent:default" > /dev/null
-  docker network disconnect "none" "${name}"
-
-  for network in "${networks[@]}"; do
-    docker network connect "${network}" "${name}"
-  done
-
-  docker start "${name}" > /dev/null
-
-  rdo_stage__update_network
-
-  "./templates/run/${run_template}" > "${self_path}/run"
-  chmod a+x "${self_path}/run"
+  rdo_stage__container__create
+  rdo_stage__container__start
+  rdo_stage__container__update_run
 
   echo "${name}"
 }
@@ -133,30 +109,57 @@ rdo_stage_tracker() {
 
   eval "$(args::init_options_string "rdo stage tracker NAME" "name" "Add tracker to staging of environments.")"
 
+  rdo_stage__container__default_args
+
+  eval "$(args::process)"
+
+  local self_type="trackers"
+  local image_name="rdo/run/opentracker:global"
+
+  create_args+=(
+    --publish 6969:6969/udp
+    --publish 6969:6969
+  )
+
+  rdo_stage__container__create
+  rdo_stage__container__start
+  rdo_stage__container__update_run
+
+  echo "${name}"
+}
+
+# Helper functions
+
+rdo_stage__container__default_args() {
   args::new_option "network" string "n" "Connect tracker to network" \
                    'networks+=("${args__1}")'
   args::new_option "run-template" string "r" "Use template to create run script" \
                    'run_template=("${args__1}")'
+}
 
-  eval "$(args::process)"
+rdo_stage__container__create() {
+  local self_path="./run/current/${self_type}/${name}"
 
   : "${run_template:?Missing run template argument.}"
 
-  local self_path="./run/current/trackers/${name}"
-  mkdir -p "${self_path}/"interfaces
+  mkdir -p "${self_path}/interfaces"
 
   echo "stage" > "${self_path}/signal"
+
+  "./templates/run/${run_template}" > "${self_path}/run"
+  chmod a+x "${self_path}/run"
 
   create_args+=(
     --name "${name}"
     --tty
     --network "none"
-    --publish 6969:6969/udp
-    --publish 6969:6969
-    --mount "type=bind,source=$(project_absolute_unix_path)/run/current/trackers/${name}/,target=/run/self/"
+    --mount "type=bind,source=$(project_absolute_unix_path)/run/current/${self_type}/${name}/,target=/run/self/"
   )
 
-  docker container create --label "project=rdo" "${create_args[@]}" "rdo/run/opentracker:global" > /dev/null
+  docker container create --label "project=rdo" "${create_args[@]}" "${image_name}" > /dev/null
+}
+
+rdo_stage__container__start() {
   docker network disconnect "none" "${name}"
 
   for network in "${networks[@]}"; do
@@ -164,18 +167,11 @@ rdo_stage_tracker() {
   done
 
   docker start "${name}" > /dev/null
-
-  rdo_stage__update_network
-
-  "./templates/run/${run_template}" > "${self_path}/run"
-  chmod a+x "${self_path}/run"
-
-  echo "${name}"
 }
 
-# Helper functions
+rdo_stage__container__update_run() {
+  local self_path="./run/current/${self_type}/${name}"
 
-rdo_stage__update_network() {
   rm -rf "${self_path}/interfaces"
 
   local line
