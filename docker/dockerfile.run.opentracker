@@ -1,0 +1,19 @@
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "lednerb/opentracker-docker"
+
+WORKDIR /run/tracker
+
+RUN apk add --no-cache bash
+
+COPY bash_profile /root/.bash_profile
+COPY entry-point.sh /
+
+ARG ANCESTOR_PROJECT
+
+LABEL ancestor_project_root="rdo"
+LABEL ancestor_project="${ANCESTOR_PROJECT}"
+
+ENTRYPOINT /entry-point.sh

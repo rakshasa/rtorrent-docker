@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cat - <<EOF
+opentracker -f /etc/opentracker/opentracker.conf
+EOF
