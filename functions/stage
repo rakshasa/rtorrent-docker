@@ -16,8 +16,8 @@ rdo_stage() {
                     'rdo_stage_init'
   args::new_command "network" default "Add network" \
                     'rdo_stage_network "${@}"'
-  args::new_command "node" default "Add node" \
-                    'rdo_stage_node "${@}"'
+  args::new_command "rtorrent" default "Add node" \
+                    'rdo_stage_rtorrent "${@}"'
   args::new_command "test" empty "Stage test environment" \
                     'rdo_stage_test'
   args::new_command "torrent" default "Add torrent" \
@@ -34,8 +34,9 @@ rdo_stage_test() {
   rdo_stage_network "rt-network-1"
   rdo_stage_network "rt-network-2"
   rdo_stage_tracker --run-template "tracker-default" --network "rt-network-1" --network "rt-network-2" "rt-tracker-1"
-  rdo_stage_node --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-node-1"
-  rdo_stage_node --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-node-2"
+  rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-seed-1"
+  rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-leech-1"
+  rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-leech-2"
   print_progress "deploying test"
   rdo_stage_deploy
   print_progress "deployed test"
@@ -49,6 +50,13 @@ rdo_stage_clean() {
 }
 
 rdo_stage_deploy() {
+  local tracker_list=()
+  mapfile -t tracker_list < <(ls "./run/current/trackers/")
+
+  for tracker in "${tracker_list[@]}"; do
+    echo "deploy" > "./run/current/trackers/${tracker}/signal"
+  done
+
   local node_list=()
   mapfile -t node_list < <(ls "./run/current/nodes/")
 
@@ -82,7 +90,7 @@ rdo_stage_network() {
   echo "${name}"
 }
 
-rdo_stage_node() {
+rdo_stage_rtorrent() {
   local create_args=()
   local networks=()
   local run_template=
@@ -95,6 +103,9 @@ rdo_stage_node() {
 
   local self_type="nodes"
   local image_name="rdo/run/rtorrent:default"
+
+  local self_path="./run/current/${self_type}/${name}"
+  mkdir -p "${self_path}/"{logs,session,torrents,watch}
 
   rdo_stage__container__create
   rdo_stage__container__start
@@ -148,6 +159,10 @@ rdo_stage__container__create() {
 
   "./templates/run/${run_template}" > "${self_path}/run"
   chmod a+x "${self_path}/run"
+
+  if [[ -f "./templates/rc/${run_template}" ]]; then
+    "./templates/rc/${run_template}" > "${self_path}/rc"
+  fi
 
   create_args+=(
     --name "${name}"

@@ -15,4 +15,4 @@ COPY --from=stage /deploy/prefix/ /prefix/
 COPY bash_profile /root/.bash_profile
 COPY entry-point.sh /
 
-ENTRYPOINT /entry-point.sh rtorrent -o system.daemon.set=true
+ENTRYPOINT /entrypoint.sh

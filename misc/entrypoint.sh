@@ -26,7 +26,7 @@ done
 
 echo "running" > "/run/self/state"
 
-if ! "/run/self/run" &> "/run/self/log"; then
+if ! "/run/self/run" &> "/run/self/run-log"; then
   echo "error" > "/run/self/state"
   echo "run_error" > "/run/self/error"
   exit 0

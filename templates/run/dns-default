@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cat - <<EOF
+/usr/sbin/named -f -g
+EOF
