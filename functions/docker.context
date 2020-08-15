@@ -171,5 +171,5 @@ rdo_docker_context__pre_run() {
   "./misc/gen-bash-profile" "${context_name}" "${tag_full}" > "${bash_profile_path}"
   "./misc/rdo-file-move" "${bash_profile_path}" "${context_path}/bash_profile"
 
-  cp "./misc/entry-point.sh" "${context_path}/entry-point.sh"
+  cp "./misc/entrypoint.sh" "${context_path}/entrypoint.sh"
 }

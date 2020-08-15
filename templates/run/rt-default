@@ -1,5 +1,5 @@
 #!/bin/bash
 
 cat - <<EOF
-rtorrent -o "system.daemon.set=true"
+rtorrent -o "system.daemon.set=true,import=/run/self/rc"
 EOF
