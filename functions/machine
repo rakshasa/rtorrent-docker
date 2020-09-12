@@ -97,10 +97,6 @@ rdo_machine_create() {
 
   eval "$(args::process)"
 
-  rdo__args__check_valid_arg arg_cpu_count || exit 1
-  rdo__args__check_valid_arg arg_docker_machine || exit 1
-  rdo__args__check_valid_arg arg_memory || exit 1
-
   if [[ "${OSTYPE}" == "cygwin" ]]; then
     # create_args+=("--virtualbox-share-folder" "$(rdo__project_absolute_path)")
      create_args+=("--virtualbox-share-folder" 'c:\cygwin64:cygwin64')

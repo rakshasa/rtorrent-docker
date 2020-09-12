@@ -11,16 +11,64 @@ DOCKER_CONTEXT_TYPES=(
 )
 
 rdo_docker_context() {
-  eval "$(args::init_subcommand "rdo docker context" "Build docker images with a build context.")"
+  # eval "$(args::init_subcommand "rdo docker context" "Build docker images with a build context.")"
 
-  args::new_command "build" default "Build image with a context" \
-                    'rdo_docker_context_build "${@}"'
-  args::new_command "clean" empty "Clean all contexts" \
-                    'rdo_docker_context_clean'
-  args::new_command "types" empty "List all context types" \
-                    'rdo_docker_context_types'
+  # args::new_command "build" default "Build image with a context" \
+  #                   'rdo_docker_context_build "${@}"'
+  # args::new_command "clean" empty "Clean all contexts" \
+  #                   'rdo_docker_context_clean'
+  # args::new_command "types" empty "List all context types" \
+  #                   'rdo_docker_context_types'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo docker context COMMAND"
+        echo
+        echo "Build docker images with a build context."
+        echo
+        echo "Commands:"
+        echo "  build    Build image with a context"
+        echo "  clean    Clean all contexts"
+        echo "  types    List all context types"
+        echo
+        echo "Run 'rdo docker context COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo docker context"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    build)
+      rdo_docker_context_build "${@}"
+      ;;
+    clean)
+      args::verify_command_empty "${@}"
+      rdo_docker_context_clean
+      ;;
+    types)
+      args::verify_command_empty "${@}"
+      rdo_docker_context_types
+      ;;
+    *)
+      print_error "rdo docker context: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
 }
 
 rdo_docker_context_build() {
@@ -30,21 +78,67 @@ rdo_docker_context_build() {
   local arg_context_name=
   local arg_context_type=
 
-  eval "$(args::init_options_default_skip_unknown "rdo docker context build" "Build image with a context.")"
+  # eval "$(args::init_options_default_skip_unknown "rdo docker context build" "Build image with a context.")"
 
-  args::new_option "cache" empty "" "Build uses package cache" \
-                   'context_build_args+=(--post-exec "rdo_docker_context__post_cache")'
-  args::new_option "context-args" string "" "Set context arguments" \
-                   'arg_context_args="${args__1}"'
-  args::new_option "context-name" string "" "Set context name" \
-                   'arg_context_name="${args__1}"'
-  args::new_option "context-type" string "" "Set context type" \
-                   'arg_context_type="${args__1}"'
-  args::new_option "empty" empty "" "Build empty context" \
-                   'arg_context_type="empty"'
+  # args::new_option "cache" empty "" "Build uses package cache" \
+  #                  'context_build_args+=(--post-exec "rdo_docker_context__post_cache")'
+  # args::new_option "context-args" string "" "Set context arguments" \
+  #                  'arg_context_args="${args__1}"'
+  # args::new_option "context-name" string "" "Set context name" \
+  #                  'arg_context_name="${args__1}"'
+  # args::new_option "context-type" string "" "Set context type" \
+  #                  'arg_context_type="${args__1}"'
+  # args::new_option "empty" empty "" "Build empty context" \
+  #                  'arg_context_type="empty"'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
 
+  while true; do
+    case "${1}" in
+      --cache)
+        shift
+        context_build_args+=(--post-exec "rdo_docker_context__post_cache")
+        ;;
+      --context-args)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        arg_context_args="${args__1}"
+        ;;
+      --context-name)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        arg_context_name="${args__1}"
+        ;;
+      --context-type)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        arg_context_type="${args__1}"
+        ;;
+      --empty)
+        shift
+        arg_context_type="empty"
+        ;;
+      --help|-h)
+        echo "Usage: rdo docker context build COMMAND"
+        echo
+        echo "Build image with a context."
+        echo
+        echo "Options:"
+        echo "      --cache          Build uses package cache"
+        echo "      --context-args   Set context arguments"
+        echo "      --context-name   Set context name"
+        echo "      --context-type   Set context type"
+        echo "      --empty          Build empty context"
+        echo
+        echo "Run 'rdo docker context build COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+  
   if [[ -z "${arg_context_type}" ]]; then
     print_error "rdo docker context build: missing context type argument"
     exit 1
@@ -170,6 +264,5 @@ rdo_docker_context__pre_run() {
 
   "./misc/gen-bash-profile" "${context_name}" "${tag_full}" > "${bash_profile_path}"
   "./misc/rdo-file-move" "${bash_profile_path}" "${context_path}/bash_profile"
-
   cp "./misc/entrypoint.sh" "${context_path}/entrypoint.sh"
 }

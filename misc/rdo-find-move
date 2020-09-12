@@ -24,6 +24,9 @@ fi
 
 mkdir -p "${DST_DIR}"
 
+SRC_DIR="$(cd "${SRC_DIR}" && pwd)"
+DST_DIR="$(cd "${DST_DIR}" && pwd)"
+
 cd "${SRC_DIR}"
 
 find ./ \
@@ -40,4 +43,5 @@ if [[ ! -e '${DST_DIR}/{}' ]] || ! diff -q '${SRC_DIR}/{}' '${DST_DIR}/{}'; then
   mv -v '${SRC_DIR}/{}' '${DST_DIR}/{}';
 fi" \;
 
+cd /
 rm -rf "${SRC_DIR}"
