@@ -1,5 +1,5 @@
 #!/bin/bash
 
 cat - <<EOF
-/usr/sbin/named -f -g
+coredns -conf /run/self/rc
 EOF

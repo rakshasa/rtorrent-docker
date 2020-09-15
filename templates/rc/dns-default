@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cat - <<EOF
+. {
+  file /run/self/root
+  log
+  errors
+}
+EOF
