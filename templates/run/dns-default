@@ -1,5 +1,0 @@
-#!/bin/bash
-
-cat - <<EOF
-coredns -conf /run/self/rc
-EOF
