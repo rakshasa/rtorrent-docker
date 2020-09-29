@@ -41,16 +41,11 @@ rdo_stage_test() {
   rdo_stage_init
   rdo_stage_network "rt-network-1"
   rdo_stage_network "rt-network-2"
-  rdo_stage_dns --run-template "dns-default" --network "rt-network-1" "rt-dns-1"
-
-  # get dns ip from this point
 
   rdo_stage_tracker --run-template "tracker-default" --network "rt-network-1" --network "rt-network-2" "rt-tracker-1"
   rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-seed-1"
   rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-leech-1"
   rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-leech-2"
-
-  rdo_stage_dns_record --dns-server "rt-dns-1" --host "trackers/rt-tracker-1" --inet "rt-network-1" "rt-tracker-1.rt-network-1"
 
   print_progress "deploying test"
   rdo_stage_deploy
@@ -104,69 +99,6 @@ rdo_stage_network() {
   echo "$(rdo_network subnet "${name}")" > "${path}/subnet"
   echo "$(rdo_network address "${name}")" > "${path}/address"
   echo "$(rdo_network prefix "${name}")" > "${path}/prefix"
-
-  echo "${name}"
-}
-
-rdo_stage_dns_record() {
-  local dns_server=()
-  local inet=()
-  local host=
-
-  eval "$(args::init_options_string "rdo stage dns-record NAME" "name" "Add dns record to staging")"
-
-  args::new_option "dns-server" string "" "Dns server name" \
-                   'dns_server+=("${args__1}")'
-  args::new_option "host" string "" "Host name" \
-                   'host="${args__1}"'
-  args::new_option "inet" string "" "Network name to use for inet record" \
-                   'inet="${args__1}"'
-
-  eval "$(args::process)"
-
-  : "${host:?Missing host argument.}"
-
-  local network
-  for network in "${inet[@]}"; do
-    echo "${name} IN A \$(cat './run/current/${host}/interfaces/${network}/inet')" >> "./run/current/dns/${dns_server}/root.template"
-  done
-
-  echo "${name}"
-}
-
-rdo_stage_dns() {
-  local create_args=()
-  local networks=()
-
-  eval "$(args::init_options_string "rdo stage dns NAME" "name" "Add dns to staging of environments.")"
-
-  rdo_stage__container__default_args
-
-  eval "$(args::process)"
-
-  local self_type="dns"
-  local image_name="rdo/run/coredns:global"
-
-  create_args+=(
-    --publish 53:53/udp
-  )
-
-  rdo_stage__container__create
-  rdo_stage__container__start
-  rdo_stage__container__update_run
-
-  cat - > "./run/current/dns/${name}/root.template" <<EOF
-\\\$ORIGIN local.
-\\\$TTL 86400
-@   IN  SOA     ns.icann.org. noc.dns.icann.org. (
-        1           ;Serial
-        7200        ;Refresh
-        3600        ;Retry
-        1209600     ;Expire
-        3600        ;Minimum TTL
-)
-
-EOF
 
   echo "${name}"
 }

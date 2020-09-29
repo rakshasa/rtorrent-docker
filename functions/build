@@ -77,7 +77,6 @@ rdo_build_init() {
   rdo_build__build --context-type "autogen" --filename "build.autogen" "build/rtorrent"
 
   rdo_build__build --context-type "run" --context-name "opentracker" --no-rebuild "run/opentracker:global"
-  rdo_build__build --context-type "run" --context-name "coredns" --no-rebuild "run/coredns:global"
 }
 
 rdo_build_compile() {
