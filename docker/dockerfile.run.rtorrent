@@ -13,6 +13,6 @@ ENV PATH="/prefix/bin:${PATH}"
 
 COPY --from=stage /deploy/prefix/ /prefix/
 COPY bash_profile /root/.bash_profile
-COPY entry-point.sh /
+COPY entrypoint.sh /
 
 ENTRYPOINT /entrypoint.sh

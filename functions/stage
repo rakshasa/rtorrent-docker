@@ -8,20 +8,27 @@ rdo_stage() {
 
   eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
 
-  args::new_command "clean" empty "Remove environment" \
-                    'rdo_stage_clean'
-  args::new_command "deploy" empty "Deploy environment" \
-                    'rdo_stage_deploy'
-  args::new_command "init" empty "Initialize new environment for staging" \
-                    'rdo_stage_init'
-  args::new_command "network" default "Add network" \
-                    'rdo_stage_network "${@}"'
-  args::new_command "rtorrent" default "Add node" \
-                    'rdo_stage_rtorrent "${@}"'
   args::new_command "test" empty "Stage test environment" \
                     'rdo_stage_test'
+
+  args::new_command "init" empty "Initialize new environment for staging" \
+                    'rdo_stage_init'
+  args::new_command "deploy" empty "Deploy environment" \
+                    'rdo_stage_deploy'
+  args::new_command "clean" empty "Remove environment" \
+                    'rdo_stage_clean'
+
+  args::new_command "network" default "Add network" \
+                    'rdo_stage_network "${@}"'
   args::new_command "torrent" default "Add torrent" \
                     'rdo_stage_torrent "${@}"'
+  args::new_command "dns-record" default "Add dns record" \
+                    'rdo_stage_dns_record "${@}"'
+
+  args::new_command "dns" default "Add dns server" \
+                    'rdo_stage_dns "${@}"'
+  args::new_command "rtorrent" default "Add node" \
+                    'rdo_stage_rtorrent "${@}"'
   args::new_command "tracker" default "Add tracker" \
                     'rdo_stage_tracker "${@}"'
 
@@ -30,13 +37,16 @@ rdo_stage() {
 
 rdo_stage_test() {
   print_progress "staging test"
+
   rdo_stage_init
   rdo_stage_network "rt-network-1"
   rdo_stage_network "rt-network-2"
+
   rdo_stage_tracker --run-template "tracker-default" --network "rt-network-1" --network "rt-network-2" "rt-tracker-1"
   rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-seed-1"
   rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-leech-1"
   rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-leech-2"
+
   print_progress "deploying test"
   rdo_stage_deploy
   print_progress "deployed test"
@@ -50,16 +60,19 @@ rdo_stage_clean() {
 }
 
 rdo_stage_deploy() {
-  local tracker_list=()
-  mapfile -t tracker_list < <(ls "./run/current/trackers/")
-
-  for tracker in "${tracker_list[@]}"; do
-    echo "deploy" > "./run/current/trackers/${tracker}/signal"
-  done
-
+  local dns_list=()
   local node_list=()
+  mapfile -t dns_list < <(ls "./run/current/dns/")
   mapfile -t node_list < <(ls "./run/current/nodes/")
 
+  # verify all nodes are up.
+
+  local node
+  for node in "${dns_list[@]}"; do
+    eval echo "\"$(cat "./run/current/dns/${node}/root.template")\"" > "./run/current/dns/${node}/root"
+  done
+
+  local node
   for node in "${node_list[@]}"; do
     echo "deploy" > "./run/current/nodes/${node}/signal"
   done
@@ -70,7 +83,7 @@ rdo_stage_deploy() {
 rdo_stage_init() {
   # TODO: Add state, don't allow calls when not in initialize.
   rdo_stage_clean
-  mkdir -p "./run/current/"{networks,nodes}
+  mkdir -p "./run/current/"{dns,networks,nodes,trackers,peers}
   print_progress "stage initialized"
 }
 
@@ -101,7 +114,7 @@ rdo_stage_rtorrent() {
 
   eval "$(args::process)"
 
-  local self_type="nodes"
+  local self_type="peers"
   local image_name="rdo/run/rtorrent:default"
 
   local self_path="./run/current/${self_type}/${name}"
@@ -149,11 +162,12 @@ rdo_stage__container__default_args() {
 }
 
 rdo_stage__container__create() {
-  local self_path="./run/current/${self_type}/${name}"
-
   : "${run_template:?Missing run template argument.}"
 
+  local self_path="./run/current/${self_type}/${name}"
+
   mkdir -p "${self_path}/interfaces"
+  ln -s "../${self_type}/${name}" "./run/current/nodes/${name}"
 
   echo "stage" > "${self_path}/signal"
 

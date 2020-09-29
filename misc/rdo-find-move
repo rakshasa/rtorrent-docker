@@ -4,10 +4,21 @@ set -e -o pipefail
 
 ARG_REPLACE=
 
-if [[ "${1}" == "--replace" ]]; then
-  ARG_REPLACE="yes"
-  shift
-fi
+while true; do
+  if [[ "${1}" == "--replace" ]]; then
+    ARG_REPLACE="yes"
+    shift
+    continue
+  fi
+
+  if [[ "${1}" == "--keep-directory" ]]; then
+    ARG_KEEP_DIRECTORY="yes"
+    shift
+    continue
+  fi
+
+  break
+done
 
 if [[ -n "${4}" ]]; then
   echo "too many arguments: ${4}" >&2
@@ -24,6 +35,9 @@ fi
 
 mkdir -p "${DST_DIR}"
 
+SRC_DIR="$(cd "${SRC_DIR}" && pwd)"
+DST_DIR="$(cd "${DST_DIR}" && pwd)"
+
 cd "${SRC_DIR}"
 
 find ./ \
@@ -38,6 +52,10 @@ set +x
 
 if [[ ! -e '${DST_DIR}/{}' ]] || ! diff -q '${SRC_DIR}/{}' '${DST_DIR}/{}'; then
   mv -v '${SRC_DIR}/{}' '${DST_DIR}/{}';
+else
+  rm -f '${SRC_DIR}/{}'
 fi" \;
 
-rm -rf "${SRC_DIR}"
+if [[ "${ARG_KEEP_DIRECTORY}" != "yes" ]]; then
+  rm -rf "$(cd "${SRC_DIR}" &> /dev/null && pwd)"
+fi

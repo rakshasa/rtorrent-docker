@@ -92,7 +92,7 @@ else \
   fi \
 fi; \
 \
-rdo-find-move "." "/deploy/output" \
+rdo-find-move --keep-directory "." "/deploy/output" \
   "( \
    -not -type d -and \
    -not -name *.log -and \
