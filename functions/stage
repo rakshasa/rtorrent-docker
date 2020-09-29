@@ -31,15 +31,17 @@ rdo_stage() {
 rdo_stage_test() {
   print_progress "staging test"
   rdo_stage_init
+
   rdo_stage_network "rt-network-1"
   rdo_stage_network "rt-network-2"
   rdo_stage_tracker --run-template "tracker-default" --network "rt-network-1" --network "rt-network-2" "rt-tracker-1"
   rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-seed-1"
   rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-leech-1"
   rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-leech-2"
-  print_progress "deploying test"
+
   rdo_stage_deploy
-  print_progress "deployed test"
+
+  print_progress "staged test"
 }
 
 rdo_stage_clean() {
@@ -50,18 +52,17 @@ rdo_stage_clean() {
 }
 
 rdo_stage_deploy() {
-  local tracker_list=()
-  mapfile -t tracker_list < <(ls "./run/current/trackers/")
+  print_progress "stage deploying"
 
-  for tracker in "${tracker_list[@]}"; do
-    echo "deploy" > "./run/current/trackers/${tracker}/signal"
-  done
+  local deploy_type
+  for deploy_type in trackers clients; do
+    local node_list=()
+    mapfile -t node_list < <(ls "./run/current/${deploy_type}/")
 
-  local node_list=()
-  mapfile -t node_list < <(ls "./run/current/nodes/")
-
-  for node in "${node_list[@]}"; do
-    echo "deploy" > "./run/current/nodes/${node}/signal"
+    for node in "${node_list[@]}"; do
+      echo "deploy" > "./run/current/nodes/${node}/signal"
+      echo "${node}"
+    done
   done
 
   print_progress "stage deployed"
@@ -101,10 +102,10 @@ rdo_stage_rtorrent() {
 
   eval "$(args::process)"
 
-  local self_type="nodes"
+  local self_type="clients"
   local image_name="rdo/run/rtorrent:default"
 
-  local self_path="./run/current/${self_type}/${name}"
+  local self_path="./run/current/nodes/${name}"
   mkdir -p "${self_path}/"{logs,session,torrents,watch}
 
   rdo_stage__container__create
@@ -149,11 +150,12 @@ rdo_stage__container__default_args() {
 }
 
 rdo_stage__container__create() {
-  local self_path="./run/current/${self_type}/${name}"
+  local self_path="./run/current/nodes/${name}"
 
   : "${run_template:?Missing run template argument.}"
 
-  mkdir -p "${self_path}/interfaces"
+  mkdir -p "./run/current/${self_type}" "${self_path}/interfaces"
+  ln -s "./../nodes/${name}" "./run/current/${self_type}/${name}"
 
   echo "stage" > "${self_path}/signal"
 
@@ -168,7 +170,7 @@ rdo_stage__container__create() {
     --name "${name}"
     --tty
     --network "none"
-    --mount "type=bind,source=$(project_absolute_unix_path)/run/current/${self_type}/${name}/,target=/run/self/"
+    --mount "type=bind,source=$(project_absolute_unix_path)/run/current/nodes/${name}/,target=/run/self/"
   )
 
   docker container create --label "project=rdo" "${create_args[@]}" "${image_name}" > /dev/null
@@ -185,7 +187,7 @@ rdo_stage__container__start() {
 }
 
 rdo_stage__container__update_run() {
-  local self_path="./run/current/${self_type}/${name}"
+  local self_path="./run/current/nodes/${name}"
 
   rm -rf "${self_path}/interfaces"
 
