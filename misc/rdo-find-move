@@ -57,5 +57,5 @@ else
 fi" \;
 
 if [[ "${ARG_KEEP_DIRECTORY}" != "yes" ]]; then
-  rm -rf "${SRC_DIR}"
+  rm -rf "$(cd "${SRC_DIR}" &> /dev/null && pwd)"
 fi
