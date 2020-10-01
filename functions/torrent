@@ -6,7 +6,10 @@ rdo_torrent() {
   eval "$(args::init_subcommand "rdo torrent" "Manage torrents.")"
 
   args::new_command "create" default "Create a torrent" \
-                    'time rdo_torrent_create "${@}"'
+                    'rdo_torrent_create "${@}"'
+
+  args::new_command "seed" default "Seed a torrent" \
+                    'rdo_torrent_seed "${@}"'
 
   eval "$(args::process)"
 }
@@ -39,8 +42,22 @@ rdo_torrent_create() {
 
   create_args+=("/torrents/${name}")
 
-  echo mktorrent "${create_args[@]}"
   docker exec -t "rdo-utils-mktorrent" mktorrent "${create_args[@]}" > /dev/null
+}
+
+rdo_torrent_seed() {
+  rdo_torrent__init
+
+  eval "$(args::init_options_string "rdo torrent seed NAME" "name" "Seed a torrent.")"
+
+  args::new_option "node" req_string "" "Seeding node" \
+                   'local node="${args__1}"'
+
+  eval "$(args::process)"
+
+  local self_path="./run/torrents/${name}"
+
+  
 }
 
 # Helper methods:
