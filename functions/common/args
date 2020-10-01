@@ -121,6 +121,24 @@ args::verify_command_string() {
 }
 
 args::process_options() {
+  local name req_found
+  for name in "${args__options[@]}"; do
+    case "${args__option_types[${name}]}" in
+      req_string)
+        req_found=yes
+        cat - <<EOF
+local args__opt_value__${name}=
+EOF
+        ;;
+    esac
+  done
+
+  if [[ "${req_found}" == "yes" ]]; then
+        cat - <<EOF
+
+EOF
+  fi
+
   cat - <<EOF
 while true; do
   case "\${1}" in
@@ -149,6 +167,14 @@ EOF
         string)
           cat - <<EOF
       local args__1="\${2:?Missing argument for '\${1}'.}"
+      shift 2
+      ${args__option_blocks[${name}]}
+EOF
+          ;;
+        req_string)
+          cat - <<EOF
+      local args__1="\${2:?Missing argument for '\${1}'.}"
+      args__opt_value__${name}="\${args__1}"
       shift 2
       ${args__option_blocks[${name}]}
 EOF
@@ -211,6 +237,21 @@ EOF
   esac
 done
 EOF
+
+  local name
+  for name in "${args__options[@]}"; do
+    case "${args__option_types[${name}]}" in
+      req_string)
+        cat - <<EOF
+
+if [[ -z "\${args__opt_value__${name}}" ]]; then
+  print_error "\${args__root}: missing required flag: --${name}"
+  return 1
+fi
+EOF
+        ;;
+    esac
+  done
 }
 
 args::process_command() {

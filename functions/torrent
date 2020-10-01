@@ -16,8 +16,8 @@ rdo_torrent_create() {
 
   eval "$(args::init_options_string "rdo torrent create NAME" "name" "Create a torrent.")"
 
-  # args::new_option "dddd" string "d" "desc" \
-  #                  'networks+=("${args__1}")'
+  args::new_option "url" req_string "" "Announce url" \
+                   'local url="${args__1}"'
 
   eval "$(args::process)"
 
@@ -28,17 +28,19 @@ rdo_torrent_create() {
   rm -rf "${self_path}"{,.torrent}
   mkdir -p "${self_path}"
 
-  rdo_torrent__create_random_file "${self_path}/file"
+  rdo_torrent__create_random_file "/torrents/${name}/file"
 
   local create_args=(
-    -a "http://example.com:1234/announce.php"
+    #-a "http://example.com:1234/announce.php"
+    -a "${url}"
     -n "${name}"
     -o "/torrents/${name}.torrent"
   )
 
   create_args+=("/torrents/${name}")
 
-  docker exec -t "rdo-utils-mktorrent" mktorrent "${create_args[@]}"
+  echo mktorrent "${create_args[@]}"
+  docker exec -t "rdo-utils-mktorrent" mktorrent "${create_args[@]}" > /dev/null
 }
 
 # Helper methods:
@@ -68,5 +70,7 @@ rdo_torrent__init() {
 rdo_torrent__create_random_file() {
   local filename="${1:?Missing filename argument.}"
 
-  head -c "$(( 5 * 1024 * 1024 ))" < <(head -c 8000 /dev/urandom; while true; do cat "${filename}"; done) > "${filename}"
+  local cmd="head -c '$(( 5 * 1024 * 1024 ))' < <(head -c 8000 /dev/urandom; while true; do cat '${filename}'; done) > '${filename}'"
+
+  docker exec -t "rdo-utils-mktorrent" bash -c "${cmd}"
 }
