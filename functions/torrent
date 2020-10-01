@@ -3,10 +3,10 @@
 include_header torrent
 
 rdo_torrent() {
-  eval "$(args::init_subcommand "rdo torrent" "Manage staging of environments.")"
+  eval "$(args::init_subcommand "rdo torrent" "Manage torrents.")"
 
   args::new_command "create" default "Create a torrent" \
-                    'time rdo_torrent_create'
+                    'time rdo_torrent_create "${@}"'
 
   eval "$(args::process)"
 }
@@ -14,21 +14,29 @@ rdo_torrent() {
 rdo_torrent_create() {
   rdo_torrent__init
 
-  local torrent_name="test"
-  local torrent_path="./run/torrents/${torrent_name}"
+  eval "$(args::init_options_string "rdo torrent create NAME" "name" "Create a torrent.")"
 
-  rm -rf "${torrent_path}"{,.torrent}
-  mkdir -p "${torrent_path}"
+  # args::new_option "dddd" string "d" "desc" \
+  #                  'networks+=("${args__1}")'
 
-  head -c "$(( 5 * 1024 * 1024 ))" < <(head -c 8000 /dev/urandom; while true; do cat "${torrent_path}/file"; done) > "${torrent_path}/file"
+  eval "$(args::process)"
+
+  local self_path="./run/torrents/${name}"
+
+  # TODO: Don't recreate.
+
+  rm -rf "${self_path}"{,.torrent}
+  mkdir -p "${self_path}"
+
+  rdo_torrent__create_random_file "${self_path}/file"
 
   local create_args=(
     -a "http://example.com:1234/announce.php"
-    -n "${torrent_name}"
-    -o "/torrents/${torrent_name}.torrent"
+    -n "${name}"
+    -o "/torrents/${name}.torrent"
   )
 
-  create_args+=("/torrents/${torrent_name}")
+  create_args+=("/torrents/${name}")
 
   docker exec -t "rdo-utils-mktorrent" mktorrent "${create_args[@]}"
 }
@@ -53,6 +61,12 @@ rdo_torrent__init() {
          --rm \
          --detach \
          --network none \
-         --mount "type=bind,src=$(get_project_path)/run/torrents/,dst=/torrents" \
+         --mount "type=bind,src=$(project_absolute_unix_path)/run/torrents/,dst=/torrents" \
          "rdo/run/mktorrent:global"
+}
+
+rdo_torrent__create_random_file() {
+  local filename="${1:?Missing filename argument.}"
+
+  head -c "$(( 5 * 1024 * 1024 ))" < <(head -c 8000 /dev/urandom; while true; do cat "${filename}"; done) > "${filename}"
 }
