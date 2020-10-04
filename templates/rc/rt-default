@@ -52,7 +52,7 @@ log.execute = /run/self/logs/execute.log
 
 print = "Loaded from '/run/self/rc'"
 
-directory.default.set = "/run/self/torrents"
+directory.default.set = "/torrents"
 session.path.set = "/run/self/session"
 
 #directory.watch.added = /run/self/watch, load.start
@@ -60,7 +60,7 @@ session.path.set = "/run/self/session"
 schedule = watch_directory,5,5,load.start=/run/self/watch/*.torrent
 schedule = watch_untied, 10, 10, remove_untied=
 
-#method.set_key = event.download.finished,state_finished,"execute=touch,(cat,/run/self/torrents/,(d.name),.completed)"
+method.set_key = event.download.finished,state_finished,"execute=touch,(cat,/run/self/torrents/,(d.name),.completed)"
 method.set_key = event.download.hash_done,state_hash_done,"execute=touch,(cat,/run/self/torrents/,(d.name),.hash_done)"
 
 #

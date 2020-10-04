@@ -68,7 +68,7 @@ rdo_torrent_node() {
   fi
 
   if [[ "${seed}" == "yes" ]]; then
-    cp -r "${self_path}" "${node_path}/torrents/${name}"
+    docker cp "${self_path}" "${node}:/torrents/${name}"
   fi
 
   cp -r "${self_path}.torrent" "${node_path}/watch/${name}.torrent"
