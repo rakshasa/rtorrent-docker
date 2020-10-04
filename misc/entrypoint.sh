@@ -26,7 +26,9 @@ done
 
 echo "running" > "/run/self/state"
 
-if ! ("/run/self/run" &> "/run/self/log"); then
+mkdir -p "/run/self/logs"
+
+if ! ("/run/self/run" &> "/run/self/logs/entrypoint.log"); then
   echo "error" > "/run/self/state"
   echo "run_error" > "/run/self/error"
   exit 0

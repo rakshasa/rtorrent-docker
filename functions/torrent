@@ -8,8 +8,8 @@ rdo_torrent() {
   args::new_command "create" default "Create a torrent" \
                     'rdo_torrent_create "${@}"'
 
-  args::new_command "seed" default "Seed a torrent" \
-                    'rdo_torrent_seed "${@}"'
+  args::new_command "node" default "Add a torrent to a client node" \
+                    'rdo_torrent_node "${@}"'
 
   eval "$(args::process)"
 }
@@ -45,19 +45,33 @@ rdo_torrent_create() {
   docker exec -t "rdo-utils-mktorrent" mktorrent "${create_args[@]}" > /dev/null
 }
 
-rdo_torrent_seed() {
+rdo_torrent_node() {
   rdo_torrent__init
 
-  eval "$(args::init_options_string "rdo torrent seed NAME" "name" "Seed a torrent.")"
+  local seed=
 
-  args::new_option "node" req_string "" "Seeding node" \
+  eval "$(args::init_options_string "rdo torrent node NAME" "name" "Add torrent to a client node.")"
+
+  args::new_option "node" req_string "" "Client node name" \
                    'local node="${args__1}"'
+  args::new_option "seed" empty "" "Seed torrent" \
+                   'seed=yes'
 
   eval "$(args::process)"
 
   local self_path="./run/torrents/${name}"
+  local node_path="./run/current/clients/${node}"
 
-  
+  if [[ ! -f "${self_path}.torrent" ]]; then
+    print_error "could not find torrent: ${self_path}.torrent"
+    return 1
+  fi
+
+  if [[ "${seed}" == "yes" ]]; then
+    cp -r "${self_path}" "${node_path}/torrents/${name}"
+  fi
+
+  cp -r "${self_path}.torrent" "${node_path}/watch/${name}.torrent"
 }
 
 # Helper methods:

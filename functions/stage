@@ -44,7 +44,8 @@ rdo_stage_test() {
 
   rdo_stage_torrent --domain "rt-tracker-1.rt-network-1" "torrent-test-1"
 
-  rdo_torrent_seed --node "rt-seed-1" "torrent-test-1"
+  rdo_torrent_node --node "rt-seed-1" --seed "torrent-test-1"
+  rdo_torrent_node --node "rt-leech-1" "torrent-test-1"
 
   rdo_stage_deploy
 
