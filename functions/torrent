@@ -7,6 +7,8 @@ rdo_torrent() {
 
   args::new_command "create" default "Create a torrent" \
                     'rdo_torrent_create "${@}"'
+  args::new_command "wait" empty "Wait for a set of torrent events" \
+                    'rdo_torrent_wait "${@}"'
 
   args::new_command "node" default "Add a torrent to a client node" \
                     'rdo_torrent_node "${@}"'
@@ -45,9 +47,23 @@ rdo_torrent_create() {
   docker exec -t "rdo-utils-mktorrent" mktorrent "${create_args[@]}" > /dev/null
 }
 
-rdo_torrent_node() {
-  rdo_torrent__init
+rdo_torrent_wait() {
+  local completed=()
+  local no_progress=()
 
+  eval "$(args::init_options_string "rdo torrent create NAME" "name" "Create a torrent.")"
+
+  args::new_option "completed" string "" "" \
+                   'completed+=("${args__1}")'
+  args::new_option "no-progress" string "" "" \
+                   'no_progress+=("${args__1}")'
+
+  eval "$(args::process)"
+
+  # local self_path="./run/torrents/${name}"
+}
+
+rdo_torrent_node() {
   local seed=
 
   eval "$(args::init_options_string "rdo torrent node NAME" "name" "Add torrent to a client node.")"
