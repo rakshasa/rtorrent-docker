@@ -49,7 +49,8 @@ rdo_stage_test() {
 
   rdo_stage_deploy
 
-  rdo_torrent_wait --completed "rt-leech-1:torrent-test-1" --no-progress "rt-leech-2:torrent-test-1"
+  rdo_torrent_wait --print --hash-done "rt-leech-1:torrent-test-1" --hash-done "rt-leech-2:torrent-test-1"
+  rdo_torrent_wait --print --completed "rt-leech-1:torrent-test-1" --no-progress "rt-leech-2:torrent-test-1"
 
   print_progress "staged test"
 }
