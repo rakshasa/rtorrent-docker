@@ -43,14 +43,20 @@ rdo_stage_test() {
   rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-2" "rt-leech-2"
 
   rdo_stage_torrent --domain "rt-tracker-1.rt-network-1" "torrent-test-1"
+  rdo_stage_torrent --domain "rt-tracker-1.rt-network-2" "torrent-test-2"
 
   rdo_torrent_node --node "rt-seed-1" --seed "torrent-test-1"
   rdo_torrent_node --node "rt-leech-1" "torrent-test-1"
+  rdo_torrent_node --node "rt-leech-2" "torrent-test-2"
 
   rdo_stage_deploy
 
-  rdo_torrent_wait --print --hash-done "rt-leech-1:torrent-test-1" --hash-done "rt-leech-2:torrent-test-1"
-  rdo_torrent_wait --print --completed "rt-leech-1:torrent-test-1" --no-progress "rt-leech-2:torrent-test-1"
+  rdo_torrent_wait --print \
+                   --hash-done "rt-leech-1:torrent-test-1" \
+                   --hash-done "rt-leech-2:torrent-test-1" \
+                   --completed "rt-leech-1:torrent-test-1" \
+                   --not-hash-done "rt-leech-1:torrent-test-2" \
+                   --not-completed "rt-leech-2:torrent-test-1"
 
   print_progress "staged test"
 }
@@ -58,7 +64,8 @@ rdo_stage_test() {
 rdo_stage_clean() {
   rdo_node_clean > /dev/null
   rdo_network_clean > /dev/null
-  rm -rf "./run/current"
+  rm -rf ./run/current &> /dev/null
+  rm -rf ./run/torrents/* &> /dev/null
   print_progress "stage cleaned"
 }
 
