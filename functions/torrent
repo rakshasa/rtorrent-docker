@@ -49,6 +49,8 @@ rdo_torrent_create() {
 
 rdo_torrent_wait() {
   local print=
+  local wait_all=
+
   local completed_nodes=()
   local completed_torrents=()
   local hash_done_nodes=()
@@ -64,34 +66,61 @@ rdo_torrent_wait() {
                    'completed_nodes+=("${args__1}"); completed_torrents+=("${args__2}")'
   args::new_option "hash-done" string2: "" "Wait for initial hashing to complete" \
                    'hash_done_nodes+=("${args__1}"); hash_done_torrents+=("${args__2}")'
+  args::new_option "seeding" string2: "" "Wait for seeding" \
+                   'seeding_nodes+=("${args__1}"); seeding_torrents+=("${args__2}")'
   args::new_option "not-completed" string2: "" "Check for not completed" \
                    'not_completed_nodes+=("${args__1}"); not_completed_torrents+=("${args__2}")'
   args::new_option "not-hash-done" string2: "" "Check for not hash done" \
                    'not_hash_done_nodes+=("${args__1}"); not_hash_done_torrents+=("${args__2}")'
+  args::new_option "not-seeding" string2: "" "Check for not seeding" \
+                   'seeding_nodes+=("${args__1}"); seeding_torrents+=("${args__2}")'
 
   args::new_option "print" empty "" "Print results" \
                    'print=yes'
+  args::new_option "wait-all" empty "" "Wait for all results before returning errors" \
+                   'wait_all=yes'
 
   eval "$(args::process)"
 
-  local hash_done_timeout=$(( SECONDS + 10 ))
-  local completed_timeout=$(( SECONDS + 30 ))
+  local result=$(( 0 ))
+
+  local timeout_hash_done=$(( SECONDS + 10 ))
+  local timeout_seeding=$(( SECONDS + 10 ))
+  local timeout_completed=$(( SECONDS + 30 ))
 
   local current_suffix="hash_done"
-  local current_timeout=$(( hash_done_timeout ))
+  local current_timeout=$(( timeout_hash_done ))
   local current_nodes=("${hash_done_nodes[@]}")
   local current_torrents=("${hash_done_torrents[@]}")
   local current_not_nodes=("${not_hash_done_nodes[@]}")
   local current_not_torrents=("${not_hash_done_torrents[@]}")
-  rdo_torrent_wait__process_done
+  rdo_torrent__wait_torrents || (( result += ${?} ))
+
+  if (( result != 0 )) && [[ "${wait_all}" != "yes" ]]; then
+    return $(( result ))
+  fi
+
+  local current_suffix="seeding"
+  local current_timeout=$(( timeout_seeding ))
+  local current_nodes=("${seeding_nodes[@]}")
+  local current_torrents=("${seeding_torrents[@]}")
+  local current_not_nodes=("${not_seeding_nodes[@]}")
+  local current_not_torrents=("${not_seeding_torrents[@]}")
+  rdo_torrent__wait_torrents || (( result += ${?} ))
+
+  if (( result != 0 )) && [[ "${wait_all}" != "yes" ]]; then
+    return $(( result ))
+  fi
 
   local current_suffix="completed"
-  local current_timeout=$(( completed_timeout ))
+  local current_timeout=$(( timeout_completed ))
   local current_nodes=("${completed_nodes[@]}")
   local current_torrents=("${completed_torrents[@]}")
   local current_not_nodes=("${not_completed_nodes[@]}")
   local current_not_torrents=("${not_completed_torrents[@]}")
-  rdo_torrent_wait__process_done
+  rdo_torrent__wait_torrents || (( result += ${?} ))
+
+  return $(( result ))
 }
 
 rdo_torrent_node() {
@@ -154,12 +183,12 @@ rdo_torrent__create_random_file() {
 }
 
 # local current_suffix="completed"
-# local current_timeout=$(( completed_timeout ))
+# local current_timeout=$(( timeout_completed ))
 # local current_nodes=("${completed_nodes[@]}")
 # local current_torrents=("${completed_torrents[@]}")
 # local current_not_nodes=("${not_completed_nodes[@]}")
 # local current_not_torrents=("${not_completed_torrents[@]}")
-rdo_torrent_wait__process_done() {
+rdo_torrent__wait_torrents() {
   if [[ "${print}" == "yes" ]]; then
     for (( idx=0; idx < ${#current_nodes[@]}; idx++ )); do
       local node="${current_nodes[${idx}]}"
@@ -174,7 +203,7 @@ rdo_torrent_wait__process_done() {
     done
   fi
 
-  local result=0
+  local result=$(( 0 ))
 
   while true; do
     local next_nodes=()
@@ -211,7 +240,7 @@ rdo_torrent_wait__process_done() {
           print_error "failed_not_${current_suffix}:${node}:${torrent}"
         fi
 
-        result+=1
+        (( result += 1 ))
         continue
       fi
 
@@ -222,7 +251,7 @@ rdo_torrent_wait__process_done() {
     current_not_nodes=("${next_not_nodes[@]}")
     current_not_torrents=("${next_not_torrents[@]}")
 
-    if (( SECONDS > current_timeout )) && ( (( ${#current_nodes[@]} == 0 )) || (( ${#current_not_nodes[@]} == 0 )) ); then
+    if (( SECONDS > current_timeout )) || ( (( ${#current_nodes[@]} == 0 )) && (( ${#current_not_nodes[@]} == 0 )) ); then
       break
     fi
 
@@ -237,7 +266,7 @@ rdo_torrent_wait__process_done() {
       print_error "failed_${current_suffix}:${node}:${torrent}"
     fi
 
-    result+=1
+    (( result += 1 ))
   done
 
   for (( idx=0; idx < ${#current_not_nodes[@]}; idx++ )); do
@@ -245,9 +274,9 @@ rdo_torrent_wait__process_done() {
     local torrent="${current_not_torrents[${idx}]}"
 
     if [[ "${print}" == "yes" ]]; then
-      print_error "failed_${current_not_suffix}:${node}:${torrent}"
+      print_normal "${current_suffix}:${node}:${torrent}"
     fi
   done
 
-  return ${result}
+  return $(( result ))
 }

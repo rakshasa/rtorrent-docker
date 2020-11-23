@@ -8,9 +8,6 @@ rdo_stage() {
 
   eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
 
-  args::new_command "test" empty "Stage test environment" \
-                    'rdo_stage_test'
-
   args::new_command "init" empty "Initialize new environment for staging" \
                     'rdo_stage_init'
   args::new_command "deploy" empty "Deploy environment" \
@@ -29,36 +26,6 @@ rdo_stage() {
                     'rdo_stage_tracker "${@}"'
 
   eval "$(args::process)"
-}
-
-rdo_stage_test() {
-  print_progress "staging test"
-  rdo_stage_init
-
-  rdo_stage_network "rt-network-1"
-  rdo_stage_network "rt-network-2"
-  rdo_stage_tracker --run-template "tracker-default" --network "rt-network-1" --network "rt-network-2" "rt-tracker-1"
-  rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" "rt-seed-1"
-  rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" "rt-leech-1"
-  rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-2" "rt-leech-2"
-
-  rdo_stage_torrent --domain "rt-tracker-1.rt-network-1" "torrent-test-1"
-  rdo_stage_torrent --domain "rt-tracker-1.rt-network-2" "torrent-test-2"
-
-  rdo_torrent_node --node "rt-seed-1" --seed "torrent-test-1"
-  rdo_torrent_node --node "rt-leech-1" "torrent-test-1"
-  rdo_torrent_node --node "rt-leech-2" "torrent-test-2"
-
-  rdo_stage_deploy
-
-  rdo_torrent_wait --print \
-                   --hash-done "rt-leech-1:torrent-test-1" \
-                   --hash-done "rt-leech-2:torrent-test-1" \
-                   --completed "rt-leech-1:torrent-test-1" \
-                   --not-hash-done "rt-leech-1:torrent-test-2" \
-                   --not-completed "rt-leech-2:torrent-test-1"
-
-  print_progress "staged test"
 }
 
 rdo_stage_clean() {
