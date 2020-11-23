@@ -21,6 +21,7 @@ rdo_torrent_node --node "rt-leech-2" "torrent-test-2"
 
 rdo_stage_deploy
 
+# TODO: Add node started event.
 rdo_torrent_wait --print --wait-all \
                  \
                  --hash-done "rt-seed-1:torrent-test-1" \

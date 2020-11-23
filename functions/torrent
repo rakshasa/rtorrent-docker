@@ -274,7 +274,7 @@ rdo_torrent__wait_torrents() {
     local torrent="${current_not_torrents[${idx}]}"
 
     if [[ "${print}" == "yes" ]]; then
-      print_normal "${current_suffix}:${node}:${torrent}"
+      print_normal "not_${current_suffix}:${node}:${torrent}"
     fi
   done
 
