@@ -6,26 +6,91 @@ rdo_stage() {
   local project_path
   project_path="$(get_project_path)"
 
-  eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
+  # eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
 
-  args::new_command "init" empty "Initialize new environment for staging" \
-                    'rdo_stage_init'
-  args::new_command "deploy" empty "Deploy environment" \
-                    'rdo_stage_deploy'
-  args::new_command "clean" empty "Remove environment" \
-                    'rdo_stage_clean'
+  # args::new_command "init" empty "Initialize new environment for staging" \
+  #                   'rdo_stage_init'
+  # args::new_command "deploy" empty "Deploy environment" \
+  #                   'rdo_stage_deploy'
+  # args::new_command "clean" empty "Remove environment" \
+  #                   'rdo_stage_clean'
 
-  args::new_command "network" default "Add network" \
-                    'rdo_stage_network "${@}"'
-  args::new_command "torrent" default "Create torrent" \
-                    'rdo_stage_create_torrent "${@}"'
+  # args::new_command "network" default "Add network" \
+  #                   'rdo_stage_network "${@}"'
+  # args::new_command "torrent" default "Create torrent" \
+  #                   'rdo_stage_create_torrent "${@}"'
 
-  args::new_command "rtorrent" default "Add node" \
-                    'rdo_stage_rtorrent "${@}"'
-  args::new_command "tracker" default "Add tracker" \
-                    'rdo_stage_tracker "${@}"'
+  # args::new_command "rtorrent" default "Add node" \
+  #                   'rdo_stage_rtorrent "${@}"'
+  # args::new_command "tracker" default "Add tracker" \
+  #                   'rdo_stage_tracker "${@}"'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo stage COMMAND"
+        echo
+        echo "Manage staging of environments."
+        echo
+        echo "Commands:"
+        echo "  init       Initialize new environment for staging"
+        echo "  deploy     Deploy environment"
+        echo "  clean      Remove environment"
+        echo "  network    Add network"
+        echo "  torrent    Create torrent"
+        echo "  rtorrent   Add node"
+        echo "  tracker    Add tracker"
+        echo
+        echo "Run 'rdo stage COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo stage"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    init)
+      args::verify_command_empty "${@}"
+      rdo_stage_init
+      ;;
+    deploy)
+      args::verify_command_empty "${@}"
+      rdo_stage_deploy
+      ;;
+    clean)
+      args::verify_command_empty "${@}"
+      rdo_stage_clean
+      ;;
+    network)
+      rdo_stage_network "${@}"
+      ;;
+    torrent)
+      rdo_stage_create_torrent "${@}"
+      ;;
+    rtorrent)
+      rdo_stage_rtorrent "${@}"
+      ;;
+    tracker)
+      rdo_stage_tracker "${@}"
+      ;;
+    *)
+      print_error "rdo stage: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
 }
 
 rdo_stage_clean() {
@@ -61,8 +126,43 @@ rdo_stage_init() {
 }
 
 rdo_stage_network() {
-  eval "$(args::init_options_string "rdo stage network NAME" "name" "Stage a network")"
-  eval "$(args::process)"
+  # eval "$(args::init_options_string "rdo stage network NAME" "name" "Stage a network")"
+
+  # eval "$(args::process)"
+
+  while true; do
+    case "${1}" in
+      --help|-h)
+        echo "Usage: rdo stage network NAME COMMAND"
+        echo
+        echo "Stage a network"
+        echo
+        echo "Run 'rdo stage network NAME COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo stage network NAME: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
+    print_error "rdo stage network NAME: missing or empty argument"
+    exit 1
+  fi
+
+  local name="${1}"
+  shift
 
   local self_path="./run/current/networks/${name}"
   mkdir -p "${self_path}"

@@ -34,39 +34,133 @@ is_header_included stage || source "./functions/stage"
 is_header_included torrent || source "./functions/torrent"
 
 rdo() {
-  eval "$(args::init_subcommand "rdo" "RTorrent docker test environment")"
+  # eval "$(args::init_subcommand "rdo" "RTorrent docker test environment")"
 
-  args::new_option "debug" empty "d" "Output additional debug information" \
-                   'set -x'
+  # args::new_option "debug" empty "d" "Output additional debug information" \
+  #                  'set -x'
 
-  args::new_command "bash" default "Start custom bash session" \
-                    'is_header_included machine || source "./functions/machine"; rdo_bash "${@}"'
-  args::new_command "batch" default "Run batch file" \
-                    'rdo_batch "${@}"'
-  args::new_command "build" default "Build projects" \
-                    'rdo_build "${@}"'
-  args::new_command "docker" default "Manage docker" \
-                    'rdo_docker "${@}"'
-  args::new_command "env" default "." \
-                    'is_header_included env || source "./functions/env"; rdo_env "${@}"'
-  args::new_command "git" default "." \
-                    'is_header_included git || source "./functions/git"; do_git "${@}"'
-  args::new_command "init" default "Initalize the environment" \
-                    'rdo_init "${@}"'
-  args::new_command "machine" default "Manage docker machines" \
-                    'is_header_included machine || source "./functions/machine"; rdo_machine "${@}"'
-  args::new_command "network" default "Manage networks" \
-                    'rdo_network "${@}"'
-  args::new_command "node" default "Manage nodes" \
-                    'rdo_node "${@}"'
-  args::new_command "stage" default "Stage environments" \
-                    'rdo_stage "${@}"'
-  args::new_command "torrent" default "Manage torrents" \
-                    'rdo_torrent "${@}"'
-  args::new_command "watch" empty "Watch docker images" \
-                    'rdo_watch "${@}"'
+  # args::new_command "bash" default "Start custom bash session" \
+  #                   'is_header_included machine || source "./functions/machine"; rdo_bash "${@}"'
+  # args::new_command "batch" default "Run batch file" \
+  #                   'rdo_batch "${@}"'
+  # args::new_command "build" default "Build projects" \
+  #                   'rdo_build "${@}"'
+  # args::new_command "docker" default "Manage docker" \
+  #                   'rdo_docker "${@}"'
+  # args::new_command "env" default "." \
+  #                   'is_header_included env || source "./functions/env"; rdo_env "${@}"'
+  # args::new_command "git" default "." \
+  #                   'is_header_included git || source "./functions/git"; do_git "${@}"'
+  # args::new_command "init" default "Initalize the environment" \
+  #                   'rdo_init "${@}"'
+  # args::new_command "machine" default "Manage docker machines" \
+  #                   'is_header_included machine || source "./functions/machine"; rdo_machine "${@}"'
+  # args::new_command "network" default "Manage networks" \
+  #                   'rdo_network "${@}"'
+  # args::new_command "node" default "Manage nodes" \
+  #                   'rdo_node "${@}"'
+  # args::new_command "stage" default "Stage environments" \
+  #                   'rdo_stage "${@}"'
+  # args::new_command "torrent" default "Manage torrents" \
+  #                   'rdo_torrent "${@}"'
+  # args::new_command "watch" empty "Watch docker images" \
+  #                   'rdo_watch "${@}"'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  while true; do
+    case "${1}" in
+      --debug|-d)
+        shift
+        set -x
+        ;;
+      --help|-h|'')
+        echo "Usage: rdo COMMAND"
+        echo
+        echo "RTorrent docker test environment"
+        echo
+        echo "Options:"
+        echo "  -d, --debug   Output additional debug information"
+        echo
+        echo "Commands:"
+        echo "  bash          Start custom bash session"
+        echo "  batch         Run batch file"
+        echo "  build         Build projects"
+        echo "  docker        Manage docker"
+        echo "  env           ."
+        echo "  git           ."
+        echo "  init          Initalize the environment"
+        echo "  machine       Manage docker machines"
+        echo "  network       Manage networks"
+        echo "  node          Manage nodes"
+        echo "  stage         Stage environments"
+        echo "  torrent       Manage torrents"
+        echo "  watch         Watch docker images"
+        echo
+        echo "Run 'rdo COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    bash)
+      is_header_included machine || source "./functions/machine"; rdo_bash "${@}"
+      ;;
+    batch)
+      rdo_batch "${@}"
+      ;;
+    build)
+      rdo_build "${@}"
+      ;;
+    docker)
+      rdo_docker "${@}"
+      ;;
+    env)
+      is_header_included env || source "./functions/env"; rdo_env "${@}"
+      ;;
+    git)
+      is_header_included git || source "./functions/git"; do_git "${@}"
+      ;;
+    init)
+      rdo_init "${@}"
+      ;;
+    machine)
+      is_header_included machine || source "./functions/machine"; rdo_machine "${@}"
+      ;;
+    network)
+      rdo_network "${@}"
+      ;;
+    node)
+      rdo_node "${@}"
+      ;;
+    stage)
+      rdo_stage "${@}"
+      ;;
+    torrent)
+      rdo_torrent "${@}"
+      ;;
+    watch)
+      args::verify_command_empty "${@}"
+      rdo_watch "${@}"
+      ;;
+    *)
+      print_error "rdo: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
 }
 
 rdo_batch() {

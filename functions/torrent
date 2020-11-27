@@ -3,17 +3,63 @@
 include_header torrent
 
 rdo_torrent() {
-  eval "$(args::init_subcommand "rdo torrent" "Manage torrents.")"
+  # eval "$(args::init_subcommand "rdo torrent" "Manage torrents.")"
 
-  args::new_command "create" default "Create a torrent" \
-                    'rdo_torrent_create "${@}"'
-  args::new_command "wait" default "Wait for a set of torrent events" \
-                    'rdo_torrent_wait "${@}"'
+  # args::new_command "create" default "Create a torrent" \
+  #                   'rdo_torrent_create "${@}"'
+  # args::new_command "wait" default "Wait for a set of torrent events" \
+  #                   'rdo_torrent_wait "${@}"'
 
-  args::new_command "node" default "Add a torrent to a client node" \
-                    'rdo_torrent_node "${@}"'
+  # args::new_command "node" default "Add a torrent to a client node" \
+  #                   'rdo_torrent_node "${@}"'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo torrent COMMAND"
+        echo
+        echo "Manage torrents."
+        echo
+        echo "Commands:"
+        echo "  create   Create a torrent"
+        echo "  wait     Wait for a set of torrent events"
+        echo "  node     Add a torrent to a client node"
+        echo
+        echo "Run 'rdo torrent COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo torrent"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    create)
+      rdo_torrent_create "${@}"
+      ;;
+    wait)
+      rdo_torrent_wait "${@}"
+      ;;
+    node)
+      rdo_torrent_node "${@}"
+      ;;
+    *)
+      print_error "rdo torrent: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
 }
 
 rdo_torrent_create() {

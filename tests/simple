@@ -30,8 +30,11 @@ rdo_torrent_wait --print --wait-all \
                  --hash-done     "rt-leech-1:torrent-test-1" \
                  --completed     "rt-leech-1:torrent-test-1" \
                  --not-hash-done "rt-leech-1:torrent-test-2" \
+                 --not-completed "rt-leech-1:torrent-test-2" \
                  \
+                 --not-hash-done "rt-leech-2:torrent-test-1" \
                  --not-completed "rt-leech-2:torrent-test-1" \
-                 --hash-done     "rt-leech-2:torrent-test-2"
+                 --hash-done     "rt-leech-2:torrent-test-2" \
+                 --not-completed "rt-leech-2:torrent-test-2"
 
 print_progress "staged test"
