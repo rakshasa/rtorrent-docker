@@ -1,6 +1,6 @@
 FROM "lednerb/opentracker-docker"
 
-WORKDIR /run/tracker
+WORKDIR /run/self
 
 RUN apk add --no-cache bash
 

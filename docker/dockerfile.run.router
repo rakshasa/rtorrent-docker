@@ -1,0 +1,29 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/ancestor/utils:global"
+
+RUN printf '%s\n' \
+  '#!/bin/bash' \
+  '' \
+  'set -xe' \
+  '' \
+  'INTERFACES="$(ip -o link | sed -ne "s/[[:digit:]]*: \\(eth[[:digit:]]*\\)[^$]*/\\1/p")"' \
+  '' \
+  'echo "${INTERFACES}"' \
+  \
+> /entrypoint.sh && chmod a+x /entrypoint.sh
+
+# echo \"${INTERFACES}\"
+
+# iptables -F
+# iptables -A INPUT -p tcp -m state --state NEW --dport $LIMIT_PORT -m connlimit --connlimit-above $LIMIT_CONN -j DROP
+# iptables -A OUTPUT -p tcp -m state --state NEW -m multiport ! --dports $TCP_PORTS -j DROP
+# iptables -A OUTPUT -p udp -m state --state NEW -m multiport ! --dports $UDP_PORTS -j DROP
+# tc qdisc add dev eth0 root tbf rate $RATE burst $BURST latency $LATENCY
+# watch -n $INTERVAL tc -s qdisc ls dev eth0
+
+ENTRYPOINT ["/entrypoint.sh"]
