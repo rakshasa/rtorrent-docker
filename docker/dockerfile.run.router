@@ -7,14 +7,16 @@ ARG TAG_APPEND
 FROM "${REPOSITORY}/ancestor/utils:global"
 
 RUN printf '%s\n' \
-  '#!/bin/bash' \
-  '' \
-  'set -xe' \
-  '' \
-  'INTERFACES="$(ip -o link | sed -ne "s/[[:digit:]]*: \\(eth[[:digit:]]*\\)[^$]*/\\1/p")"' \
-  '' \
-  'echo "${INTERFACES}"' \
-  \
+'#!/bin/bash' \
+'' \
+'set -xe' \
+'' \
+'INTERFACES="$(ip -o link | sed -ne "s/[[:digit:]]*: \\(eth[[:digit:]]*\\)[^$]*/\\1/p")"' \
+'' \
+'echo "${INTERFACES}"' \
+'' \
+'tail -f /dev/null' \
+\
 > /entrypoint.sh && chmod a+x /entrypoint.sh
 
 # echo \"${INTERFACES}\"

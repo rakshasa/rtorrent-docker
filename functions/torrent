@@ -134,7 +134,7 @@ rdo_torrent_wait() {
   local timeout_seeding=$(( SECONDS + 10 ))
   local timeout_completed=$(( SECONDS + 30 ))
 
-  local current_suffix="hash_done"
+  local current_category="hash_done"
   local current_timeout=$(( timeout_hash_done ))
   local current_nodes=("${hash_done_nodes[@]}")
   local current_torrents=("${hash_done_torrents[@]}")
@@ -146,7 +146,7 @@ rdo_torrent_wait() {
     return $(( result ))
   fi
 
-  local current_suffix="seeding"
+  local current_category="seeding"
   local current_timeout=$(( timeout_seeding ))
   local current_nodes=("${seeding_nodes[@]}")
   local current_torrents=("${seeding_torrents[@]}")
@@ -158,7 +158,7 @@ rdo_torrent_wait() {
     return $(( result ))
   fi
 
-  local current_suffix="completed"
+  local current_category="completed"
   local current_timeout=$(( timeout_completed ))
   local current_nodes=("${completed_nodes[@]}")
   local current_torrents=("${completed_torrents[@]}")
@@ -228,7 +228,7 @@ rdo_torrent__create_random_file() {
   docker exec -t "rdo-utils-mktorrent" bash -c "${cmd}"
 }
 
-# local current_suffix="completed"
+# local current_category="completed"
 # local current_timeout=$(( timeout_completed ))
 # local current_nodes=("${completed_nodes[@]}")
 # local current_torrents=("${completed_torrents[@]}")
@@ -239,13 +239,13 @@ rdo_torrent__wait_torrents() {
     for (( idx=0; idx < ${#current_nodes[@]}; idx++ )); do
       local node="${current_nodes[${idx}]}"
       local torrent="${current_torrents[${idx}]}"
-      print_normal "waiting_${current_suffix}:${node}:${torrent}"
+      print_normal "waiting     ${current_category}:${node}:${torrent}"
     done
 
     for (( idx=0; idx < ${#current_not_nodes[@]}; idx++ )); do
       local node="${current_not_nodes[${idx}]}"
       local torrent="${current_not_torrents[${idx}]}"
-      print_normal "waiting_not_${current_suffix}:${node}:${torrent}"
+      print_normal "waiting not_${current_category}:${node}:${torrent}"
     done
   fi
 
@@ -259,9 +259,9 @@ rdo_torrent__wait_torrents() {
       local node="${current_nodes[${idx}]}"
       local torrent="${current_torrents[${idx}]}"
 
-      if [[ -f "./run/current/clients/${node}/torrents/${torrent}.${current_suffix}" ]]; then
+      if [[ -f "./run/current/clients/${node}/torrents/${torrent}.${current_category}" ]]; then
         if [[ "${print}" == "yes" ]]; then
-          print_normal "${current_suffix}:${node}:${torrent}"
+          print_normal "            ${current_category}:${node}:${torrent}"
         fi
 
         continue
@@ -281,9 +281,9 @@ rdo_torrent__wait_torrents() {
       local node="${current_not_nodes[${idx}]}"
       local torrent="${current_not_torrents[${idx}]}"
 
-      if [[ -f "./run/current/clients/${node}/torrents/${torrent}.${current_suffix}" ]]; then
+      if [[ -f "./run/current/clients/${node}/torrents/${torrent}.${current_category}" ]]; then
         if [[ "${print}" == "yes" ]]; then
-          print_error "failed_not_${current_suffix}:${node}:${torrent}"
+          print_error " failed_not_${current_category}:${node}:${torrent}"
         fi
 
         (( result += 1 ))
@@ -309,7 +309,7 @@ rdo_torrent__wait_torrents() {
     local torrent="${current_torrents[${idx}]}"
 
     if [[ "${print}" == "yes" ]]; then
-      print_error "failed_${current_suffix}:${node}:${torrent}"
+      print_error "    failed__${current_category}:${node}:${torrent}"
     fi
 
     (( result += 1 ))
@@ -320,7 +320,7 @@ rdo_torrent__wait_torrents() {
     local torrent="${current_not_torrents[${idx}]}"
 
     if [[ "${print}" == "yes" ]]; then
-      print_normal "not_${current_suffix}:${node}:${torrent}"
+      print_normal "        not_${current_category}:${node}:${torrent}"
     fi
   done
 

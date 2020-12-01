@@ -1,16 +1,12 @@
-#!/bin/bash
 #
 # Test default behavior of rtorrent in various network setttings.
+#
 
-print_progress "staging ci default test"
-
-rdo_stage_init
+rdo_test_begin
 
 #
 # Public torrents:
 #
-
-# 
 
 rdo_stage_network "rt-network-global"
 
@@ -23,6 +19,18 @@ rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-global" "rt
 
 rdo_torrent_node --node "rt-seed-public-1"  --seed "torrent-public-1"
 rdo_torrent_node --node "rt-leech-public-1"        "torrent-public-1"
+
+#
+# Leecher behind a NAT:
+#
+
+rdo_stage_network "rt-network-nat-1"
+
+rdo_stage_router --network "rt-network-global" --network "rt-network-nat-1" "rt-router-nat-1"
+
+rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-nat-1" "rt-leech-public-1"
+
+rdo_torrent_node --node "rt-leech-nat-1" "torrent-public-1"
 
 #
 # Deploy:
@@ -40,4 +48,4 @@ rdo_torrent_wait --print --wait-all \
                  --completed     "rt-leech-public-1:torrent-public-1" \
                  --seeding       "rt-leech-public-1:torrent-public-1"
 
-print_progress "completed ci default test"
+rdo_test_end

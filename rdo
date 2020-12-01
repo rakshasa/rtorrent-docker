@@ -163,6 +163,19 @@ rdo() {
   esac
 }
 
+rdo_test_begin() {
+  rdo_test__name="$(basename "${BASH_SOURCE[1]}")"
+  rdo_test__name="${rdo_test__name//-/ }"
+
+  print_progress "staging ${rdo_test__name} tests"
+
+  rdo_stage_init
+}
+
+rdo_test_end() {
+  print_progress "completed ${rdo_test__name} tests"
+}
+
 rdo_batch() {
   eval "$(args::init_options_string "rdo batch FILENAME" "filename" "Run batch file")"
 
