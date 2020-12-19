@@ -47,6 +47,8 @@ pkg-add bash \
         diffutils \
         findutils \
         iproute2 \
+        iptables \
+        ip6tables \
         tar
 
 ARG ANCESTOR_PROJECT

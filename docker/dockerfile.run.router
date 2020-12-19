@@ -4,7 +4,7 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/ancestor/utils:global"
+FROM "${REPOSITORY}/ancestor/run:global"
 
 RUN printf '%s\n' \
 '#!/bin/bash' \
@@ -15,17 +15,13 @@ RUN printf '%s\n' \
 '' \
 'echo "${INTERFACES}"' \
 '' \
+'iptables -F' \
+'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE' \
+'iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT' \
+'iptables -A FORWARD -i eth0 -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT' \
+'' \
 'tail -f /dev/null' \
 \
 > /entrypoint.sh && chmod a+x /entrypoint.sh
-
-# echo \"${INTERFACES}\"
-
-# iptables -F
-# iptables -A INPUT -p tcp -m state --state NEW --dport $LIMIT_PORT -m connlimit --connlimit-above $LIMIT_CONN -j DROP
-# iptables -A OUTPUT -p tcp -m state --state NEW -m multiport ! --dports $TCP_PORTS -j DROP
-# iptables -A OUTPUT -p udp -m state --state NEW -m multiport ! --dports $UDP_PORTS -j DROP
-# tc qdisc add dev eth0 root tbf rate $RATE burst $BURST latency $LATENCY
-# watch -n $INTERVAL tc -s qdisc ls dev eth0
 
 ENTRYPOINT ["/entrypoint.sh"]
