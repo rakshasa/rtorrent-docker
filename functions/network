@@ -5,18 +5,22 @@ include_header network
 rdo_network() {
   eval "$(args::init_subcommand "rdo network" "Manage networks.")"
 
-  args::new_command "address" default "Get network address" \
-                    'rdo_network_address "${@}"'
   args::new_command "clean" empty "Remove all networks" \
                     'rdo_network_clean "${@}"'
   args::new_command "ls" default "List networks" \
                     'rdo_network_ls "${@}"'
+
+  args::new_command "address" default "Get network address" \
+                    'rdo_network_address "${@}"'
   args::new_command "prefix" default "Get network prefix" \
                     'rdo_network_prefix "${@}"'
-  # args::new_command "rm" default "Remove one or more networks" \
-  #                   'rdo_network_rm "${@}"'
   args::new_command "subnet" default "Get network subnet" \
                     'rdo_network_subnet "${@}"'
+
+  args::new_command "bridge" default "Get bridge name" \
+                    'rdo_network_bridge "${@}"'
+  args::new_command "nat" default "Add nat between networks" \
+                    'rdo_network_nat "${@}"'
 
   eval "$(args::process)"
 }
@@ -46,7 +50,68 @@ rdo_network_prefix() {
   echo "${subnet##*/}"
 }
 
+rdo_network_bridge() {
+  local name="${1:?Missing name argument.}"
+  local network_id
+  network_id="$(docker network inspect --format {{.Id}} "${name}")"
+
+  echo "br-${network_id:0:12}"
+}
+
 rdo_network_subnet() {
   local name="${1:?Missing name argument.}"
   docker network inspect --format '{{ (index .IPAM.Config 0).Subnet }}' "${name}"
+}
+
+rdo_network_nat() {
+  eval "$(args::init_options_string "rdo network nat OUTER-NETWORK" "outer_network" "Add NAT route between networks.")"
+
+  args::new_option "network" string "n" "Add inner network" \
+                   'inner_networks+=("${args__1}")'
+
+  eval "$(args::process)"
+
+  if (( ${#inner_networks[@]} == 0 )); then
+    print_error "rdo network nat: Missing inner networks."
+    return 1
+  fi
+
+  local outer_network_bridge
+  outer_network_bridge="$(rdo_network_bridge "${outer_network}")"
+
+  local bridge
+  local inner_network_bridges=()
+  for bridge in "${inner_networks[@]}"; do
+    inner_network_bridges+=("$(rdo_network_bridge "${bridge}")")
+  done
+
+  rdo_network__iptables -t nat -A POSTROUTING -o "${outer_network_bridge}" -j MASQUERADE
+
+  local bridge
+  for bridge in "${inner_networks[@]}"; do
+    rdo_network__iptables -A FORWARD -i "${bridge}" -o "${outer_network_bridge}" -j ACCEPT
+    rdo_network__iptables -A FORWARD -i "${outer_network_bridge}" -o "${bridge}" -m state --state RELATED,ESTABLISHED -j ACCEPT
+  done
+}
+
+# Helper functions
+
+rdo_network__iptables() {
+  print_normal iptables "${*}"
+
+  case "${RDO_DOCKER_TYPE}" in
+    "default")
+      # iptables "${*}"
+      print_error "default not supported"
+      return 1
+    ;;
+    "machine")
+      : "${RDO_DOCKER_MACHINE:?Missing docker machine.}"
+      docker-machine ssh "${RDO_DOCKER_MACHINE}" sudo iptables "${*}"
+    ;;
+    *)
+      print_error "rdo_network__iptables: invalid docker type"
+      return 1
+      ;;
+  esac
 }

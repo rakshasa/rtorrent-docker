@@ -15,13 +15,13 @@ RUN printf '%s\n' \
 '' \
 'echo "${INTERFACES}"' \
 '' \
-'iptables -F' \
-'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE' \
-'iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT' \
-'iptables -A FORWARD -i eth0 -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT' \
-'' \
 'tail -f /dev/null' \
 \
 > /entrypoint.sh && chmod a+x /entrypoint.sh
+
+# 'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE' \
+# 'iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT' \
+# 'iptables -A FORWARD -i eth0 -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT' \
+# '' \
 
 ENTRYPOINT ["/entrypoint.sh"]

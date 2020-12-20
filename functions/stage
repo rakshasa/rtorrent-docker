@@ -104,7 +104,11 @@ rdo_stage_network() {
   local self_path="./run/current/networks/${name}"
   mkdir -p "${self_path}"
 
-  docker network create --label "project=rdo" "${name}" > /dev/null
+  local args=(
+    --label "project=rdo"
+  )
+
+  docker network create "${args[@]}" "${name}" > /dev/null
 
   echo "$(rdo_network subnet "${name}")" > "${self_path}/subnet"
   echo "$(rdo_network address "${name}")" > "${self_path}/address"
@@ -187,8 +191,8 @@ rdo_stage_tracker() {
   local image_name="rdo/run/opentracker:global"
 
   create_args+=(
-    --publish 6969:6969/udp
-    --publish 6969:6969
+    # --publish 6969:6969/udp
+    # --publish 6969:6969
   )
 
   rdo_stage__container__create

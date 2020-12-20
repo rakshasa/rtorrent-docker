@@ -253,6 +253,7 @@ _rtorrent_docker__rdo_network() {
       ls
       prefix
       rm
+      bridge
       subnet
     )
   fi
