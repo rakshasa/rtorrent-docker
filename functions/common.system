@@ -2,12 +2,13 @@
 
 include_header common.system
 
-rdo__machine_cpu_count() {
-  nproc --ignore 2
+rdo__cpu_count() {
+  sysctl -n hw.ncpu
 }
 
 rdo__machine_memory() {
-  local memory_size="$(free -m | awk '/^Mem:/{print $2}')"
+  local memory_size
+  memory_size="$(sysctl -n hw.memsize)"
 
   if (( "${memory_size}" < 15000 )); then
     echo "$(( ${memory_size} * 2 / 4 ))"
