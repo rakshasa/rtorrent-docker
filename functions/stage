@@ -31,6 +31,7 @@ rdo_stage() {
 }
 
 rdo_stage_clean() {
+  rdo_network_iptables_flush > /dev/null
   rdo_node_clean > /dev/null
   rdo_network_clean > /dev/null
   rm -rf ./run/current &> /dev/null
@@ -47,8 +48,10 @@ rdo_stage_deploy() {
     mapfile -t node_list < <(ls "./run/current/${deploy_type}/")
 
     for node in "${node_list[@]}"; do
-      echo "deploy" > "./run/current/nodes/${node}/signal"
-      echo "${deploy_type}/${node}"
+      if [[ "$(cat "./run/current/nodes/${node}/signal")" == "stage" ]]; then
+        echo "deploy" > "./run/current/nodes/${node}/signal"
+        echo "${deploy_type}/${node}"
+      fi
     done
   done
 

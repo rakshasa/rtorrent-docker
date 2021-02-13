@@ -5,52 +5,56 @@
 rdo_test_begin
 
 #
-# Public torrents:
+# Topology, trackers and torrents:
 #
 
 rdo_stage_network "rt-global"
-
+rdo_stage_network "rt-nat"
+rdo_network_nat   --network "rt-nat" "rt-global"
 rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
+rdo_stage_torrent --domain "rt-tracker-global.rt-global"                 "torrent-global"
 
-rdo_stage_torrent --domain "rt-tracker-global.rt-global" "torrent-global"
+#
+# Global seeders:
+#
 
 rdo_stage_rtorrent --run-template "rt-default" --network "rt-global" "rt-seed-global"
-rdo_stage_rtorrent --run-template "rt-default" --network "rt-global" "rt-leech-global"
-
-rdo_torrent_node --node "rt-seed-global"  --seed "torrent-global"
-rdo_torrent_node --node "rt-leech-global"        "torrent-global"
+rdo_torrent_node   --node "rt-seed-global"     --seed                "torrent-global"
 
 #
-# Leecher behind a NAT:
-#
-
-rdo_stage_network "rt-nat"
-
-rdo_network_nat --network "rt-nat" "rt-global"
-
-#rdo_stage_router --network "rt-global" --network "rt-nat" "rt-router-nat"
-rdo_stage_rtorrent --run-template "rt-default" --network "rt-nat" "rt-leech-nat"
-
-rdo_torrent_node --node "rt-leech-nat" "torrent-global"
-
-#
-# Deploy:
+# Deploy seeders:
 #
 
 rdo_stage_deploy
-
 rdo_torrent_wait --print --wait-all \
                  \
                  --hash-done     "rt-seed-global:torrent-global" \
-                 --not-completed "rt-seed-global:torrent-global" \
                  --seeding       "rt-seed-global:torrent-global" \
+                 --not-completed "rt-seed-global:torrent-global"
+
+#
+# Leechers:
+#
+
+rdo_stage_rtorrent --run-template "rt-default"      --network "rt-global" "rt-leech-global"
+rdo_torrent_node   --node         "rt-leech-global"                       "torrent-global"
+
+rdo_stage_rtorrent --run-template "rt-default"      --network "rt-nat"    "rt-leech-nat"
+rdo_torrent_node   --node         "rt-leech-nat"                          "torrent-global"
+
+#
+# Deploy leechers:
+#
+
+rdo_stage_deploy
+rdo_torrent_wait --print --wait-all \
                  \
                  --hash-done     "rt-leech-global:torrent-global" \
+                 --not-seeding   "rt-leech-global:torrent-global" \
                  --completed     "rt-leech-global:torrent-global" \
-                 --seeding       "rt-leech-global:torrent-global" \
                  \
                  --hash-done     "rt-leech-nat:torrent-global" \
-                 --completed     "rt-leech-nat:torrent-global" \
-                 --seeding       "rt-leech-nat:torrent-global"
+                 --not-seeding   "rt-leech-nat:torrent-global" \
+                 --completed     "rt-leech-nat:torrent-global"
 
 rdo_test_end
