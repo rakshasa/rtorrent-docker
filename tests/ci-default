@@ -28,7 +28,7 @@ rdo_stage_network "rt-nat"
 
 rdo_network_nat --network "rt-nat" "rt-global"
 
-rdo_stage_router --network "rt-global" --network "rt-nat" "rt-router-nat"
+#rdo_stage_router --network "rt-global" --network "rt-nat" "rt-router-nat"
 rdo_stage_rtorrent --run-template "rt-default" --network "rt-nat" "rt-leech-nat"
 
 rdo_torrent_node --node "rt-leech-nat" "torrent-global"

@@ -146,6 +146,8 @@ rdo_stage_router() {
   local self_type="routers"
   local image_name="rdo/run/router:global"
 
+  create_args+=(--cap-add NET_ADMIN)
+
   rdo_stage__container__create
   rdo_stage__container__start
   rdo_stage__container__update_run

@@ -17,4 +17,5 @@ pkg-add curl \
         musl \
         ncurses \
         openssl \
+        tcpdump \
         zlib
