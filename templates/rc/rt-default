@@ -62,8 +62,7 @@ schedule = watch_untied, 10, 10, remove_untied=
 
 method.set_key = event.download.finished,state_finished,((execute,touch,((cat,/run/self/torrents/,((d.name)),.completed)) ))
 method.set_key = event.download.hash_done,state_hash_done,((execute,touch,((cat,/run/self/torrents/,((d.name)),.hash_done)) ))
-method.set_key = event.download.hash_done,state_hash_done.seeding,((branch,((d.complete)),((execute,touch,((cat,/run/self/torrents/,((d.name)),.seeding)) )) ))
-
+method.set_key = event.download.hash_done,state_hash_done.seeding, {(branch,((d.complete)),((execute,touch,(cat,/run/self/torrents/,(d.name),.seeding))))}
 
 #
 # Per-node optional resource file:

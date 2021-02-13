@@ -101,38 +101,172 @@ rdo_torrent_wait() {
   local completed_torrents=()
   local hash_done_nodes=()
   local hash_done_torrents=()
+  local seeding_nodes=()
+  local seeding_torrents=()
+
   local not_completed_nodes=()
   local not_completed_torrents=()
   local not_hash_done_nodes=()
   local not_hash_done_torrents=()
+  local not_seeding_nodes=()
+  local not_seeding_torrents=()
 
-  eval "$(args::init_options_empty "rdo torrent wait" "Wait for torrents.")"
+  # eval "$(args::init_options_empty "rdo torrent wait" "Wait for torrents.")"
 
-  args::new_option "completed" string2: "" "Wait for completion" \
-                   'completed_nodes+=("${args__1}"); completed_torrents+=("${args__2}")'
-  args::new_option "hash-done" string2: "" "Wait for initial hashing to complete" \
-                   'hash_done_nodes+=("${args__1}"); hash_done_torrents+=("${args__2}")'
-  args::new_option "seeding" string2: "" "Wait for seeding" \
-                   'seeding_nodes+=("${args__1}"); seeding_torrents+=("${args__2}")'
-  args::new_option "not-completed" string2: "" "Check for not completed" \
-                   'not_completed_nodes+=("${args__1}"); not_completed_torrents+=("${args__2}")'
-  args::new_option "not-hash-done" string2: "" "Check for not hash done" \
-                   'not_hash_done_nodes+=("${args__1}"); not_hash_done_torrents+=("${args__2}")'
-  args::new_option "not-seeding" string2: "" "Check for not seeding" \
-                   'seeding_nodes+=("${args__1}"); seeding_torrents+=("${args__2}")'
+  # args::new_option "completed" string2: "" "Wait for completion" \
+  #                  'completed_nodes+=("${args__1}"); completed_torrents+=("${args__2}")'
+  # args::new_option "hash-done" string2: "" "Wait for initial hashing to complete" \
+  #                  'hash_done_nodes+=("${args__1}"); hash_done_torrents+=("${args__2}")'
+  # args::new_option "seeding" string2: "" "Wait for seeding" \
+  #                  'seeding_nodes+=("${args__1}"); seeding_torrents+=("${args__2}")'
 
-  args::new_option "print" empty "" "Print results" \
-                   'print=yes'
-  args::new_option "wait-all" empty "" "Wait for all results before returning errors" \
-                   'wait_all=yes'
+  # args::new_option "not-completed" string2: "" "Check for not completed" \
+  #                  'not_completed_nodes+=("${args__1}"); not_completed_torrents+=("${args__2}")'
+  # args::new_option "not-hash-done" string2: "" "Check for not hash done" \
+  #                  'not_hash_done_nodes+=("${args__1}"); not_hash_done_torrents+=("${args__2}")'
+  # args::new_option "not-seeding" string2: "" "Check for not seeding" \
+  #                  'not_seeding_nodes+=("${args__1}"); not_seeding_torrents+=("${args__2}")'
 
-  eval "$(args::process)"
+  # args::new_option "print" empty "" "Print results" \
+  #                  'print=yes'
+  # args::new_option "wait-all" empty "" "Wait for all results before returning errors" \
+  #                  'wait_all=yes'
+
+  # eval "$(args::process)"
+
+  while true; do
+    case "${1}" in
+      --completed)
+        local args__1="${2%%:*}"
+        local args__2="${2##*:}"
+        local args__1="${args__1:?Missing argument for '${1}'.}"
+        local args__2="${args__2:?Missing argument for '${1}'.}"
+
+        if [[ "${args__1}:${args__2}" != "${2}" ]]; then
+          print_error "${args__root}: invalid option format: ${1} ${2}"
+          return 1
+        fi
+
+        shift 2
+        completed_nodes+=("${args__1}"); completed_torrents+=("${args__2}")
+        ;;
+      --hash-done)
+        local args__1="${2%%:*}"
+        local args__2="${2##*:}"
+        local args__1="${args__1:?Missing argument for '${1}'.}"
+        local args__2="${args__2:?Missing argument for '${1}'.}"
+
+        if [[ "${args__1}:${args__2}" != "${2}" ]]; then
+          print_error "${args__root}: invalid option format: ${1} ${2}"
+          return 1
+        fi
+
+        shift 2
+        hash_done_nodes+=("${args__1}"); hash_done_torrents+=("${args__2}")
+        ;;
+      --seeding)
+        local args__1="${2%%:*}"
+        local args__2="${2##*:}"
+        local args__1="${args__1:?Missing argument for '${1}'.}"
+        local args__2="${args__2:?Missing argument for '${1}'.}"
+
+        if [[ "${args__1}:${args__2}" != "${2}" ]]; then
+          print_error "${args__root}: invalid option format: ${1} ${2}"
+          return 1
+        fi
+
+        shift 2
+        seeding_nodes+=("${args__1}"); seeding_torrents+=("${args__2}")
+        ;;
+      --not-completed)
+        local args__1="${2%%:*}"
+        local args__2="${2##*:}"
+        local args__1="${args__1:?Missing argument for '${1}'.}"
+        local args__2="${args__2:?Missing argument for '${1}'.}"
+
+        if [[ "${args__1}:${args__2}" != "${2}" ]]; then
+          print_error "${args__root}: invalid option format: ${1} ${2}"
+          return 1
+        fi
+
+        shift 2
+        not_completed_nodes+=("${args__1}"); not_completed_torrents+=("${args__2}")
+        ;;
+      --not-hash-done)
+        local args__1="${2%%:*}"
+        local args__2="${2##*:}"
+        local args__1="${args__1:?Missing argument for '${1}'.}"
+        local args__2="${args__2:?Missing argument for '${1}'.}"
+
+        if [[ "${args__1}:${args__2}" != "${2}" ]]; then
+          print_error "${args__root}: invalid option format: ${1} ${2}"
+          return 1
+        fi
+
+        shift 2
+        not_hash_done_nodes+=("${args__1}"); not_hash_done_torrents+=("${args__2}")
+        ;;
+      --not-seeding)
+        local args__1="${2%%:*}"
+        local args__2="${2##*:}"
+        local args__1="${args__1:?Missing argument for '${1}'.}"
+        local args__2="${args__2:?Missing argument for '${1}'.}"
+
+        if [[ "${args__1}:${args__2}" != "${2}" ]]; then
+          print_error "${args__root}: invalid option format: ${1} ${2}"
+          return 1
+        fi
+
+        shift 2
+        not_seeding_nodes+=("${args__1}"); not_seeding_torrents+=("${args__2}")
+        ;;
+      --print)
+        shift
+        print=yes
+        ;;
+      --wait-all)
+        shift
+        wait_all=yes
+        ;;
+      --help|-h)
+        echo "Usage: rdo torrent wait COMMAND"
+        echo
+        echo "Wait for torrents."
+        echo
+        echo "Options:"
+        echo "      --completed       Wait for completion"
+        echo "      --hash-done       Wait for initial hashing to complete"
+        echo "      --seeding         Wait for seeding"
+        echo "      --not-completed   Check for not completed"
+        echo "      --not-hash-done   Check for not hash done"
+        echo "      --not-seeding     Check for not seeding"
+        echo "      --print           Print results"
+        echo "      --wait-all        Wait for all results before returning errors"
+        echo
+        echo "Run 'rdo torrent wait COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 0 )); then
+    print_error "rdo torrent wait: too many arguments"
+    exit 1
+  fi
 
   local result=$(( 0 ))
 
-  local timeout_hash_done=$(( SECONDS + 10 ))
-  local timeout_seeding=$(( SECONDS + 10 ))
-  local timeout_completed=$(( SECONDS + 30 ))
+  local timeout_hash_done=$(( SECONDS + 5 ))
+  local timeout_seeding=$(( SECONDS + 5 ))
+  local timeout_completed=$(( SECONDS + 10 ))
 
   local current_category="hash_done"
   local current_timeout=$(( timeout_hash_done ))

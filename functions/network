@@ -41,14 +41,14 @@ rdo_network_address() {
 }
 
 rdo_network_clean() {
+  rdo_network_iptables_flush || true
+
   local networks
   mapfile -t networks < <(rdo_network_ls --quiet --no-trunc)
 
   if (( ${#networks[@]} > 0 )); then
     docker network rm "${networks[@]}"
   fi
-
-  rdo_network_iptables_flush
 }
 
 rdo_network_ls() {
@@ -79,7 +79,7 @@ rdo_network_iptables_flush() {
   rules="$(rdo_network_iptables_list | sed -e 's/^-[AI] /sudo iptables -D /')"
 
   if [[ -n "${rules}" ]]; then
-    rdo__call_host bash -c "echo ${rules}; ${rules}"
+    rdo__call_host bash -c "echo '${rules}'; ${rules}"
   fi
 }
 
