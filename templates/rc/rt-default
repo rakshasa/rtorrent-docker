@@ -43,6 +43,8 @@ try = ((log.add_output, "thread_debug", "thread"))
 try = ((log.add_output, "tracker_debug", "tracker"))
 try = ((log.add_output, "dht_debug", "old_dht"))
 
+# Update to new format:
+log.execute = /run/self/logs/execute.log
 
 #
 # Settings:
@@ -50,13 +52,18 @@ try = ((log.add_output, "dht_debug", "old_dht"))
 
 print = "Loaded from '/run/self/rc'"
 
-directory.default.set = "/run/self/torrents"
+directory.default.set = "/torrents"
 session.path.set = "/run/self/session"
 
 #directory.watch.added = /run/self/watch, load.start
 
 schedule = watch_directory,5,5,load.start=/run/self/watch/*.torrent
 schedule = watch_untied, 10, 10, remove_untied=
+
+method.set_key = event.download.finished,state_finished,((execute,touch,((cat,/run/self/torrents/,((d.name)),.completed)) ))
+method.set_key = event.download.hash_done,state_hash_done,((execute,touch,((cat,/run/self/torrents/,((d.name)),.hash_done)) ))
+method.set_key = event.download.hash_done,state_hash_done.seeding,((branch,((d.complete)),((execute,touch,((cat,/run/self/torrents/,((d.name)),.seeding)) )) ))
+
 
 #
 # Per-node optional resource file:

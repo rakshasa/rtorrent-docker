@@ -41,6 +41,8 @@ rdo() {
 
   # args::new_command "bash" default "Start custom bash session" \
   #                   'is_header_included machine || source "./functions/machine"; rdo_bash "${@}"'
+  # args::new_command "batch" default "Run batch file" \
+  #                   'rdo_batch "${@}"'
   # args::new_command "build" default "Build projects" \
   #                   'rdo_build "${@}"'
   # args::new_command "docker" default "Manage docker" \
@@ -82,6 +84,7 @@ rdo() {
         echo
         echo "Commands:"
         echo "  bash          Start custom bash session"
+        echo "  batch         Run batch file"
         echo "  build         Build projects"
         echo "  docker        Manage docker"
         echo "  env           ."
@@ -115,6 +118,9 @@ rdo() {
   case "${args__cmd}" in
     bash)
       is_header_included machine || source "./functions/machine"; rdo_bash "${@}"
+      ;;
+    batch)
+      rdo_batch "${@}"
       ;;
     build)
       rdo_build "${@}"
@@ -155,6 +161,27 @@ rdo() {
       exit 1
       ;;
   esac
+}
+
+rdo_test_begin() {
+  rdo_test__name="$(basename "${BASH_SOURCE[1]}")"
+  rdo_test__name="${rdo_test__name//-/ }"
+
+  print_progress "staging ${rdo_test__name} tests"
+
+  rdo_stage_init
+}
+
+rdo_test_end() {
+  print_progress "completed ${rdo_test__name} tests"
+}
+
+rdo_batch() {
+  eval "$(args::init_options_string "rdo batch FILENAME" "filename" "Run batch file")"
+
+  eval "$(args::process)"
+
+  source "${filename}"
 }
 
 rdo_watch() {

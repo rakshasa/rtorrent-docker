@@ -5,18 +5,31 @@ include_header network
 rdo_network() {
   eval "$(args::init_subcommand "rdo network" "Manage networks.")"
 
-  args::new_command "address" default "Get network address" \
-                    'rdo_network_address "${@}"'
   args::new_command "clean" empty "Remove all networks" \
                     'rdo_network_clean "${@}"'
   args::new_command "ls" default "List networks" \
                     'rdo_network_ls "${@}"'
+
+  args::new_command "address" default "Get network address" \
+                    'rdo_network_address "${@}"'
   args::new_command "prefix" default "Get network prefix" \
                     'rdo_network_prefix "${@}"'
-  # args::new_command "rm" default "Remove one or more networks" \
-  #                   'rdo_network_rm "${@}"'
   args::new_command "subnet" default "Get network subnet" \
                     'rdo_network_subnet "${@}"'
+
+  args::new_command "bridge" default "Get bridge name" \
+                    'rdo_network_bridge "${@}"'
+  args::new_command "nat" default "Add nat between networks" \
+                    'rdo_network_nat "${@}"'
+
+  args::new_command "iptables" default "Call iptables on docker host" \
+                    'rdo_network_iptables "${@}"'
+  args::new_command "iptables-flush" empty "Flush rdo-specific iptables rules on docker host" \
+                    'rdo_network_iptables_flush'
+  args::new_command "iptables-list" empty "List rdo-specific iptables rules on docker host" \
+                    'rdo_network_iptables_list'
+  args::new_command "iptables-save" default "Call iptables-save on docker host" \
+                    'rdo_network_iptables_save "${@}"'
 
   eval "$(args::process)"
 }
@@ -34,6 +47,8 @@ rdo_network_clean() {
   if (( ${#networks[@]} > 0 )); then
     docker network rm "${networks[@]}"
   fi
+
+  rdo_network_iptables_flush
 }
 
 rdo_network_ls() {
@@ -46,7 +61,68 @@ rdo_network_prefix() {
   echo "${subnet##*/}"
 }
 
+rdo_network_bridge() {
+  local name="${1:?Missing name argument.}"
+  local network_id
+  network_id="$(docker network inspect --format {{.Id}} "${name}")"
+
+  echo "br-${network_id:0:12}"
+}
+
+rdo_network_iptables() {
+  print_normal iptables "${@}"
+  rdo__call_host sudo iptables "${@}"
+}
+
+rdo_network_iptables_flush() {
+  local rules
+  rules="$(rdo_network_iptables_list | sed -e 's/^-[AI] /sudo iptables -D /')"
+
+  if [[ -n "${rules}" ]]; then
+    rdo__call_host bash -c "echo ${rules}; ${rules}"
+  fi
+}
+
+rdo_network_iptables_list() {
+  rdo__call_host sudo iptables-save | sed -n -e '/ -m comment --comment "rdo network" /p'
+}
+
+rdo_network_iptables_save() {
+  rdo__call_host sudo iptables-save "${@}"
+}
+
 rdo_network_subnet() {
   local name="${1:?Missing name argument.}"
   docker network inspect --format '{{ (index .IPAM.Config 0).Subnet }}' "${name}"
+}
+
+rdo_network_nat() {
+  eval "$(args::init_options_string "rdo network nat OUTER-NETWORK" "outer_network" "Add NAT route between networks.")"
+
+  args::new_option "network" string "n" "Add inner network" \
+                   'inner_networks+=("${args__1}")'
+
+  eval "$(args::process)"
+
+  if (( ${#inner_networks[@]} == 0 )); then
+    print_error "rdo network nat: Missing inner networks."
+    return 1
+  fi
+
+  local outer_network_bridge
+  outer_network_bridge="$(rdo_network_bridge "${outer_network}")"
+
+  local iptables_args=(
+    -m comment
+    --comment "'rdo network'"
+  )
+
+  local network
+  for network in "${inner_networks[@]}"; do
+    local inner_network_bridge
+    inner_network_bridge+=("$(rdo_network_bridge "${network}")")
+
+    rdo_network_iptables "${iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
+    rdo_network_iptables "${iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -m state --state RELATED,ESTABLISHED -j ACCEPT
+  done
 }

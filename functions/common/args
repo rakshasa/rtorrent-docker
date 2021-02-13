@@ -121,6 +121,31 @@ args::verify_command_string() {
 }
 
 args::process_options() {
+  local name req_found
+  for name in "${args__options[@]}"; do
+    case "${args__option_types[${name}]}" in
+      req_string)
+        req_found=yes
+        cat - <<EOF
+local args__opt_value__${name}=
+EOF
+        ;;
+      req_string2*)
+        req_found=yes
+        cat - <<EOF
+local args__opt_value__${name}_1=
+local args__opt_value__${name}_2=
+EOF
+        ;;
+    esac
+  done
+
+  if [[ "${req_found}" == "yes" ]]; then
+        cat - <<EOF
+
+EOF
+  fi
+
   cat - <<EOF
 while true; do
   case "\${1}" in
@@ -139,7 +164,8 @@ EOF
 EOF
       fi
 
-      case "${args__option_types[${name}]}" in
+      local opt_type="${args__option_types[${name}]}"
+      case "${opt_type}" in
         empty)
           cat - <<EOF
       shift
@@ -149,6 +175,66 @@ EOF
         string)
           cat - <<EOF
       local args__1="\${2:?Missing argument for '\${1}'.}"
+      shift 2
+      ${args__option_blocks[${name}]}
+EOF
+          ;;
+        string2)
+          cat - <<EOF
+      local args__1="\${2:?Missing argument for '\${1}'.}"
+      local args__2="\${3:?Missing argument for '\${1}'.}"
+      shift 3
+      ${args__option_blocks[${name}]}
+EOF
+          ;;
+        string2*)
+          cat - <<EOF
+      local args__1="\${2%%${opt_type#string2}*}"
+      local args__2="\${2##*${opt_type#string2}}"
+      local args__1="\${args__1:?Missing argument for '\${1}'.}"
+      local args__2="\${args__2:?Missing argument for '\${1}'.}"
+
+      if [[ "\${args__1}${opt_type#string2}\${args__2}" != "\${2}" ]]; then
+        print_error "\${args__root}: invalid option format: \${1} \${2}"
+        return 1
+      fi
+
+      shift 2
+      ${args__option_blocks[${name}]}
+EOF
+          ;;
+        req_string)
+          cat - <<EOF
+      local args__1="\${2:?Missing argument for '\${1}'.}"
+      local args__opt_value__${name}="\${args__1}"
+      shift 2
+      ${args__option_blocks[${name}]}
+EOF
+          ;;
+        req_string2)
+          cat - <<EOF
+      local args__1="\${2:?Missing argument for '\${1}'.}"
+      local args__2="\${3:?Missing argument for '\${1}'.}"
+      local args__opt_value__${name}_1="\${args__1}"
+      local args__opt_value__${name}_2="\${args__2}"
+      shift 3
+      ${args__option_blocks[${name}]}
+EOF
+          ;;
+        req_string2*)
+          cat - <<EOF
+      local args__1="\${2%%${opt_type#string2}*}"
+      local args__2="\${2##*${opt_type#string2}}"
+      local args__1="\${args__1:?Missing argument for '\${1}'.}"
+      local args__2="\${args__2:?Missing argument for '\${1}'.}"
+      local args__opt_value__${name}_1="\${args__1}"
+      local args__opt_value__${name}_2="\${args__2}"
+
+      if [[ "\${args_1}${opt_type#string2}\${args_2}" != "\${2}" ]]; then
+        print_error "\${args__root}: invalid option format: \${1} \${2}"
+        return 1
+      fi
+
       shift 2
       ${args__option_blocks[${name}]}
 EOF
@@ -211,6 +297,30 @@ EOF
   esac
 done
 EOF
+
+  local name
+  for name in "${args__options[@]}"; do
+    case "${args__option_types[${name}]}" in
+      req_string)
+        cat - <<EOF
+
+if [[ -z "\${args__opt_value__${name}}" ]]; then
+  print_error "\${args__root}: missing required flag: --${name}"
+  return 1
+fi
+EOF
+        ;;
+      req_string2*)
+        cat - <<EOF
+
+if [[ -z "\${args__opt_value__${name}}_1" ]] || [[ -z "\${args__opt_value__${name}}_2" ]]; then
+  print_error "\${args__root}: missing required flag: --${name}"
+  return 1
+fi
+EOF
+        ;;
+    esac
+  done
 }
 
 args::process_command() {
@@ -354,8 +464,18 @@ args::process() {
   fi
 
   case "${args__extra_args}" in
-    empty|default)
+    default)
       :
+      ;;
+    empty)
+      cat - <<EOF
+
+if (( \${#} > 0 )); then
+  print_error "${args__root}: too many arguments"
+  exit 1
+fi
+
+EOF
       ;;
     string)
       cat - <<EOF

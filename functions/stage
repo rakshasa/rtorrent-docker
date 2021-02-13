@@ -8,9 +8,6 @@ rdo_stage() {
 
   eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
 
-  args::new_command "test" empty "Stage test environment" \
-                    'rdo_stage_test'
-
   args::new_command "init" empty "Initialize new environment for staging" \
                     'rdo_stage_init'
   args::new_command "deploy" empty "Deploy environment" \
@@ -20,13 +17,11 @@ rdo_stage() {
 
   args::new_command "network" default "Add network" \
                     'rdo_stage_network "${@}"'
-  args::new_command "torrent" default "Add torrent" \
-                    'rdo_stage_torrent "${@}"'
-  args::new_command "dns-record" default "Add dns record" \
-                    'rdo_stage_dns_record "${@}"'
+  args::new_command "torrent" default "Create torrent" \
+                    'rdo_stage_create_torrent "${@}"'
 
-  args::new_command "dns" default "Add dns server" \
-                    'rdo_stage_dns "${@}"'
+  args::new_command "router" default "Add router" \
+                    'rdo_stage_router "${@}"'
   args::new_command "rtorrent" default "Add node" \
                     'rdo_stage_rtorrent "${@}"'
   args::new_command "tracker" default "Add tracker" \
@@ -35,46 +30,26 @@ rdo_stage() {
   eval "$(args::process)"
 }
 
-rdo_stage_test() {
-  print_progress "staging test"
-
-  rdo_stage_init
-  rdo_stage_network "rt-network-1"
-  rdo_stage_network "rt-network-2"
-
-  rdo_stage_tracker --run-template "tracker-default" --network "rt-network-1" --network "rt-network-2" "rt-tracker-1"
-  rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-seed-1"
-  rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-leech-1"
-  rdo_stage_rtorrent --run-template "rt-default" --network "rt-network-1" --network "rt-network-2" "rt-leech-2"
-
-  print_progress "deploying test"
-  rdo_stage_deploy
-  print_progress "deployed test"
-}
-
 rdo_stage_clean() {
   rdo_node_clean > /dev/null
   rdo_network_clean > /dev/null
-  rm -rf "./run/current"
+  rm -rf ./run/current &> /dev/null
+  rm -rf ./run/torrents/* &> /dev/null
   print_progress "stage cleaned"
 }
 
 rdo_stage_deploy() {
-  local dns_list=()
-  local node_list=()
-  mapfile -t dns_list < <(ls "./run/current/dns/")
-  mapfile -t node_list < <(ls "./run/current/nodes/")
+  print_progress "stage deploying"
 
-  # verify all nodes are up.
+  local deploy_type
+  for deploy_type in trackers clients; do
+    local node_list=()
+    mapfile -t node_list < <(ls "./run/current/${deploy_type}/")
 
-  local node
-  for node in "${dns_list[@]}"; do
-    eval echo "\"$(cat "./run/current/dns/${node}/root.template")\"" > "./run/current/dns/${node}/root"
-  done
-
-  local node
-  for node in "${node_list[@]}"; do
-    echo "deploy" > "./run/current/nodes/${node}/signal"
+    for node in "${node_list[@]}"; do
+      echo "deploy" > "./run/current/nodes/${node}/signal"
+      echo "${deploy_type}/${node}"
+    done
   done
 
   print_progress "stage deployed"
@@ -83,24 +58,101 @@ rdo_stage_deploy() {
 rdo_stage_init() {
   # TODO: Add state, don't allow calls when not in initialize.
   rdo_stage_clean
-  mkdir -p "./run/current/"{dns,networks,nodes,trackers,peers}
+  mkdir -p "./run/current/"{networks,nodes}
   print_progress "stage initialized"
 }
 
 rdo_stage_network() {
-  eval "$(args::init_options_string "rdo stage network NAME" "name" "Add network to staging of environments.")"
+  # eval "$(args::init_options_string "rdo stage network NAME" "name" "Stage a network")"
+
+  # eval "$(args::process)"
+
+  while true; do
+    case "${1}" in
+      --help|-h)
+        echo "Usage: rdo stage network NAME COMMAND"
+        echo
+        echo "Stage a network"
+        echo
+        echo "Run 'rdo stage network NAME COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo stage network NAME: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
+    print_error "rdo stage network NAME: missing or empty argument"
+    exit 1
+  fi
+
+  local name="${1}"
+  shift
+
+  local self_path="./run/current/networks/${name}"
+  mkdir -p "${self_path}"
+
+  local args=(
+    --label "project=rdo"
+  )
+
+  docker network create "${args[@]}" "${name}" > /dev/null
+
+  echo "$(rdo_network subnet "${name}")" > "${self_path}/subnet"
+  echo "$(rdo_network address "${name}")" > "${self_path}/address"
+  echo "$(rdo_network prefix "${name}")" > "${self_path}/prefix"
+
+  echo "networks/${name}"
+}
+
+rdo_stage_torrent() {
+  eval "$(args::init_options_string "rdo stage torrent NAME" "name" "Stage a torrent")"
+
+  args::new_option "domain" req_string "" "Tracker domain name" \
+                   'local domain="${args__1}"'
+
   eval "$(args::process)"
 
-  local path="./run/current/networks/${name}"
-  mkdir -p "${path}"
+  # local self_path="./run/current/to/${name}"
+  # mkdir -p "${self_path}"
 
-  docker network create --label "project=rdo" "${name}" > /dev/null
+  rdo_torrent create --url "http://${domain}:6969/announce.php" "${name}"
 
-  echo "$(rdo_network subnet "${name}")" > "${path}/subnet"
-  echo "$(rdo_network address "${name}")" > "${path}/address"
-  echo "$(rdo_network prefix "${name}")" > "${path}/prefix"
+  echo "torrents/${name}"
+}
 
-  echo "${name}"
+rdo_stage_router() {
+  local create_args=()
+  local networks=()
+
+  eval "$(args::init_options_string "rdo stage router NAME" "name" "Add router to staging of environments.")"
+
+  rdo_stage__container__default_args
+
+  eval "$(args::process)"
+
+  local self_type="routers"
+  local image_name="rdo/run/router:global"
+
+  create_args+=(--cap-add NET_ADMIN)
+
+  rdo_stage__container__create
+  rdo_stage__container__start
+  rdo_stage__container__update_run
+
+  echo "${self_type}/${name}"
 }
 
 rdo_stage_rtorrent() {
@@ -108,23 +160,23 @@ rdo_stage_rtorrent() {
   local networks=()
   local run_template=
 
-  eval "$(args::init_options_string "rdo stage node NAME" "name" "Add node to staging of environments.")"
+  eval "$(args::init_options_string "rdo stage node NAME" "name" "Stage an rtorrent client.")"
 
   rdo_stage__container__default_args
 
   eval "$(args::process)"
 
-  local self_type="peers"
+  local self_type="clients"
   local image_name="rdo/run/rtorrent:default"
 
-  local self_path="./run/current/${self_type}/${name}"
+  local self_path="./run/current/nodes/${name}"
   mkdir -p "${self_path}/"{logs,session,torrents,watch}
 
   rdo_stage__container__create
   rdo_stage__container__start
   rdo_stage__container__update_run
 
-  echo "${name}"
+  echo "${self_type}/${name}"
 }
 
 rdo_stage_tracker() {
@@ -141,15 +193,15 @@ rdo_stage_tracker() {
   local image_name="rdo/run/opentracker:global"
 
   create_args+=(
-    --publish 6969:6969/udp
-    --publish 6969:6969
+    # --publish 6969:6969/udp
+    # --publish 6969:6969
   )
 
   rdo_stage__container__create
   rdo_stage__container__start
   rdo_stage__container__update_run
 
-  echo "${name}"
+  echo "${self_type}/${name}"
 }
 
 # Helper functions
@@ -162,12 +214,12 @@ rdo_stage__container__default_args() {
 }
 
 rdo_stage__container__create() {
+  local self_path="./run/current/nodes/${name}"
+
   : "${run_template:?Missing run template argument.}"
 
-  local self_path="./run/current/${self_type}/${name}"
-
-  mkdir -p "${self_path}/interfaces"
-  ln -s "../${self_type}/${name}" "./run/current/nodes/${name}"
+  mkdir -p "./run/current/${self_type}" "${self_path}/interfaces"
+  ln -s "./../nodes/${name}" "./run/current/${self_type}/${name}"
 
   echo "stage" > "${self_path}/signal"
 
@@ -182,7 +234,7 @@ rdo_stage__container__create() {
     --name "${name}"
     --tty
     --network "none"
-    --mount "type=bind,source=$(project_absolute_unix_path)/run/current/${self_type}/${name}/,target=/run/self/"
+    --mount "type=bind,source=$(project_absolute_unix_path)/run/current/nodes/${name}/,target=/run/self/"
   )
 
   docker container create --label "project=rdo" "${create_args[@]}" "${image_name}" > /dev/null
@@ -199,7 +251,7 @@ rdo_stage__container__start() {
 }
 
 rdo_stage__container__update_run() {
-  local self_path="./run/current/${self_type}/${name}"
+  local self_path="./run/current/nodes/${name}"
 
   rm -rf "${self_path}/interfaces"
 

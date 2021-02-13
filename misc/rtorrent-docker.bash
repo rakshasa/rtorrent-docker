@@ -54,6 +54,7 @@ _rtorrent_docker__rdo() {
   else
     commands=(
       bash
+      batch
       build
       destroy
       docker
@@ -67,6 +68,9 @@ _rtorrent_docker__rdo() {
       tags
       torrent
       watch
+    )
+    arg_funcs=(
+      batch#_filedir
     )
   fi
 }
@@ -249,6 +253,11 @@ _rtorrent_docker__rdo_network() {
       ls
       prefix
       rm
+      bridge
+      iptables
+      iptables-flush
+      iptables-list
+      iptables-save
       subnet
     )
   fi

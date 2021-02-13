@@ -3,34 +3,197 @@
 include_header torrent
 
 rdo_torrent() {
-  eval "$(args::init_subcommand "rdo torrent" "Manage staging of environments.")"
+  # eval "$(args::init_subcommand "rdo torrent" "Manage torrents.")"
 
-  args::new_command "create" default "Create a torrent" \
-                    'time rdo_torrent_create'
+  # args::new_command "create" default "Create a torrent" \
+  #                   'rdo_torrent_create "${@}"'
+  # args::new_command "wait" default "Wait for a set of torrent events" \
+  #                   'rdo_torrent_wait "${@}"'
 
-  eval "$(args::process)"
+  # args::new_command "node" default "Add a torrent to a client node" \
+  #                   'rdo_torrent_node "${@}"'
+
+  # eval "$(args::process)"
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo torrent COMMAND"
+        echo
+        echo "Manage torrents."
+        echo
+        echo "Commands:"
+        echo "  create   Create a torrent"
+        echo "  wait     Wait for a set of torrent events"
+        echo "  node     Add a torrent to a client node"
+        echo
+        echo "Run 'rdo torrent COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo torrent"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    create)
+      rdo_torrent_create "${@}"
+      ;;
+    wait)
+      rdo_torrent_wait "${@}"
+      ;;
+    node)
+      rdo_torrent_node "${@}"
+      ;;
+    *)
+      print_error "rdo torrent: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
 }
 
 rdo_torrent_create() {
   rdo_torrent__init
 
-  local torrent_name="test"
-  local torrent_path="./run/torrents/${torrent_name}"
+  eval "$(args::init_options_string "rdo torrent create NAME" "name" "Create a torrent.")"
 
-  rm -rf "${torrent_path}"{,.torrent}
-  mkdir -p "${torrent_path}"
+  args::new_option "url" req_string "" "Announce url" \
+                   'local url="${args__1}"'
 
-  head -c "$(( 5 * 1024 * 1024 ))" < <(head -c 8000 /dev/urandom; while true; do cat "${torrent_path}/file"; done) > "${torrent_path}/file"
+  eval "$(args::process)"
+
+  local self_path="./run/torrents/${name}"
+
+  # TODO: Don't recreate.
+
+  rm -rf "${self_path}"{,.torrent}
+
+  mkdir -p "${self_path}"
+  rdo_torrent__create_random_file "/torrents/${name}/file"
 
   local create_args=(
-    -a "http://example.com:1234/announce.php"
-    -n "${torrent_name}"
-    -o "/torrents/${torrent_name}.torrent"
+    #-a "http://example.com:1234/announce.php"
+    -a "${url}"
+    -n "${name}"
+    -o "/torrents/${name}.torrent"
   )
 
-  create_args+=("/torrents/${torrent_name}")
+  create_args+=("/torrents/${name}")
 
-  docker exec -t "rdo-utils-mktorrent" mktorrent "${create_args[@]}"
+  docker exec -t "rdo-utils-mktorrent" mktorrent "${create_args[@]}" > /dev/null
+}
+
+rdo_torrent_wait() {
+  local print=
+  local wait_all=
+
+  local completed_nodes=()
+  local completed_torrents=()
+  local hash_done_nodes=()
+  local hash_done_torrents=()
+  local not_completed_nodes=()
+  local not_completed_torrents=()
+  local not_hash_done_nodes=()
+  local not_hash_done_torrents=()
+
+  eval "$(args::init_options_empty "rdo torrent wait" "Wait for torrents.")"
+
+  args::new_option "completed" string2: "" "Wait for completion" \
+                   'completed_nodes+=("${args__1}"); completed_torrents+=("${args__2}")'
+  args::new_option "hash-done" string2: "" "Wait for initial hashing to complete" \
+                   'hash_done_nodes+=("${args__1}"); hash_done_torrents+=("${args__2}")'
+  args::new_option "seeding" string2: "" "Wait for seeding" \
+                   'seeding_nodes+=("${args__1}"); seeding_torrents+=("${args__2}")'
+  args::new_option "not-completed" string2: "" "Check for not completed" \
+                   'not_completed_nodes+=("${args__1}"); not_completed_torrents+=("${args__2}")'
+  args::new_option "not-hash-done" string2: "" "Check for not hash done" \
+                   'not_hash_done_nodes+=("${args__1}"); not_hash_done_torrents+=("${args__2}")'
+  args::new_option "not-seeding" string2: "" "Check for not seeding" \
+                   'seeding_nodes+=("${args__1}"); seeding_torrents+=("${args__2}")'
+
+  args::new_option "print" empty "" "Print results" \
+                   'print=yes'
+  args::new_option "wait-all" empty "" "Wait for all results before returning errors" \
+                   'wait_all=yes'
+
+  eval "$(args::process)"
+
+  local result=$(( 0 ))
+
+  local timeout_hash_done=$(( SECONDS + 10 ))
+  local timeout_seeding=$(( SECONDS + 10 ))
+  local timeout_completed=$(( SECONDS + 30 ))
+
+  local current_category="hash_done"
+  local current_timeout=$(( timeout_hash_done ))
+  local current_nodes=("${hash_done_nodes[@]}")
+  local current_torrents=("${hash_done_torrents[@]}")
+  local current_not_nodes=("${not_hash_done_nodes[@]}")
+  local current_not_torrents=("${not_hash_done_torrents[@]}")
+  rdo_torrent__wait_torrents || (( result += ${?} ))
+
+  if (( result != 0 )) && [[ "${wait_all}" != "yes" ]]; then
+    return $(( result ))
+  fi
+
+  local current_category="seeding"
+  local current_timeout=$(( timeout_seeding ))
+  local current_nodes=("${seeding_nodes[@]}")
+  local current_torrents=("${seeding_torrents[@]}")
+  local current_not_nodes=("${not_seeding_nodes[@]}")
+  local current_not_torrents=("${not_seeding_torrents[@]}")
+  rdo_torrent__wait_torrents || (( result += ${?} ))
+
+  if (( result != 0 )) && [[ "${wait_all}" != "yes" ]]; then
+    return $(( result ))
+  fi
+
+  local current_category="completed"
+  local current_timeout=$(( timeout_completed ))
+  local current_nodes=("${completed_nodes[@]}")
+  local current_torrents=("${completed_torrents[@]}")
+  local current_not_nodes=("${not_completed_nodes[@]}")
+  local current_not_torrents=("${not_completed_torrents[@]}")
+  rdo_torrent__wait_torrents || (( result += ${?} ))
+
+  return $(( result ))
+}
+
+rdo_torrent_node() {
+  local seed=
+
+  eval "$(args::init_options_string "rdo torrent node NAME" "name" "Add torrent to a client node.")"
+
+  args::new_option "node" req_string "" "Client node name" \
+                   'local node="${args__1}"'
+  args::new_option "seed" empty "" "Seed torrent" \
+                   'seed=yes'
+
+  eval "$(args::process)"
+
+  local self_path="./run/torrents/${name}"
+  local node_path="./run/current/clients/${node}"
+
+  if [[ ! -f "${self_path}.torrent" ]]; then
+    print_error "could not find torrent: ${self_path}.torrent"
+    return 1
+  fi
+
+  if [[ "${seed}" == "yes" ]]; then
+    docker cp "${self_path}" "${node}:/torrents/${name}"
+  fi
+
+  cp -r "${self_path}.torrent" "${node_path}/watch/${name}.torrent"
 }
 
 # Helper methods:
@@ -53,6 +216,113 @@ rdo_torrent__init() {
          --rm \
          --detach \
          --network none \
-         --mount "type=bind,src=$(get_project_path)/run/torrents/,dst=/torrents" \
+         --mount "type=bind,src=$(project_absolute_unix_path)/run/torrents/,dst=/torrents" \
          "rdo/run/mktorrent:global"
+}
+
+rdo_torrent__create_random_file() {
+  local filename="${1:?Missing filename argument.}"
+
+  local cmd="head -c '$(( 5 * 1024 * 1024 ))' < <(head -c 8000 /dev/urandom; while true; do cat '${filename}'; done) > '${filename}'"
+
+  docker exec -t "rdo-utils-mktorrent" bash -c "${cmd}"
+}
+
+# local current_category="completed"
+# local current_timeout=$(( timeout_completed ))
+# local current_nodes=("${completed_nodes[@]}")
+# local current_torrents=("${completed_torrents[@]}")
+# local current_not_nodes=("${not_completed_nodes[@]}")
+# local current_not_torrents=("${not_completed_torrents[@]}")
+rdo_torrent__wait_torrents() {
+  if [[ "${print}" == "yes" ]]; then
+    for (( idx=0; idx < ${#current_nodes[@]}; idx++ )); do
+      local node="${current_nodes[${idx}]}"
+      local torrent="${current_torrents[${idx}]}"
+      print_normal "waiting     ${current_category}:${node}:${torrent}"
+    done
+
+    for (( idx=0; idx < ${#current_not_nodes[@]}; idx++ )); do
+      local node="${current_not_nodes[${idx}]}"
+      local torrent="${current_not_torrents[${idx}]}"
+      print_normal "waiting not_${current_category}:${node}:${torrent}"
+    done
+  fi
+
+  local result=$(( 0 ))
+
+  while true; do
+    local next_nodes=()
+    local next_torrents=()
+    local idx
+    for (( idx=0; idx < ${#current_nodes[@]}; idx++ )); do
+      local node="${current_nodes[${idx}]}"
+      local torrent="${current_torrents[${idx}]}"
+
+      if [[ -f "./run/current/clients/${node}/torrents/${torrent}.${current_category}" ]]; then
+        if [[ "${print}" == "yes" ]]; then
+          print_normal "            ${current_category}:${node}:${torrent}"
+        fi
+
+        continue
+      fi
+
+      next_nodes+=("${node}")
+      next_torrents+=("${torrent}")
+    done
+
+    current_nodes=("${next_nodes[@]}")
+    current_torrents=("${next_torrents[@]}")
+
+    local next_not_nodes=()
+    local next_not_torrents=()
+    local idx
+    for (( idx=0; idx < ${#current_not_nodes[@]}; idx++ )); do
+      local node="${current_not_nodes[${idx}]}"
+      local torrent="${current_not_torrents[${idx}]}"
+
+      if [[ -f "./run/current/clients/${node}/torrents/${torrent}.${current_category}" ]]; then
+        if [[ "${print}" == "yes" ]]; then
+          print_error " failed_not_${current_category}:${node}:${torrent}"
+        fi
+
+        (( result += 1 ))
+        continue
+      fi
+
+      next_not_nodes+=("${node}")
+      next_not_torrents+=("${torrent}")
+    done
+
+    current_not_nodes=("${next_not_nodes[@]}")
+    current_not_torrents=("${next_not_torrents[@]}")
+
+    if (( SECONDS > current_timeout )) || ( (( ${#current_nodes[@]} == 0 )) && (( ${#current_not_nodes[@]} == 0 )) ); then
+      break
+    fi
+
+    sleep 0.5
+  done
+
+  for (( idx=0; idx < ${#current_nodes[@]}; idx++ )); do
+    local node="${current_nodes[${idx}]}"
+    local torrent="${current_torrents[${idx}]}"
+
+    if [[ "${print}" == "yes" ]]; then
+      print_error "    failed__${current_category}:${node}:${torrent}"
+    fi
+
+    (( result += 1 ))
+  done
+
+  for (( idx=0; idx < ${#current_not_nodes[@]}; idx++ )); do
+    local node="${current_not_nodes[${idx}]}"
+    local torrent="${current_not_torrents[${idx}]}"
+
+    if [[ "${print}" == "yes" ]]; then
+      print_normal "        not_${current_category}:${node}:${torrent}"
+    fi
+  done
+
+  return $(( result ))
 }

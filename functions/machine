@@ -83,10 +83,12 @@ rdo_machine() {
 }
 
 rdo_machine_create() {
-  local arg_cpu_count="$(rdo__machine_cpu_count)"
   local arg_disk_size=100000
   local arg_docker_machine=
-  local arg_memory="$(rdo__machine_memory)"
+
+  local arg_cpu_count arg_memory
+  arg_cpu_count=$(( $(rdo__cpu_count) - 2 ))
+  arg_memory="$(rdo__machine_memory)"
 
   local create_args=()
 
