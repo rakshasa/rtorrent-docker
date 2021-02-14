@@ -32,6 +32,7 @@ declare -a args__options
 declare -A args__option_types
 declare -A args__option_flags
 declare -A args__option_descriptions
+declare -A args__option_inits
 declare -A args__option_blocks
 declare -a args__commands
 declare -A args__command_types
@@ -95,7 +96,8 @@ args::new_option() {
   args__option_types[${name}]="${2:?Missing type argument.}"
   args__option_flags[${name}]="${3}"
   args__option_descriptions[${name}]="${4:?Missing description argument.}"
-  args__option_blocks[${name}]="${5:?Missing block argument.}"
+  args__option_inits[${name}]="${5}"
+  args__option_blocks[${name}]="${6:?Missing block argument.}"
 }
 
 args::new_command() {
@@ -121,17 +123,26 @@ args::verify_command_string() {
 }
 
 args::process_options() {
-  local name req_found
+  local name skip_line
+  for name in "${args__options[@]}"; do
+    if [[ -n "${args__option_inits[${name}]}" ]]; then
+      skip_line=yes
+      cat - <<EOF
+${args__option_inits[${name}]}
+EOF
+    fi
+  done
+
   for name in "${args__options[@]}"; do
     case "${args__option_types[${name}]}" in
       req_string)
-        req_found=yes
+        skip_line=yes
         cat - <<EOF
 local args__opt_value__${name}=
 EOF
         ;;
       req_string2*)
-        req_found=yes
+        skip_line=yes
         cat - <<EOF
 local args__opt_value__${name}_1=
 local args__opt_value__${name}_2=
@@ -140,10 +151,8 @@ EOF
     esac
   done
 
-  if [[ "${req_found}" == "yes" ]]; then
-        cat - <<EOF
-
-EOF
+  if [[ "${skip_line}" == "yes" ]]; then
+    printf '\n'
   fi
 
   cat - <<EOF
@@ -389,7 +398,7 @@ EOF
 
 args::print_help() {
   cat - <<EOF
-      echo "Usage: ${args__root} COMMAND"
+      echo "Usage: ${args__root}"
       echo
       echo "${args__root_description}"
 EOF
@@ -504,5 +513,8 @@ EOF
 args::print_process() {
   local args__is_processing=no
   local args__indent="${1:-2}"
+
+  printf "%${args__indent}s# start of generated bash args '%s'\n\n" ' ' "${args__root}"
   args::process | utils::prepend_output "$(printf "%${args__indent}s" ' ')"
+  printf "\n%${args__indent}s# end of generated bash args '%s'\n" ' ' "${args__root}"
 }

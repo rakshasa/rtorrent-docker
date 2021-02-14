@@ -68,7 +68,7 @@ rdo_torrent_create() {
   eval "$(args::init_options_string "rdo torrent create NAME" "name" "Create a torrent.")"
 
   args::new_option "url" req_string "" "Announce url" \
-                   'local url="${args__1}"'
+                   'local url' 'url="${args__1}"'
 
   eval "$(args::process)"
 
@@ -305,14 +305,12 @@ rdo_torrent_wait() {
 }
 
 rdo_torrent_node() {
-  local seed=
-
   eval "$(args::init_options_string "rdo torrent node NAME" "name" "Add torrent to a client node.")"
 
   args::new_option "node" req_string "" "Client node name" \
-                   'local node="${args__1}"'
+    'local node' 'node="${args__1}"'
   args::new_option "seed" empty "" "Seed torrent" \
-                   'seed=yes'
+    'local seed' 'seed=yes'
 
   eval "$(args::process)"
 

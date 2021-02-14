@@ -99,8 +99,7 @@ rdo_network_subnet() {
 rdo_network_nat() {
   eval "$(args::init_options_string "rdo network nat OUTER-NETWORK" "outer_network" "Add NAT route between networks.")"
 
-  args::new_option "network" string "n" "Add inner network" \
-                   'inner_networks+=("${args__1}")'
+  args::new_option "network" req_string "n" "Add inner network" 'local inner_networks=()' 'inner_networks+=("${args__1}")'
 
   eval "$(args::process)"
 
