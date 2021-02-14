@@ -20,6 +20,8 @@ rdo_stage() {
   args::new_command "torrent" default "Create torrent" \
                     'rdo_stage_create_torrent "${@}"'
 
+  args::new_command "dns" default "Add dns" \
+                    'rdo_stage_dns "${@}"'
   args::new_command "router" default "Add router" \
                     'rdo_stage_router "${@}"'
   args::new_command "rtorrent" default "Add node" \
@@ -124,7 +126,7 @@ rdo_stage_torrent() {
   eval "$(args::init_options_string "rdo stage torrent NAME" "name" "Stage a torrent")"
 
   args::new_option "domain" req_string "" "Tracker domain name" \
-                   'local domain="${args__1}"'
+                   'local domain=()' 'domain="${args__1}"'
 
   eval "$(args::process)"
 
@@ -136,9 +138,33 @@ rdo_stage_torrent() {
   echo "torrents/${name}"
 }
 
+rdo_stage_dns() {
+  local create_args=()
+
+  eval "$(args::init_options_string "rdo stage dns NAME" "name" "Add dns to staging of environments.")"
+
+  rdo_stage__container__default_args
+
+  eval "$(args::process)"
+
+  local self_type="dns"
+  local image_name="phensley/docker-dns"
+
+  create_args+=(
+    --mount "type=bind,src=/var/run/docker.sock,dst=/docker.sock,bind-propagation=rshared"
+  )
+
+  #--domain example.com --no-recursion
+
+  rdo_stage__container__create
+  rdo_stage__container__start
+  rdo_stage__container__update_run
+
+  echo "${self_type}/${name}"
+}
+
 rdo_stage_router() {
   local create_args=()
-  local networks=()
 
   eval "$(args::init_options_string "rdo stage router NAME" "name" "Add router to staging of environments.")"
 
@@ -159,9 +185,9 @@ rdo_stage_router() {
 }
 
 rdo_stage_rtorrent() {
+  #### TODO: add initializer to args options
+
   local create_args=()
-  local networks=()
-  local run_template=
 
   eval "$(args::init_options_string "rdo stage node NAME" "name" "Stage an rtorrent client.")"
 
@@ -184,7 +210,6 @@ rdo_stage_rtorrent() {
 
 rdo_stage_tracker() {
   local create_args=()
-  local networks=()
 
   eval "$(args::init_options_string "rdo stage tracker NAME" "name" "Add tracker to staging of environments.")"
 
@@ -211,9 +236,9 @@ rdo_stage_tracker() {
 
 rdo_stage__container__default_args() {
   args::new_option "network" string "n" "Connect tracker to network" \
-                   'networks+=("${args__1}")'
+                   'local networks=()' 'networks+=("${args__1}")'
   args::new_option "run-template" string "r" "Use template to create run script" \
-                   'run_template=("${args__1}")'
+                   'local run_template' 'run_template=("${args__1}")'
 }
 
 rdo_stage__container__create() {
