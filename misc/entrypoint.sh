@@ -1,6 +1,12 @@
 #!/bin/bash
 
+set -e
+
 echo "staging" > "/run/self/state"
+
+if [[ -f "/run/self/resolv.conf" ]]; then
+  cp "/run/self/resolv.conf" "/etc/resolv.conf"
+fi
 
 TIMEOUT=$(( SECONDS + 600 ))
 while true; do
