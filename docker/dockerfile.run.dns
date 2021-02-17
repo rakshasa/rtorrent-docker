@@ -1,0 +1,13 @@
+FROM "phensley/docker-dns"
+
+WORKDIR /run/self
+
+RUN apk add --no-cache bash
+
+COPY bash_profile /root/.bash_profile
+COPY entrypoint.sh /
+
+LABEL ancestor_project_root="rdo"
+LABEL ancestor_project="run"
+
+ENTRYPOINT /entrypoint.sh

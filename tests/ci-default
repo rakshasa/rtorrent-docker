@@ -4,6 +4,7 @@
 
 rdo_test_begin
 
+
 #
 # Topology, trackers and torrents:
 #
@@ -13,24 +14,25 @@ rdo_stage_network "rt-nat"
 
 rdo_network_nat   --network "rt-nat"    "rt-global"
 
+rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
 rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
 
 rdo_stage_deploy
 
-
-#
-# Global seeders:
-#
-
-rdo_stage_torrent --domain "rt-tracker-global.rt-global" "torrent-global"
-
-rdo_stage_rtorrent --run-template "rt-default" --network "rt-global" "rt-seed-global"
-rdo_torrent_node   --node "rt-seed-global"     --seed                "torrent-global"
+default_rtorrent_args=(
+  --run-template "rt-default"
+  --dns-inet "rt-dns-global:rt-global"
+)
 
 
 #
-# Deploy seeders:
+# Seeders:
 #
+
+rdo_stage_torrent --domain "rt-tracker-global.rt" "torrent-global"
+
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global" "rt-seed-global"
+rdo_torrent_node   --node "rt-seed-global" --seed "torrent-global"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
@@ -39,19 +41,16 @@ rdo_torrent_wait --print --wait-all \
                  --seeding       "rt-seed-global:torrent-global" \
                  --not-completed "rt-seed-global:torrent-global"
 
+
 #
 # Leechers:
 #
 
-rdo_stage_rtorrent --run-template "rt-default"      --network "rt-global" "rt-leech-global"
-rdo_torrent_node   --node         "rt-leech-global"                       "torrent-global"
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global" "rt-leech-global"
+rdo_torrent_node   --node "rt-leech-global" "torrent-global"
 
-rdo_stage_rtorrent --run-template "rt-default"      --network "rt-nat"    "rt-leech-nat"
-rdo_torrent_node   --node         "rt-leech-nat"                          "torrent-global"
-
-#
-# Deploy leechers:
-#
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat"    "rt-leech-nat"
+rdo_torrent_node   --node "rt-leech-nat"    "torrent-global"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \

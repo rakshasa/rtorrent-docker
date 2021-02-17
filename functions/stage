@@ -22,8 +22,6 @@ rdo_stage() {
 
   args::new_command "dns" default "Add dns" \
                     'rdo_stage_dns "${@}"'
-  args::new_command "router" default "Add router" \
-                    'rdo_stage_router "${@}"'
   args::new_command "rtorrent" default "Add node" \
                     'rdo_stage_rtorrent "${@}"'
   args::new_command "tracker" default "Add tracker" \
@@ -45,7 +43,7 @@ rdo_stage_deploy() {
   print_progress "stage deploying"
 
   local deploy_type
-  for deploy_type in trackers clients; do
+  for deploy_type in dns trackers clients; do
     local node_list=()
     mapfile -t node_list < <(ls "./run/current/${deploy_type}/" 2> /dev/null || :)
 
@@ -135,9 +133,6 @@ rdo_stage_torrent() {
 
   eval "$(args::process)"
 
-  # local self_path="./run/current/to/${name}"
-  # mkdir -p "${self_path}"
-
   rdo_torrent create --url "http://${domain}:6969/announce.php" "${name}"
 
   echo "torrents/${name}"
@@ -153,10 +148,10 @@ rdo_stage_dns() {
   eval "$(args::process)"
 
   local self_type="dns"
-  local image_name="phensley/docker-dns"
+  local image_name="rdo/run/dns:global"
 
   create_args+=(
-    --mount "type=bind,src=/var/run/docker.sock,dst=/docker.sock,bind-propagation=rshared"
+    --mount "type=bind,src=/var/run/docker.sock,dst=/docker.sock"
   )
 
   rdo_stage__container__create
@@ -166,30 +161,7 @@ rdo_stage_dns() {
   echo "${self_type}/${name}"
 }
 
-rdo_stage_router() {
-  local create_args=()
-
-  eval "$(args::init_options_string "rdo stage router NAME" "name" "Add router to staging of environments.")"
-
-  rdo_stage__container__default_args
-
-  eval "$(args::process)"
-
-  local self_type="routers"
-  local image_name="rdo/run/router:global"
-
-  create_args+=(--cap-add NET_ADMIN)
-
-  rdo_stage__container__create
-  rdo_stage__container__start
-  rdo_stage__container__update_run
-
-  echo "${self_type}/${name}"
-}
-
 rdo_stage_rtorrent() {
-  #### TODO: add initializer to args options
-
   local create_args=()
 
   eval "$(args::init_options_string "rdo stage node NAME" "name" "Stage an rtorrent client.")"
@@ -238,8 +210,8 @@ rdo_stage_tracker() {
 # Helper functions
 
 rdo_stage__container__default_args() {
-  args::new_option "dns-node" string "" "Set dns resolver to a dns node" \
-                   'local dns_node=' 'dns_node="${args__1}"'
+  args::new_option "dns-inet" string2: "" "Set dns resolver to a 'dns_node:network'" \
+                   'local resolve_conf' 'resolve_conf="nameserver $(cat ./run/current/dns/${args__1}/interfaces/${args__2}/inet)"'
   args::new_option "network" string "n" "Connect tracker to network" \
                    'local networks=()' 'networks+=("${args__1}")'
   args::new_option "run-template" string "r" "Use template to create run script" \
@@ -261,6 +233,10 @@ rdo_stage__container__create() {
 
   if [[ -f "./templates/rc/${run_template}" ]]; then
     "./templates/rc/${run_template}" > "${self_path}/rc"
+  fi
+
+  if [[ -n "${resolve_conf}" ]]; then
+    echo "${resolve_conf}" > "${self_path}/resolv.conf"
   fi
 
   create_args+=(
