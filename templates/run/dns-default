@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cat - <<EOF
+./dockerdns \
+  --no-recursion \
+  --domain rt.local
+EOF
