@@ -47,7 +47,7 @@ rdo_stage_deploy() {
   local deploy_type
   for deploy_type in trackers clients; do
     local node_list=()
-    mapfile -t node_list < <(ls "./run/current/${deploy_type}/")
+    mapfile -t node_list < <(ls "./run/current/${deploy_type}/" 2> /dev/null || :)
 
     for node in "${node_list[@]}"; do
       if [[ "$(cat "./run/current/nodes/${node}/signal")" == "stage" ]]; then
@@ -115,6 +115,11 @@ rdo_stage_network() {
 
   docker network create "${args[@]}" "${name}" > /dev/null
 
+  local network_bridge
+  network_bridge+=("$(rdo_network_bridge "${name}")")
+
+  rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${network_bridge}" ! -o "${network_bridge}" -j DROP
+
   echo "$(rdo_network subnet "${name}")" > "${self_path}/subnet"
   echo "$(rdo_network address "${name}")" > "${self_path}/address"
   echo "$(rdo_network prefix "${name}")" > "${self_path}/prefix"
@@ -153,8 +158,6 @@ rdo_stage_dns() {
   create_args+=(
     --mount "type=bind,src=/var/run/docker.sock,dst=/docker.sock,bind-propagation=rshared"
   )
-
-  #--domain example.com --no-recursion
 
   rdo_stage__container__create
   rdo_stage__container__start
@@ -235,6 +238,8 @@ rdo_stage_tracker() {
 # Helper functions
 
 rdo_stage__container__default_args() {
+  args::new_option "dns-node" string "" "Set dns resolver to a dns node" \
+                   'local dns_node=' 'dns_node="${args__1}"'
   args::new_option "network" string "n" "Connect tracker to network" \
                    'local networks=()' 'networks+=("${args__1}")'
   args::new_option "run-template" string "r" "Use template to create run script" \

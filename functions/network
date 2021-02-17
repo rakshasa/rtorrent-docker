@@ -2,6 +2,11 @@
 
 include_header network
 
+default_iptables_args=(
+  -m comment
+  --comment "'rdo network'"
+)
+
 rdo_network() {
   eval "$(args::init_subcommand "rdo network" "Manage networks.")"
 
@@ -111,17 +116,12 @@ rdo_network_nat() {
   local outer_network_bridge
   outer_network_bridge="$(rdo_network_bridge "${outer_network}")"
 
-  local iptables_args=(
-    -m comment
-    --comment "'rdo network'"
-  )
-
   local network
   for network in "${inner_networks[@]}"; do
     local inner_network_bridge
     inner_network_bridge+=("$(rdo_network_bridge "${network}")")
 
-    rdo_network_iptables "${iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
-    rdo_network_iptables "${iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -m state --state RELATED,ESTABLISHED -j ACCEPT
+    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
+    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -m state --state RELATED,ESTABLISHED -j ACCEPT
   done
 }

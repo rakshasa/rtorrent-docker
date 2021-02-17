@@ -10,16 +10,23 @@ rdo_test_begin
 
 rdo_stage_network "rt-global"
 rdo_stage_network "rt-nat"
-rdo_network_nat   --network "rt-nat" "rt-global"
+
+rdo_network_nat   --network "rt-nat"    "rt-global"
+
 rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
-rdo_stage_torrent --domain "rt-tracker-global.rt-global"                 "torrent-global"
+
+rdo_stage_deploy
+
 
 #
 # Global seeders:
 #
 
+rdo_stage_torrent --domain "rt-tracker-global.rt-global" "torrent-global"
+
 rdo_stage_rtorrent --run-template "rt-default" --network "rt-global" "rt-seed-global"
 rdo_torrent_node   --node "rt-seed-global"     --seed                "torrent-global"
+
 
 #
 # Deploy seeders:
