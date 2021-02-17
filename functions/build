@@ -11,11 +11,11 @@ rdo_build() {
   eval "$(args::init_subcommand "rdo build" "Build project.")"
 
   args::new_option "compiler" string "c" "Select the compiler to use" \
-                   'build_args+=("--build-arg" "COMPILER=${args__1}")'
+                   '' 'build_args+=("--build-arg" "COMPILER=${args__1}")'
   args::new_option "dry-run" empty "" "Do not actually build the container" \
-                   'build_args+=("--dry-run")'
+                   '' 'build_args+=("--dry-run")'
   args::new_option "rebuild" empty "" "Rebuild all base images" \
-                   'build_args+=("--rebuild"); arg_rebuild="yes"'
+                   '' 'build_args+=("--rebuild"); arg_rebuild="yes"'
 
   args::new_command "all" empty "Build all" \
                     'rdo_build_all'
