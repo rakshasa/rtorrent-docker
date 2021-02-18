@@ -17,8 +17,6 @@ rdo_stage() {
 
   args::new_command "network" default "Add network" \
                     'rdo_stage_network "${@}"'
-  args::new_command "torrent" default "Create torrent" \
-                    'rdo_stage_create_torrent "${@}"'
 
   args::new_command "dns" default "Add dns" \
                     'rdo_stage_dns "${@}"'
@@ -125,19 +123,6 @@ rdo_stage_network() {
   echo "networks/${name}"
 }
 
-rdo_stage_torrent() {
-  eval "$(args::init_options_string "rdo stage torrent NAME" "name" "Stage a torrent")"
-
-  args::new_option "domain" req_string "" "Tracker domain name" \
-                   'local domain=()' 'domain="${args__1}"'
-
-  eval "$(args::process)"
-
-  rdo_torrent create --url "http://${domain}:6969/announce.php" "${name}"
-
-  echo "torrents/${name}"
-}
-
 rdo_stage_dns() {
   local create_args=()
 
@@ -164,17 +149,25 @@ rdo_stage_dns() {
 rdo_stage_rtorrent() {
   local create_args=()
 
-  eval "$(args::init_options_string "rdo stage node NAME" "name" "Stage an rtorrent client.")"
+  eval "$(args::init_options_string "rdo stage rtorrent NAME" "name" "Stage an rtorrent client.")"
 
   rdo_stage__container__default_args
+
+  args::new_option "torrents-disksize" string "" "Torrents volume disksize" \
+                   'local torrents_disksize' 'torrents_disksize="${args__1}"'
 
   eval "$(args::process)"
 
   local self_type="clients"
   local image_name="rdo/run/rtorrent:default"
 
-  local self_path="./run/current/nodes/${name}"
-  mkdir -p "${self_path}/"{logs,session,torrents,watch}
+  if [[ -n "${torrents_disksize}" ]]; then
+    create_args+=(--mount "type=tmpfs,dst=/torrents,tmpfs-size=${torrents_disksize}")
+  else
+    create_args+=(--mount "type=tmpfs,dst=/torrents")
+  fi
+
+  mkdir -p "./run/current/nodes/${name}/"{logs,session,torrents,watch}
 
   rdo_stage__container__create
   rdo_stage__container__start
