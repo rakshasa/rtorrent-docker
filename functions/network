@@ -8,43 +8,79 @@ default_iptables_args=(
 )
 
 rdo_network() {
-  eval "$(args::init_subcommand "rdo network" "Manage networks.")"
+  # eval "$(args::init_subcommand "rdo network" "Manage networks.")"
 
-  args::new_command "clean" empty "Remove all networks" \
-                    'rdo_network_clean "${@}"'
-  args::new_command "ls" default "List networks" \
-                    'rdo_network_ls "${@}"'
+  # args::new_command "clean" empty "Remove all networks" \
+  #                   'rdo_network_clean "${@}"'
+  # args::new_command "ls" default "List networks" \
+  #                   'rdo_network_ls "${@}"'
 
-  args::new_command "address" default "Get network address" \
-                    'rdo_network_address "${@}"'
-  args::new_command "prefix" default "Get network prefix" \
-                    'rdo_network_prefix "${@}"'
-  args::new_command "subnet" default "Get network subnet" \
-                    'rdo_network_subnet "${@}"'
+  # args::new_command "address" default "Get network address" \
+  #                   'rdo_network_address "${@}"'
+  # args::new_command "prefix" default "Get network prefix" \
+  #                   'rdo_network_prefix "${@}"'
+  # args::new_command "subnet" default "Get network subnet" \
+  #                   'rdo_network_subnet "${@}"'
+  # args::new_command "interface-name" default "Get interface name" \
+  #                   'rdo_network_interface_name "${@}"'
 
-  args::new_command "bridge" default "Get bridge name" \
-                    'rdo_network_bridge "${@}"'
-  args::new_command "nat" default "Add nat between networks" \
-                    'rdo_network_nat "${@}"'
+  # args::new_command "bridge" default "Get bridge name" \
+  #                   'rdo_network_bridge "${@}"'
+  # args::new_command "nat" default "Add nat between networks" \
+  #                   'rdo_network_nat "${@}"'
 
-  args::new_command "iptables" default "Call iptables on docker host" \
-                    'rdo_network_iptables "${@}"'
-  args::new_command "iptables-flush" empty "Flush rdo-specific iptables rules on docker host" \
-                    'rdo_network_iptables_flush'
-  args::new_command "iptables-list" empty "List rdo-specific iptables rules on docker host" \
-                    'rdo_network_iptables_list'
-  args::new_command "iptables-save" default "Call iptables-save on docker host" \
-                    'rdo_network_iptables_save "${@}"'
-  args::new_command "tc" default "Call tc on docker host" \
-                    'rdo_network_tc "${@}"'
+  # args::new_command "iptables" default "Call iptables on docker host" \
+  #                   'rdo_network_iptables "${@}"'
+  # args::new_command "iptables-flush" empty "Flush rdo-specific iptables rules on docker host" \
+  #                   'rdo_network_iptables_flush'
+  # args::new_command "iptables-list" empty "List rdo-specific iptables rules on docker host" \
+  #                   'rdo_network_iptables_list'
+  # args::new_command "iptables-save" default "Call iptables-save on docker host" \
+  #                   'rdo_network_iptables_save "${@}"'
+
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo network'
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo network"
+        echo
+        echo "Manage networks."
+        echo
+        echo "Commands:"
+        echo "  clean            Remove all networks"
+        echo "  ls               List networks"
+        echo "  address          Get network address"
+        echo "  prefix           Get network prefix"
+        echo "  subnet           Get network subnet"
+        echo "  interface-name   Get interface name"
+        echo "  bridge           Get bridge name"
+        echo "  nat              Add nat between networks"
+        echo "  iptables         Call iptables on docker host"
+        echo "  iptables-flush   Flush rdo-specific iptables rules on docker host"
+        echo "  iptables-list    List rdo-specific iptables rules on docker host"
+        echo "  iptables-save    Call iptables-save on docker host"
+        echo
+        echo "Run 'rdo network COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
 
   eval "$(args::process)"
 }
 
-rdo_network_address() {
-  local subnet
-  subnet="$(rdo_network_subnet "${@}")"
-  echo "${subnet%%/*}"
+  # end of generated bash args 'rdo network'
 }
 
 rdo_network_clean() {
@@ -62,6 +98,12 @@ rdo_network_ls() {
   docker network ls --filter "label=project=rdo" "${@}"
 }
 
+rdo_network_address() {
+  local subnet
+  subnet="$(rdo_network_subnet "${@}")"
+  echo "${subnet%%/*}"
+}
+
 rdo_network_prefix() {
   local subnet
   subnet="$(rdo_network_subnet "${@}")"
@@ -76,9 +118,96 @@ rdo_network_bridge() {
   echo "br-${network_id:0:12}"
 }
 
-rdo_network_subnet() {
-  local name="${1:?Missing name argument.}"
-  docker network inspect --format '{{ (index .IPAM.Config 0).Subnet }}' "${name}"
+rdo_network_interface_name() {
+  # eval "$(args::init_options_string "rdo network interface-name NODE-NAME" "node_name" "Get node's interface name.")"
+
+  # args::new_option "ifname" string "" "Node interface name" 'local ifname="eth0"' 'ifname="${args__1}"'
+
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo network interface-name NODE-NAME'
+
+  local ifname="eth0"
+
+  while true; do
+    case "${1}" in
+      --ifname)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        ifname="${args__1}"
+        ;;
+      --help|-h)
+        echo "Usage: rdo network interface-name NODE-NAME"
+        echo
+        echo "Get node's interface name."
+        echo
+        echo "Options:"
+        echo "      --ifname   Node interface name"
+        echo
+        echo "Run 'rdo network interface-name NODE-NAME COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo network interface-name NODE-NAME: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
+    print_error "rdo network interface-name NODE-NAME: missing or empty argument"
+    exit 1
+  fi
+
+  local node_name="${1}"
+  shift
+
+  # end of generated bash args 'rdo network interface-name NODE-NAME'
+
+  local sandbox_key ip_entry
+  sandbox_key="$(docker inspect --format '{{ .NetworkSettings.SandboxKey }}' "${node_name}")"
+  ip_entry="$(rdo__call_host sudo nsenter --net="${sandbox_key}" ip -oneline link show dev "${ifname}")"
+
+  if ! [[ "${ip_entry}" =~ ^[0-9]*:\ [^@\ ]*@if([0-9]*):\ [^$]*$ ]]; then
+    exit 1
+  fi
+
+  if ! [[ "$(rdo__call_host ip -oneline link show)" =~ [0-9]*:\ ([^@\ ]*)@if$(( BASH_REMATCH[1] - 1 )):\  ]]; then
+    exit 1
+  fi
+
+  echo "${BASH_REMATCH[1]}"
+}
+
+rdo_network_iptables() {
+  print_normal iptables "${@}"
+  rdo__call_host sudo iptables "${@}"
+}
+
+rdo_network_iptables_flush() {
+  local rules
+  rules="$(rdo_network_iptables_list | sed -e 's/^-[AI] /sudo iptables -D /')"
+
+  if [[ -n "${rules}" ]]; then
+    rdo__call_host bash -c "echo '${rules}'; ${rules}"
+  fi
+}
+
+rdo_network_iptables_list() {
+  rdo__call_host sudo iptables-save | sed -n -e '/ -m comment --comment "rdo network" /p'
+}
+
+rdo_network_iptables_save() {
+  rdo__call_host sudo iptables-save "${@}"
 }
 
 rdo_network_nat() {
@@ -104,31 +233,4 @@ rdo_network_nat() {
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -m state --state RELATED,ESTABLISHED -j ACCEPT
   done
-}
-
-rdo_network_iptables() {
-  print_normal iptables "${@}"
-  rdo__call_host sudo iptables "${@}"
-}
-
-rdo_network_iptables_flush() {
-  local rules
-  rules="$(rdo_network_iptables_list | sed -e 's/^-[AI] /sudo iptables -D /')"
-
-  if [[ -n "${rules}" ]]; then
-    rdo__call_host bash -c "echo '${rules}'; ${rules}"
-  fi
-}
-
-rdo_network_iptables_list() {
-  rdo__call_host sudo iptables-save | sed -n -e '/ -m comment --comment "rdo network" /p'
-}
-
-rdo_network_iptables_save() {
-  rdo__call_host sudo iptables-save "${@}"
-}
-
-rdo_network_tc() {
-  print_normal tc "${@}"
-  rdo__call_host sudo tc "${@}"
 }
