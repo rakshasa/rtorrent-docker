@@ -254,11 +254,12 @@ _rtorrent_docker__rdo_network() {
       prefix
       rm
       bridge
+      subnet
       iptables
       iptables-flush
       iptables-list
       iptables-save
-      subnet
+      tc
     )
   fi
 }

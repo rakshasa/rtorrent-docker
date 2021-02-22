@@ -35,6 +35,8 @@ rdo_network() {
                     'rdo_network_iptables_list'
   args::new_command "iptables-save" default "Call iptables-save on docker host" \
                     'rdo_network_iptables_save "${@}"'
+  args::new_command "tc" default "Call tc on docker host" \
+                    'rdo_network_tc "${@}"'
 
   eval "$(args::process)"
 }
@@ -74,28 +76,6 @@ rdo_network_bridge() {
   echo "br-${network_id:0:12}"
 }
 
-rdo_network_iptables() {
-  print_normal iptables "${@}"
-  rdo__call_host sudo iptables "${@}"
-}
-
-rdo_network_iptables_flush() {
-  local rules
-  rules="$(rdo_network_iptables_list | sed -e 's/^-[AI] /sudo iptables -D /')"
-
-  if [[ -n "${rules}" ]]; then
-    rdo__call_host bash -c "echo '${rules}'; ${rules}"
-  fi
-}
-
-rdo_network_iptables_list() {
-  rdo__call_host sudo iptables-save | sed -n -e '/ -m comment --comment "rdo network" /p'
-}
-
-rdo_network_iptables_save() {
-  rdo__call_host sudo iptables-save "${@}"
-}
-
 rdo_network_subnet() {
   local name="${1:?Missing name argument.}"
   docker network inspect --format '{{ (index .IPAM.Config 0).Subnet }}' "${name}"
@@ -124,4 +104,31 @@ rdo_network_nat() {
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -m state --state RELATED,ESTABLISHED -j ACCEPT
   done
+}
+
+rdo_network_iptables() {
+  print_normal iptables "${@}"
+  rdo__call_host sudo iptables "${@}"
+}
+
+rdo_network_iptables_flush() {
+  local rules
+  rules="$(rdo_network_iptables_list | sed -e 's/^-[AI] /sudo iptables -D /')"
+
+  if [[ -n "${rules}" ]]; then
+    rdo__call_host bash -c "echo '${rules}'; ${rules}"
+  fi
+}
+
+rdo_network_iptables_list() {
+  rdo__call_host sudo iptables-save | sed -n -e '/ -m comment --comment "rdo network" /p'
+}
+
+rdo_network_iptables_save() {
+  rdo__call_host sudo iptables-save "${@}"
+}
+
+rdo_network_tc() {
+  print_normal tc "${@}"
+  rdo__call_host sudo tc "${@}"
 }
