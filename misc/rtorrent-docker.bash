@@ -248,17 +248,18 @@ _rtorrent_docker__rdo_machine() {
 _rtorrent_docker__rdo_network() {
   if [[ "${word}" != -* ]]; then
     commands=(
-      address
       clean
       ls
-      prefix
       rm
+      address
+      prefix
+      subnet
+      interface-name
       bridge
       iptables
       iptables-flush
       iptables-list
       iptables-save
-      subnet
     )
   fi
 }
