@@ -57,8 +57,8 @@ session.path.set = "/run/self/session"
 
 #directory.watch.added = /run/self/watch, load.start
 
-schedule = watch_directory,5,5,load.start=/run/self/watch/*.torrent
-schedule = watch_untied, 10, 10, remove_untied=
+schedule = watch_directory,1,1,load.start=/run/self/watch/*.torrent
+schedule = watch_untied, 1, 1, remove_untied=
 
 method.set_key = event.download.finished,state_finished,((execute,touch,((cat,/run/self/torrents/,((d.name)),.completed)) ))
 method.set_key = event.download.hash_done,state_hash_done,((execute,touch,((cat,/run/self/torrents/,((d.name)),.hash_done)) ))
