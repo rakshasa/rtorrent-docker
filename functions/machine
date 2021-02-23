@@ -44,9 +44,12 @@ rdo_machine_create() {
     :
   fi
 
-  create_args+=("--virtualbox-cpu-count" "${arg_cpu_count}")
-  create_args+=("--virtualbox-disk-size" "${arg_disk_size}")
-  create_args+=("--virtualbox-memory" "${arg_memory}")
+  create_args+=(
+    --virtualbox-cpu-count "${arg_cpu_count}"
+    --virtualbox-disk-size "${arg_disk_size}"
+    --virtualbox-memory "${arg_memory}"
+    --virtualbox-boot2docker-url "https://releases.rancher.com/os/latest/rancheros.iso"
+  )
 
   print_progress "creating docker machine '${arg_docker_machine}' (cpu:${arg_cpu_count} memory:${arg_memory} disk_size:${arg_disk_size})"
 
