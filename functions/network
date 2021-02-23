@@ -221,7 +221,7 @@ rdo_network_interface_name() {
 
   local sandbox_key ip_entry
   sandbox_key="$(docker inspect --format '{{ .NetworkSettings.SandboxKey }}' "${node_name}")"
-  ip_entry="$(rdo__call_host sudo nsenter --net="${sandbox_key}" ip -oneline link show dev "${ifname}")"
+  ip_entry="$(rdo__call_host sudo nsenter --net="${sandbox_key}" -- ip -oneline link show dev "${ifname}")"
 
   if ! [[ "${ip_entry}" =~ ^[0-9]*:\ [^@\ ]*@if([0-9]*):\ [^$]*$ ]]; then
     exit 1

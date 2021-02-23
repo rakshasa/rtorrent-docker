@@ -1,0 +1,62 @@
+#!/bin/bash
+
+#
+# Test default behavior of rtorrent in various network setttings.
+#
+
+rdo_test_begin
+
+
+#
+# Topology, trackers and torrents:
+#
+
+rdo_stage_network "rt-global"
+
+rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
+rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
+
+rdo_stage_deploy
+
+default_client_args=(
+  --run-template "rt-default"
+  --network "rt-global"
+  --dns-inet "rt-dns-global:rt-global"
+)
+
+
+#
+# Clients:
+#
+
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-seed-global"
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-unlimited"
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-unlimited-tc-8kbit"
+
+rdo_network_tc qdisc add dev "$(rdo_network_interface_name "rt-throttle-unlimited-tc-8kbit")" root tbf rate 8kbit latency 1ms burst 2048
+
+rdo_torrent_create --domain "rt-tracker-global.rt" --size-mb "1" "torrent-1m"
+rdo_torrent_node --seed --node "rt-seed-global" "torrent-1m"
+
+rdo_stage_deploy
+rdo_torrent_wait --print --wait-all \
+                 \
+                 --hash-done     "rt-seed-global:torrent-1m" \
+                 \
+                 --seeding       "rt-seed-global:torrent-1m"
+
+#
+# Test throttle:
+#
+
+rdo_torrent_node --node "rt-throttle-unlimited"          "torrent-1m"
+rdo_torrent_node --node "rt-throttle-unlimited-tc-8kbit" "torrent-1m"
+
+rdo_stage_deploy
+rdo_torrent_wait --print --wait-all \
+                 \
+                 --completed "rt-throttle-unlimited:torrent-1m" \
+                 \
+                 --not-completed "rt-throttle-unlimited-tc-8kbit:torrent-1m"
+
+rdo_test_end

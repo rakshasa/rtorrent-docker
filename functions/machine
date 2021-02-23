@@ -23,7 +23,6 @@ rdo_machine() {
 
 rdo_machine_create() {
   local arg_disk_size=100000
-  local arg_docker_machine=
 
   local arg_cpu_count arg_memory
   arg_cpu_count=$(( $(rdo__cpu_count) - 2 ))
@@ -34,14 +33,13 @@ rdo_machine_create() {
   eval "$(args::init_options_empty "rdo machine create" "Create the docker machine")"
 
   args::new_option "name" string "n" "Set the docker machine name" \
-                   '' 'arg_docker_machine="${args__1}"'
+                   'local arg_docker_machine' 'arg_docker_machine="${args__1}"'
 
   eval "$(args::process)"
 
   if [[ "${OSTYPE}" == "cygwin" ]]; then
     # create_args+=("--virtualbox-share-folder" "$(rdo__project_absolute_path)")
-     create_args+=("--virtualbox-share-folder" 'c:\cygwin64:cygwin64')
-    :
+    create_args+=("--virtualbox-share-folder" 'c:\cygwin64:cygwin64')
   fi
 
   create_args+=(
@@ -61,8 +59,22 @@ rdo_machine_create() {
   rdo_machine__attempt_start "${arg_docker_machine}"
 
   if [[ -z "$(docker-machine inspect "${arg_docker_machine}")" ]]; then
-    print_normal "creating docker machine '${arg_docker_machine}'"
-    docker-machine create "${create_args[@]}" --driver virtualbox "${arg_docker_machine}"
+    print_normal "creating docker machine '${arg_docker_machine}': ${create_args[*]}"
+
+    docker-machine create --driver virtualbox "${create_args[@]}" "${arg_docker_machine}"
+    docker-machine ssh rdo sudo ros service enable virtualbox-tools
+    docker-machine ssh rdo sudo ros service up virtualbox-tools
+    docker-machine ssh rdo sudo mkdir /cygwin64
+
+    print_normal "waiting for virtualbox mount command to become available"
+
+    while ! docker-machine ssh rdo command -v mount.vboxsf 2> /dev/null; do
+      printf '.'
+      sleep 1
+    done
+
+    docker-machine ssh rdo sudo mount.vboxsf cygwin64 /cygwin64
+
   else
     print_normal "docker machine '${arg_docker_machine}' already exists, skipping creation"
   fi
