@@ -41,5 +41,5 @@ Run CI tests
 ------------
 
 ```bash
-rdo batch tests/ci-default
+rdo batch tests/ci-all
 ```
