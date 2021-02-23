@@ -1,0 +1,40 @@
+#!/bin/bash
+
+SUCCESSFUL_TESTS=()
+FAILED_TESTS=()
+
+run_test() {
+  local test_name="${1:?Missing argument.}"
+
+  print_progress
+  print_progress "running test: ${test_name}"
+  print_progress
+
+  if source "./tests/${test_name}"; then
+    print_progress
+    print_progress "*** SUCCEEDED ***"
+    print_progress
+    SUCCESSFUL_TESTS+=("${test_name}")
+  else
+    print_error
+    print_error "*** FAILED ***"
+    print_error
+    FAILED_TESTS+=("${test_name}")
+  fi
+}
+
+run_test ci-default
+run_test ci-throttle
+
+print_progress "CI results:"
+print_progress
+
+for t in "${SUCCESSFUL_TESTS[@]}"; do
+  print_progress "succeeded: ${t}"
+done
+
+for t in "${FAILED_TESTS[@]}"; do
+  print_failed "failed: ${t}"
+done
+
+print_progress
