@@ -15,6 +15,9 @@ rdo_stage() {
   args::new_command "clean" empty "Remove environment" \
                     'rdo_stage_clean'
 
+  args::new_command "append-rc" default "Append to node's rc file" \
+                    'rdo_stage_append_rc "${@}"'
+
   args::new_command "network" default "Add network" \
                     'rdo_stage_network "${@}"'
 
@@ -28,13 +31,11 @@ rdo_stage() {
   eval "$(args::process)"
 }
 
-rdo_stage_clean() {
-  rdo_network_iptables_flush > /dev/null
-  rdo_node_clean > /dev/null
-  rdo_network_clean > /dev/null
-  rm -rf ./run/current &> /dev/null
-  rm -rf ./run/torrents/* &> /dev/null
-  print_progress "stage cleaned"
+rdo_stage_init() {
+  # TODO: Add state, don't allow calls when not in initialize.
+  rdo_stage_clean
+  mkdir -p "./run/current/"{networks,nodes}
+  print_progress "stage initialized"
 }
 
 rdo_stage_deploy() {
@@ -45,6 +46,7 @@ rdo_stage_deploy() {
     local node_list=()
     mapfile -t node_list < <(ls "./run/current/${deploy_type}/" 2> /dev/null || :)
 
+    local node
     for node in "${node_list[@]}"; do
       if [[ "$(cat "./run/current/nodes/${node}/signal")" == "stage" ]]; then
         echo "deploy" > "./run/current/nodes/${node}/signal"
@@ -56,11 +58,33 @@ rdo_stage_deploy() {
   print_progress "stage deployed"
 }
 
-rdo_stage_init() {
-  # TODO: Add state, don't allow calls when not in initialize.
-  rdo_stage_clean
-  mkdir -p "./run/current/"{networks,nodes}
-  print_progress "stage initialized"
+rdo_stage_clean() {
+  rdo_network_iptables_flush > /dev/null
+  rdo_node_clean > /dev/null
+  rdo_network_clean > /dev/null
+  rm -rf ./run/current &> /dev/null
+  rm -rf ./run/torrents/* &> /dev/null
+  print_progress "stage cleaned"
+}
+
+rdo_stage_append_rc() {
+  eval "$(args::init_options_string "rdo stage append-rc APPEND-TEXT" "append_text" "Append to node's rc file")"
+
+  args::new_option "node" string "" "Name of the node" \
+                   'local node_list=()' 'node_list+=("${args__1}")'
+
+  eval "$(args::process)"
+
+  local node
+  for node in "${node_list[@]}"; do
+    if [[ "$(cat "./run/current/nodes/${node}/signal")" == "staging" ]]; then
+      print_error "stage_append_rc called on a node not staging: ${node}"
+      exit 1
+    fi
+
+    printf "append to node ${node}:\n${append_text}\n"
+    printf "\n${append_text}\n" >> "./run/current/nodes/${node}/rc"
+  done
 }
 
 rdo_stage_network() {
