@@ -46,40 +46,62 @@ rdo_torrent_wait --print --wait-all \
 
 
 #
-# Clients:
-#
-
-# Throttled clients have a TC setting that ensures that the
-# client-side throttle has time to kick in.
-
-rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-unlimited"
-rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-unlimited-tc-8kbit"
-rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-200k"
-rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-200k-tc-8kbit"
-
-rdo_stage_append_rc \
-  --node "rt-throttle-200k" \
-  --node "rt-throttle-200k-tc-8kbit" \
-  "throttle.global_down.max_rate.set_kb = 200"
-
-rdo_network_tc_add_qdisc --rate 8kbit "rt-throttle-unlimited-tc-8kbit"
-rdo_network_tc_add_qdisc --rate 8kbit "rt-throttle-200k-tc-8kbit"
-
-
-#
 # Test throttle:
 #
 
-rdo_torrent_node --node "rt-throttle-unlimited"          "torrent-1m"
-rdo_torrent_node --node "rt-throttle-unlimited-tc-8kbit" "torrent-1m"
-rdo_torrent_node --node "rt-throttle-200k"               "torrent-1m"
-rdo_torrent_node --node "rt-throttle-200k-tc-8kbit"      "torrent-1m"
+# Throttled clients have a TC setting so as toensures that the
+# client-side throttle has time to kick in.
+#
+
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-unlimited"
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-unlimited-tc-80kbit"
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-unlimited-tc-1600kbit"
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-10k"
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-10k-tc-1600kbit"
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-200k"
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-200k-tc-80kbit"
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-throttle-200k-tc-1600kbit"
+
+# 1mbyte /   80kbit/s = 100s
+# 1mbyte / 1600kbit/s = 5s
+
+rdo_network_tc_add_qdisc --rate 80kbit   "rt-throttle-unlimited-tc-80kbit"
+rdo_network_tc_add_qdisc --rate 1600kbit "rt-throttle-unlimited-tc-1600kbit"
+rdo_network_tc_add_qdisc --rate 1600kbit "rt-throttle-10k-tc-1600kbit"
+rdo_network_tc_add_qdisc --rate 80kbit   "rt-throttle-200k-tc-80kbit"
+rdo_network_tc_add_qdisc --rate 1600kbit "rt-throttle-200k-tc-1600kbit"
+
+rdo_stage_append_rc \
+  --node "rt-throttle-10k" \
+  --node "rt-throttle-10k-tc-1600kbit" \
+  "throttle.global_down.max_rate.set_kb = 10"
+
+rdo_stage_append_rc \
+  --node "rt-throttle-200k" \
+  --node "rt-throttle-200k-tc-80kbit" \
+  --node "rt-throttle-200k-tc-1600kbit" \
+  "throttle.global_down.max_rate.set_kb = 200"
+
+rdo_torrent_node --node "rt-throttle-unlimited"             "torrent-1m"
+rdo_torrent_node --node "rt-throttle-unlimited-tc-80kbit"   "torrent-1m"
+rdo_torrent_node --node "rt-throttle-unlimited-tc-1600kbit" "torrent-1m"
+rdo_torrent_node --node "rt-throttle-10k"                   "torrent-1m"
+rdo_torrent_node --node "rt-throttle-10k-tc-1600kbit"       "torrent-1m"
+rdo_torrent_node --node "rt-throttle-200k"                  "torrent-1m"
+rdo_torrent_node --node "rt-throttle-200k-tc-80kbit"        "torrent-1m"
+rdo_torrent_node --node "rt-throttle-200k-tc-1600kbit"      "torrent-1m"
+
+# remove 10k 80kbit
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
                  --completed     "rt-throttle-unlimited:torrent-1m" \
-                 --not-completed "rt-throttle-unlimited-tc-8kbit:torrent-1m" \
+                 --not-completed "rt-throttle-unlimited-tc-80kbit:torrent-1m" \
+                 --completed     "rt-throttle-unlimited-tc-1600kbit:torrent-1m" \
+                 --not-completed "rt-throttle-10k:torrent-1m" \
+                 --not-completed "rt-throttle-10k-tc-1600kbit:torrent-1m" \
                  --completed     "rt-throttle-200k:torrent-1m" \
-                 --not-completed "rt-throttle-200k-tc-8kbit:torrent-1m"
+                 --not-completed "rt-throttle-200k-tc-80kbit:torrent-1m" \
+                 --completed     "rt-throttle-200k-tc-1600kbit:torrent-1m"
 
 rdo_test_end

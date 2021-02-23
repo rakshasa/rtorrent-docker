@@ -270,7 +270,7 @@ rdo_network_tc_add_qdisc() {
 
   rdo__call_host sudo tc \
                  qdisc add dev "$(rdo_network_interface_name "${node_name}")" \
-                 root tbf rate 8kbit \
-                 latency 1ms \
-                 burst 2048
+                 root tbf rate "${rate}" \
+                 latency 50ms \
+                 burst 1540
 }
