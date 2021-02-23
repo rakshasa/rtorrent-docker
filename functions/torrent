@@ -67,8 +67,12 @@ rdo_torrent_create() {
 
   eval "$(args::init_options_string "rdo torrent create NAME" "name" "Create a torrent.")"
 
-  args::new_option "url" req_string "" "Announce url" \
-                   'local url' 'url="${args__1}"'
+  args::new_option "domain" string "" "Tracker domain name" \
+                   'local url' 'url="http://${args__1}:6969/announce.php"'
+  args::new_option "size-kb" string "" "Size in kilobytes" \
+                   'local torrent_size=$(( 1024 * 1024 ))' 'torrent_size=$(( args__1 * 1024 ))'
+  args::new_option "size-mb" string "" "Size in megabytes" \
+                   '' 'torrent_size=$(( args__1 * 1024 * 1024 ))'
 
   eval "$(args::process)"
 
@@ -79,7 +83,7 @@ rdo_torrent_create() {
   rm -rf "${self_path}"{,.torrent}
 
   mkdir -p "${self_path}"
-  rdo_torrent__create_random_file "/torrents/${name}/file"
+  rdo_torrent__create_random_file "/torrents/${name}/file" "${torrent_size}"
 
   local create_args=(
     #-a "http://example.com:1234/announce.php"
@@ -91,6 +95,8 @@ rdo_torrent_create() {
   create_args+=("/torrents/${name}")
 
   docker exec -t "rdo-utils-mktorrent" mktorrent "${create_args[@]}" > /dev/null
+
+  echo "torrents/${name}"
 }
 
 rdo_torrent_wait() {
@@ -323,7 +329,8 @@ rdo_torrent_node() {
   fi
 
   if [[ "${seed}" == "yes" ]]; then
-    docker cp "${self_path}" "${node}:/torrents/${name}"
+    # docker cp does not work for tmpfs, so use tar and exec
+    tar -cf - -C "$(dirname "${self_path}")" "$(basename "${self_path}")" | docker exec -i "${node}" tar -xf - -C "/torrents"
   fi
 
   cp -r "${self_path}.torrent" "${node_path}/watch/${name}.torrent"
@@ -355,8 +362,9 @@ rdo_torrent__init() {
 
 rdo_torrent__create_random_file() {
   local filename="${1:?Missing filename argument.}"
+  local filesize="${2:?Missing filesize argument.}"
 
-  local cmd="head -c '$(( 5 * 1024 * 1024 ))' < <(head -c 8000 /dev/urandom; while true; do cat '${filename}'; done) > '${filename}'"
+  local cmd="head -c '${filesize}' < <(head -c 8000 /dev/urandom; while true; do cat '${filename}'; done) > '${filename}'"
 
   docker exec -t "rdo-utils-mktorrent" bash -c "${cmd}"
 }

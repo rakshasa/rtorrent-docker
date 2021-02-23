@@ -36,8 +36,8 @@ rdo_init_machine() {
   local env_args=()
   local machine_args=()
 
-  env_args+=("--docker-machine" "rtorrent-machine")
-  machine_args+=("--name" "rtorrent-machine")
+  env_args+=("--docker-machine" "rdo")
+  machine_args+=("--name" "rdo")
 
   rm -f "${DATA_PATH}/env" &> /dev/null || :
 
