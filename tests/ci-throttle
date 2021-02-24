@@ -68,7 +68,7 @@ for client in "${test_throttle_clients[@]}"; do
   rdo_stage_rtorrent "${default_client_args[@]}" "${client}"
 done
 
-# Using rate < 8kbit(?) kills docker containers.
+# Using rate < 8kbit(?) kills docker containers, or other issues.
 rdo_network_tc_replace_root_tbf --rate 8kbit "${test_throttle_clients[@]}"
 
 rdo_stage_append_rc \

@@ -23,7 +23,9 @@ pkg-add autoconf \
         musl-dev \
         ncurses-dev \
         openssl-dev \
-        zlib-dev
+        zlib-dev \
+        \
+        libexecinfo-dev
 
 RUN echo -e "\033[0;32msetting configure flags\033[0m"; set -xe; \
 \
