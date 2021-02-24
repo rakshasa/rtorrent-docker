@@ -68,7 +68,8 @@ for client in "${test_throttle_clients[@]}"; do
   rdo_stage_rtorrent "${default_client_args[@]}" "${client}"
 done
 
-rdo_network_tc_replace_root_tbf --rate 80kbit "${test_throttle_clients[@]}"
+# Using rate < 8kbit(?) kills docker containers.
+rdo_network_tc_replace_root_tbf --rate 8kbit "${test_throttle_clients[@]}"
 
 rdo_stage_append_rc \
   --node "rt-throttle-10k-tc-unlimited" \
@@ -85,11 +86,13 @@ for client in "${test_throttle_clients[@]}"; do
   rdo_torrent_node --node "${client}" "torrent-1m"
 done
 
-rdo_stage_deploy
-rdo_torrent_wait --print --wait-all $(printf -- " --hash-done %s:torrent-1m" "${test_throttle_clients[@]}")
-
+# Start torrents:
+#
 # 1mbyte /   80kbit/s = 100s
 # 1mbyte / 1600kbit/s = 5s
+
+rdo_stage_deploy
+rdo_torrent_wait --print --wait-all $(printf -- " --hash-done %s:torrent-1m" "${test_throttle_clients[@]}")
 
 rdo_network_tc_del_root                         "rt-throttle-unlimited-tc-unlimited"
 rdo_network_tc_replace_root_tbf --rate 80kbit   "rt-throttle-unlimited-tc-80kbit"
