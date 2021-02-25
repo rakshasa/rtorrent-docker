@@ -34,7 +34,7 @@ default_rtorrent_args=(
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global"
 
 rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global" "rt-seed-global"
-rdo_torrent_node   --node "rt-seed-global" --seed "torrent-global"
+rdo_torrent_node   --seeder "rt-seed-global" "torrent-global"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
@@ -48,11 +48,15 @@ rdo_torrent_wait --print --wait-all \
 # Leechers:
 #
 
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global" "rt-leech-global"
-rdo_torrent_node   --node "rt-leech-global" "torrent-global"
+test_clients=(
+  "rt-leech-global"
+  "rt-leech-nat"
+)
 
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global" "rt-leech-global"
 rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat"    "rt-leech-nat"
-rdo_torrent_node   --node "rt-leech-nat"    "torrent-global"
+
+rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-global"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
