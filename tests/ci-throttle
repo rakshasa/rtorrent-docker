@@ -6,10 +6,6 @@
 #  * Increase base time of test to properly test throttling.
 
 
-#
-# Test default behavior of rtorrent in various network setttings.
-#
-
 rdo_test_begin
 
 
@@ -37,7 +33,7 @@ default_client_args=(
 rdo_stage_rtorrent "${default_client_args[@]}" "rt-seed-global"
 
 rdo_torrent_create --domain "rt-tracker-global.rt" --size-mb "1" "torrent-1m"
-rdo_torrent_node --seed --node "rt-seed-global" "torrent-1m"
+rdo_torrent_node   --seeder "rt-seed-global" "torrent-1m"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
@@ -64,9 +60,7 @@ test_throttle_clients=(
   "rt-throttle-200k-tc-1600kbit"
 )
 
-for client in "${test_throttle_clients[@]}"; do
-  rdo_stage_rtorrent "${default_client_args[@]}" "${client}"
-done
+rdo_stage_rtorrent "${default_client_args[@]}" "${test_throttle_clients[@]}"
 
 # Using rate < 8kbit(?) kills docker containers, or other issues.
 rdo_network_tc_replace_root_tbf --rate 8kbit "${test_throttle_clients[@]}"
@@ -82,9 +76,7 @@ rdo_stage_append_rc \
   --node "rt-throttle-200k-tc-1600kbit" \
   "throttle.global_down.max_rate.set_kb = 200"
 
-for client in "${test_throttle_clients[@]}"; do
-  rdo_torrent_node --node "${client}" "torrent-1m"
-done
+rdo_torrent_node $(printf -- " --leecher %s" "${test_throttle_clients[@]}") "torrent-1m"
 
 # Start torrents:
 #

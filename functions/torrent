@@ -311,31 +311,34 @@ rdo_torrent_wait() {
 }
 
 rdo_torrent_node() {
-  eval "$(args::init_options_string "rdo torrent node TORRENT-NAME" "torrent_name" "Add torrent to a client node.")"
+  eval "$(args::init_options_string "rdo torrent node TORRENT-NAME" "torrent_name" "Add torrent to client nodes.")"
 
-  args::new_option "node" req_string "" "Client node name" \
-    'local node_name' 'node_name="${args__1}"'
-  args::new_option "seed" empty "" "Seed torrent" \
-    'local seed' 'seed=yes'
+  args::new_option "leecher" string "" "Add leecher node" \
+                   'local leecher=()' 'leecher+=("${args__1}")'
+  args::new_option "seeder" string "" "Add seeder node" \
+                   'local seeder=()' 'seeder+=("${args__1}")'
 
   eval "$(args::process)"
 
   local self_path="./run/torrents/${torrent_name}"
-  local node_path="./run/current/clients/${node_name}"
 
-  if [[ ! -f "${self_path}.torrent" ]]; then
-    print_error "could not find torrent: ${self_path}.torrent"
-    return 1
-  fi
-
-  if [[ "${seed}" == "yes" ]]; then
-    # docker cp does not work for tmpfs, so use tar and exec
+  local node_name
+  for node_name in "${seeder[@]}"; do
     tar -cf - -C "$(dirname "${self_path}")" "$(basename "${self_path}")" | docker exec -i "${node_name}" tar -xf - -C "/torrents"
-  fi
+  done
 
-  cp -r "${self_path}.torrent" "${node_path}/watch/${torrent_name}.torrent"
+  for node_name in "${seeder[@]}" "${leecher[@]}"; do
+    local node_path="./run/current/clients/${node_name}"
 
-  print_normal "torrent/${torrent_name}/node/${node_name}"
+    if [[ ! -f "${self_path}.torrent" ]]; then
+      print_error "could not find torrent: ${self_path}.torrent"
+      return 1
+    fi
+
+    cp -r "${self_path}.torrent" "${node_path}/watch/${torrent_name}.torrent"
+
+    print_normal "torrent/${torrent_name}/node/${node_name}"
+  done
 }
 
 # Helper methods:
