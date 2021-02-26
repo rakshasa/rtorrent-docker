@@ -1,11 +1,18 @@
 #!/bin/bash
 
+set -e
+
+TESTS=(
+  ci-default
+
+  ci-low-diskspace
+  ci-throttle
+)
+
 SUCCESSFUL_TESTS=()
 FAILED_TESTS=()
 
-run_test() {
-  local test_name="${1:?Missing argument.}"
-
+for test_name in "${TESTS[@]}"; do
   print_progress
   print_progress "running test: ${test_name}"
   print_progress
@@ -23,10 +30,7 @@ run_test() {
 
     FAILED_TESTS+=("${test_name}")
   fi
-}
-
-run_test ci-default
-run_test ci-throttle
+done
 
 print_progress "CI results:"
 print_progress
