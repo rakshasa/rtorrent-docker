@@ -272,19 +272,25 @@ rdo_network_tc_replace_root_tbf() {
 
   eval "$(args::process)"
 
+  local commands
+
   local node_name
   for node_name in "${@}"; do
     local node_ifname
     node_ifname="$(rdo_network_interface_name "${node_name}")"
 
-    echo "tc_replace_root_tbf/${node_name}/${node_ifname}/rate:${rate}"
+    tc_command=(
+      tc qdisc replace dev "'${node_ifname}'"
+      root tbf
+      rate "'${rate}'"
+      latency 50ms
+      burst 1540
+    )
 
-    rdo__call_host sudo tc qdisc replace dev "${node_ifname}" \
-                   root tbf \
-                   rate "${rate}" \
-                   latency 50ms \
-                   burst 1540
+    commands+="$(echo "echo 'tc_replace_root_tbf/${node_name}/${node_ifname}/rate:${rate}' && ${tc_command[@]} && ")"
   done
+
+  rdo__call_host sudo bash -c "\"${commands} : \""
 }
 
 rdo_network_tc_del_root() {
@@ -292,12 +298,20 @@ rdo_network_tc_del_root() {
 
   eval "$(args::process)"
 
+  local commands
+
   local node_name
   for node_name in "${@}"; do
     local node_ifname
     node_ifname="$(rdo_network_interface_name "${node_name}")"
 
-    rdo__call_host sudo tc qdisc del dev "${node_ifname}" \
-                   root
+    tc_command=(
+      tc qdisc del dev "'${node_ifname}'"
+      root
+    )
+
+    commands+="$(echo "echo 'tc_del_root/${node_name}/${node_ifname}/rate:${rate}' && ${tc_command[@]} && ")"
   done
+
+  rdo__call_host sudo bash -c "\"${commands} : \""
 }
