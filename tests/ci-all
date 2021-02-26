@@ -2,22 +2,22 @@
 
 set -e
 
-TESTS=(
+local TESTS=(
   ci-default
-
   ci-low-diskspace
   ci-throttle
 )
 
-SUCCESSFUL_TESTS=()
-FAILED_TESTS=()
+local SUCCESSFUL_TESTS=()
+local FAILED_TESTS=()
 
+local test_name
 for test_name in "${TESTS[@]}"; do
   print_progress
   print_progress "running test: ${test_name}"
   print_progress
 
-  if ( eval echo "$(cat "./tests/${test_name}")" ); then
+  if ./rdo batch "./tests/${test_name}"; then
     print_progress
     print_progress "*** SUCCEEDED ***"
     print_progress
@@ -40,7 +40,11 @@ for t in "${SUCCESSFUL_TESTS[@]}"; do
 done
 
 for t in "${FAILED_TESTS[@]}"; do
-  print_failed "failed: ${t}"
+  print_error "failed: ${t}"
 done
 
 print_progress
+
+if (( ${#FAILED_TESTS[@]} != 0 )); then
+  return 1
+fi
