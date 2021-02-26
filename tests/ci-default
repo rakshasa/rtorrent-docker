@@ -41,7 +41,7 @@ rdo_torrent_wait --print --wait-all \
                  \
                  --hash-done     "rt-seed-global:torrent-global" \
                  --seeding       "rt-seed-global:torrent-global" \
-                 --not-completed "rt-seed-global:torrent-global"
+                 --completed "rt-seed-global:torrent-global"
 
 
 #

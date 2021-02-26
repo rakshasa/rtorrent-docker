@@ -268,7 +268,7 @@ rdo_torrent_wait() {
     exit 1
   fi
 
-  local result=$(( 0 ))
+  local failed
 
   local start_time=$(( SECONDS ))
   local timeout_hash_done=$(( SECONDS + 15 ))
@@ -281,10 +281,13 @@ rdo_torrent_wait() {
   local current_torrents=("${hash_done_torrents[@]}")
   local current_not_nodes=("${not_hash_done_nodes[@]}")
   local current_not_torrents=("${not_hash_done_torrents[@]}")
-  rdo_torrent__wait_torrents || (( result += ${?} ))
 
-  if (( result != 0 )) && [[ "${wait_all}" != "yes" ]]; then
-    return $(( result ))
+  if ! rdo_torrent__wait_torrents; then
+    failed="yes"
+
+    if [[ "${wait_all}" != "yes" ]]; then
+      return 1
+    fi
   fi
 
   local current_category="seeding"
@@ -293,10 +296,13 @@ rdo_torrent_wait() {
   local current_torrents=("${seeding_torrents[@]}")
   local current_not_nodes=("${not_seeding_nodes[@]}")
   local current_not_torrents=("${not_seeding_torrents[@]}")
-  rdo_torrent__wait_torrents || (( result += ${?} ))
 
-  if (( result != 0 )) && [[ "${wait_all}" != "yes" ]]; then
-    return $(( result ))
+  if ! rdo_torrent__wait_torrents; then
+    failed="yes"
+
+    if [[ "${wait_all}" != "yes" ]]; then
+      return 1
+    fi
   fi
 
   local current_category="completed"
@@ -305,9 +311,16 @@ rdo_torrent_wait() {
   local current_torrents=("${completed_torrents[@]}")
   local current_not_nodes=("${not_completed_nodes[@]}")
   local current_not_torrents=("${not_completed_torrents[@]}")
-  rdo_torrent__wait_torrents || (( result += ${?} ))
 
-  return $(( result ))
+  if ! rdo_torrent__wait_torrents; then
+    failed="yes"
+  fi
+
+  if [[ "${failed}" == "yes" ]]; then
+    return 1
+  fi
+
+  echo success
 }
 
 rdo_torrent_node() {
@@ -432,7 +445,7 @@ rdo_torrent__wait_torrents() {
           print_error " failed_not_${current_category}:${node}:${torrent} $(( SECONDS - start_time ))s"
         fi
 
-        (( result += 1 ))
+        : $(( result += 1 ))
         continue
       fi
 
@@ -458,7 +471,7 @@ rdo_torrent__wait_torrents() {
       print_error "    failed__${current_category}:${node}:${torrent} $(( SECONDS - start_time ))s"
     fi
 
-    (( result += 1 ))
+    : $(( result += 1 ))
   done
 
   for (( idx=0; idx < ${#current_not_nodes[@]}; idx++ )); do
@@ -470,5 +483,5 @@ rdo_torrent__wait_torrents() {
     fi
   done
 
-  return $(( result ))
+  return $(( result != 0 ))
 }
