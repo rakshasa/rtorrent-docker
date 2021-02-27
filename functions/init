@@ -45,6 +45,10 @@ rdo_init_machine() {
   rdo env create "${env_args[@]}"
   rdo machine create "${machine_args[@]}"
 
+  cat > "${DATA_PATH}/env.engine" <<EOF
+export DOCKER_CONTEXT="default"
+EOF
+
   print_progress "ready to start bash session"
 }
 

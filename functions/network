@@ -267,8 +267,10 @@ rdo_network_tc_replace_root_tbf() {
   eval "$(args::init_options_default "rdo network tc-replace-root-tbf [NODE-NAME]..." "Replace tc root tbf rule of nodes.")"
 
   # Using rate < 8kbit kills docker containers.
-  args::new_option "rate" req_string "" "Ingress traffic rate" \
+  args::new_option "rate" req_string "" "Limit ingress traffic rate" \
                    'local rate' 'rate="${args__1}"'
+  args::new_option "rate-epsilon" empty "" "Limit ingress traffic rate to lowest possible" \
+                   'local rate' 'rate=8kbit'
 
   eval "$(args::process)"
 

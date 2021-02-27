@@ -12,6 +12,7 @@ RUN \
 \
 pkg-add curl \
         cppunit \
+        libexecinfo \
         libgcc \
         libstdc++ \
         musl \

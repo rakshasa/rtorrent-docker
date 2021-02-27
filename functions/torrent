@@ -319,8 +319,6 @@ rdo_torrent_wait() {
   if [[ "${failed}" == "yes" ]]; then
     return 1
   fi
-
-  echo success
 }
 
 rdo_torrent_node() {
