@@ -257,6 +257,7 @@ rdo_build__compile_status() {
   fi
 }
 
+# TODO: Needs to delete an image if it fails, or use an intermediate tag.
 rdo_build__check_compile() {
   local context_name="${1:?Missing context name argument.}"
 
@@ -269,12 +270,12 @@ rdo_build__check_compile() {
 }
 
 rdo_build__libtorrent() {
-  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent" --build-arg "IGNORE_BUILD_ERROR=yes" "build/rtorrent"
+  rdo_build__build --context-type "compile" --context-name "libtorrent" --filename "build.libtorrent" --build-arg "IGNORE_BUILD_ERROR=no" "build/rtorrent"
   rdo_build__check_compile "libtorrent"
 }
 
 rdo_build__rtorrent() {
-  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent" --build-arg "IGNORE_BUILD_ERROR=yes" "build/rtorrent"
+  rdo_build__build --context-type "compile" --context-name "rtorrent" --filename "build.rtorrent" --build-arg "IGNORE_BUILD_ERROR=no" "build/rtorrent"
   rdo_build__check_compile "rtorrent"
   rdo_build__rtorrent_run
 }

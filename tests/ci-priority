@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# Missing tests:
+#
+#  * Add tests with throttle rather than tc.
+
+
+
+rdo_test_begin
+
+
+#
+# Topology, trackers and torrents:
+#
+
+rdo_stage_network "rt-global"
+
+rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
+rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
+
+rdo_stage_deploy
+
+default_client_args=(
+  --run-template "rt-default"
+  --network "rt-global"
+  --dns-inet "rt-dns-global:rt-global"
+)
+
+#
+# Seeders:
+#
+
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-seed-global"
+
+rdo_torrent_create --domain "rt-tracker-global.rt" --size-mb "1" "torrent-1m"
+rdo_torrent_create --domain "rt-tracker-global.rt" --size-mb "2" "torrent-2m"
+rdo_torrent_node   --seeder "rt-seed-global" "torrent-1m"
+rdo_torrent_node   --seeder "rt-seed-global" "torrent-2m"
+
+rdo_stage_deploy
+rdo_torrent_wait --print --wait-all \
+                 --seeding       "rt-seed-global:torrent-1m" \
+                 --seeding       "rt-seed-global:torrent-2m"
+
+
+#
+# Test throttle:
+#
+
+test_clients=(
+  "rt-priority"
+  # "rt-throttle-unlimited-tc-800kbit"
+  # "rt-throttle-10k-tc-unlimited"
+  # "rt-throttle-10k-tc-800kbit"
+  # "rt-throttle-200k-tc-unlimited"
+  # "rt-throttle-200k-tc-80kbit"
+  # "rt-throttle-200k-tc-800kbit"
+)
+
+rdo_stage_rtorrent "${default_client_args[@]}" "${test_clients[@]}"
+
+rdo_network_tc_replace_root_tbf --rate-epsilon "${test_clients[@]}"
+
+# rdo_stage_append_rc \
+#   --node "rt-throttle-10k-tc-unlimited" \
+#   --node "rt-throttle-10k-tc-800kbit" \
+#   "throttle.global_down.max_rate.set_kb = 10"
+
+rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-1m"
+
+rdo_stage_deploy
+rdo_torrent_wait --print --wait-all \
+
+
+                 # $(printf -- " --hash-done %s:torrent-1m" "${test_clients[@]}")
+
+# rdo_network_tc_del_root                        "rt-throttle-unlimited-tc-unlimited"
+# rdo_network_tc_replace_root_tbf --rate 80kbit  "rt-throttle-unlimited-tc-80kbit"
+# rdo_network_tc_replace_root_tbf --rate 800kbit "rt-throttle-unlimited-tc-800kbit"
+# rdo_network_tc_del_root                        "rt-throttle-10k-tc-unlimited"
+# rdo_network_tc_replace_root_tbf --rate 800kbit "rt-throttle-10k-tc-800kbit"
+# rdo_network_tc_del_root                        "rt-throttle-200k-tc-unlimited"
+# rdo_network_tc_replace_root_tbf --rate 80kbit  "rt-throttle-200k-tc-80kbit"
+# rdo_network_tc_replace_root_tbf --rate 800kbit "rt-throttle-200k-tc-800kbit"
+
+# rdo_torrent_wait --print --wait-all \
+#                  --completed     "rt-throttle-unlimited-tc-unlimited:torrent-1m" \
+#                  --not-completed "rt-throttle-unlimited-tc-80kbit:torrent-1m" \
+#                  --completed     "rt-throttle-unlimited-tc-800kbit:torrent-1m" \
+#                  --not-completed "rt-throttle-10k-tc-unlimited:torrent-1m" \
+#                  --not-completed "rt-throttle-10k-tc-800kbit:torrent-1m" \
+#                  --completed     "rt-throttle-200k-tc-unlimited:torrent-1m" \
+#                  --not-completed "rt-throttle-200k-tc-80kbit:torrent-1m" \
+#                  --completed     "rt-throttle-200k-tc-800kbit:torrent-1m"
+
+rdo_test_end
