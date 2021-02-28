@@ -26,6 +26,7 @@ default_client_args=(
   --dns-inet "rt-dns-global:rt-global"
 )
 
+
 #
 # Seeders:
 #
@@ -41,13 +42,22 @@ rdo_torrent_wait --print --wait-all \
                  --seeding       "rt-seed-global:torrent-1m"
 
 
+test_clients=()
+test_torrent_results=()
+test_tc_rate_none=()
+test_tc_rate_80k=()
+test_tc_rate_800k=()
+
 #
 # Test throttle:
 #
-#
+
 # Throttled clients have a TC setting so as to ensures that the
 # client-side throttle has time to kick in.
 #
+# 1mbyte /   80kbit/s = 100s
+# 1mbyte / 800kbit/s = 5s
+
 
 test_throttle_clients=(
   "rt-throttle-unlimited-tc-unlimited"
@@ -60,10 +70,33 @@ test_throttle_clients=(
   "rt-throttle-200k-tc-800kbit"
 )
 
-rdo_stage_rtorrent "${default_client_args[@]}" "${test_throttle_clients[@]}"
+test_clients+=("${test_throttle_clients[@]}")
+test_torrent_results+=(
+  --completed     "rt-throttle-unlimited-tc-unlimited:torrent-1m"
+  --not-completed "rt-throttle-unlimited-tc-80kbit:torrent-1m"
+  --completed     "rt-throttle-unlimited-tc-800kbit:torrent-1m"
+  --not-completed "rt-throttle-10k-tc-unlimited:torrent-1m"
+  --not-completed "rt-throttle-10k-tc-800kbit:torrent-1m"
+  --completed     "rt-throttle-200k-tc-unlimited:torrent-1m"
+  --not-completed "rt-throttle-200k-tc-80kbit:torrent-1m"
+  --completed     "rt-throttle-200k-tc-800kbit:torrent-1m"
+)
+test_tc_rate_none+=(
+  "rt-throttle-unlimited-tc-unlimited"
+  "rt-throttle-10k-tc-unlimited"
+  "rt-throttle-200k-tc-unlimited"
+)
+test_tc_rate_80k+=(
+  "rt-throttle-unlimited-tc-80kbit"
+  "rt-throttle-200k-tc-80kbit"
+)
+test_tc_rate_800k+=(
+  "rt-throttle-unlimited-tc-800kbit"
+  "rt-throttle-10k-tc-800kbit"
+  "rt-throttle-200k-tc-800kbit"
+)
 
-# Using rate < 8kbit(?) kills docker containers, or other issues.
-rdo_network_tc_replace_root_tbf --rate 8kbit "${test_throttle_clients[@]}"
+rdo_stage_rtorrent "${default_client_args[@]}" "${test_throttle_clients[@]}"
 
 rdo_stage_append_rc \
   --node "rt-throttle-10k-tc-unlimited" \
@@ -76,33 +109,23 @@ rdo_stage_append_rc \
   --node "rt-throttle-200k-tc-800kbit" \
   "throttle.global_down.max_rate.set_kb = 200"
 
-rdo_torrent_node $(printf -- " --leecher %s" "${test_throttle_clients[@]}") "torrent-1m"
 
-# Start torrents:
 #
-# 1mbyte /   80kbit/s = 100s
-# 1mbyte / 800kbit/s = 5s
+# Run throttle tests:
+#
+
+# Using rate < 8kbit(?) kills docker containers, or other issues.
+rdo_network_tc_replace_root_tbf --rate-epsilon "${test_throttle_clients[@]}"
+
+rdo_torrent_node $(printf -- " --leecher %s" "${test_throttle_clients[@]}") "torrent-1m"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all $(printf -- " --hash-done %s:torrent-1m" "${test_throttle_clients[@]}")
 
-rdo_network_tc_del_root                        "rt-throttle-unlimited-tc-unlimited"
-rdo_network_tc_replace_root_tbf --rate 80kbit  "rt-throttle-unlimited-tc-80kbit"
-rdo_network_tc_replace_root_tbf --rate 800kbit "rt-throttle-unlimited-tc-800kbit"
-rdo_network_tc_del_root                        "rt-throttle-10k-tc-unlimited"
-rdo_network_tc_replace_root_tbf --rate 800kbit "rt-throttle-10k-tc-800kbit"
-rdo_network_tc_del_root                        "rt-throttle-200k-tc-unlimited"
-rdo_network_tc_replace_root_tbf --rate 80kbit  "rt-throttle-200k-tc-80kbit"
-rdo_network_tc_replace_root_tbf --rate 800kbit "rt-throttle-200k-tc-800kbit"
+rdo_network_tc_del_root                         "${test_tc_rate_none[@]}"
+rdo_network_tc_replace_root_tbf --rate 80kbit   "${test_tc_rate_80k[@]}"
+rdo_network_tc_replace_root_tbf --rate 800kbit  "${test_tc_rate_800k[@]}"
 
-rdo_torrent_wait --print --wait-all \
-                 --completed     "rt-throttle-unlimited-tc-unlimited:torrent-1m" \
-                 --not-completed "rt-throttle-unlimited-tc-80kbit:torrent-1m" \
-                 --completed     "rt-throttle-unlimited-tc-800kbit:torrent-1m" \
-                 --not-completed "rt-throttle-10k-tc-unlimited:torrent-1m" \
-                 --not-completed "rt-throttle-10k-tc-800kbit:torrent-1m" \
-                 --completed     "rt-throttle-200k-tc-unlimited:torrent-1m" \
-                 --not-completed "rt-throttle-200k-tc-80kbit:torrent-1m" \
-                 --completed     "rt-throttle-200k-tc-800kbit:torrent-1m"
+rdo_torrent_wait --print --wait-all "${test_torrent_results[@]}"
 
 rdo_test_end
