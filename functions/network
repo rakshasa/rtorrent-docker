@@ -270,7 +270,7 @@ rdo_network_tc_replace_root_tbf() {
   args::new_option "rate" req_string "" "Limit ingress traffic rate" \
                    'local rate' 'rate="${args__1}"'
   args::new_option "rate-epsilon" empty "" "Limit ingress traffic rate to lowest possible" \
-                   'local rate' 'rate=8kbit'
+                   'local rate' 'rate=8kbit; args__opt_value__rate=8kbit'
 
   eval "$(args::process)"
 
@@ -312,7 +312,7 @@ rdo_network_tc_del_root() {
       root
     )
 
-    commands+="$(echo "echo 'tc_del_root/${node_name}/${node_ifname}/rate:${rate}' && ${tc_command[@]} && ")"
+    commands+="$(echo "echo 'tc_del_root/${node_name}/${node_ifname}' && ${tc_command[@]} && ")"
   done
 
   rdo__call_host sudo bash -c "\"${commands} : \""

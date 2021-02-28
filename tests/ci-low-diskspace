@@ -4,6 +4,7 @@
 #
 #  * Test with multiple torrents.
 #  * Test with external source of disk usage, both adding and deleting.
+#  * Test with diskspace already used up.
 
 
 rdo_test_begin
@@ -41,53 +42,82 @@ rdo_torrent_wait --print --wait-all \
                  --seeding       "rt-seed-global:torrent-1m"
 
 
+test_clients=()
+test_torrent_results=()
+
+
 #
-# Test low diskspace:
+# Test with unlimited diskspace:
 #
 
 test_df_unlimited_clients=(
-  "rt-low-diskspace-none-df-unlimited"
-  "rt-low-diskspace-default-df-unlimited"
-  "rt-low-diskspace-500k-df-unlimited"
-  "rt-low-diskspace-1500k-df-unlimited"
+  "rt-df-unlimited-low-diskspace-none"
+  "rt-df-unlimited-low-diskspace-default"
+  "rt-df-unlimited-low-diskspace-500k"
+  "rt-df-unlimited-low-diskspace-1500k"
 )
-
-test_df_2mb_clients=(
-  "rt-low-diskspace-none-df-2mb"
-  "rt-low-diskspace-default-df-2mb"
-  "rt-low-diskspace-500k-df-2mb"
-  "rt-low-diskspace-1500k-df-2mb"
-)
-
-# Test diskspace used up.
-
-test_clients=(
-  "${test_df_unlimited_clients[@]}"
-  "${test_df_2mb_clients[@]}"
+test_clients+=("${test_df_unlimited_clients[@]}")
+test_torrent_results+=(
+  --completed "rt-df-unlimited-low-diskspace-none:torrent-1m"
+  --completed "rt-df-unlimited-low-diskspace-default:torrent-1m"
+  --completed "rt-df-unlimited-low-diskspace-500k:torrent-1m"
+  --completed "rt-df-unlimited-low-diskspace-1500k:torrent-1m"
 )
 
 rdo_stage_rtorrent "${default_client_args[@]}" \
                    "${test_df_unlimited_clients[@]}"
+
+rdo_stage_append_rc \
+  --node "rt-df-unlimited-low-diskspace-none" \
+  "schedule_remove2 = low_diskspace"
+rdo_stage_append_rc \
+  --node "rt-df-unlimited-low-diskspace-500k" \
+  "schedule2 = low_diskspace,1,1,((close_low_diskspace,500K))"
+rdo_stage_append_rc \
+  --node "rt-df-unlimited-low-diskspace-1500k" \
+  "schedule2 = low_diskspace,1,1,((close_low_diskspace,1500K))"
+
+
+#
+# Test with 2mb diskspace:
+#
+
+test_df_2mb_clients=(
+  "rt-df-2mb-low-diskspace-none"
+  "rt-df-2mb-low-diskspace-default"
+  "rt-df-2mb-low-diskspace-500k"
+  "rt-df-2mb-low-diskspace-1500k"
+)
+test_clients+=("${test_df_2mb_clients[@]}")
+test_torrent_results+=(
+  --completed     "rt-df-2mb-low-diskspace-none:torrent-1m"
+  --not-completed "rt-df-2mb-low-diskspace-default:torrent-1m"
+  --completed     "rt-df-2mb-low-diskspace-500k:torrent-1m"
+  --not-completed "rt-df-2mb-low-diskspace-1500k:torrent-1m"
+)
+
 rdo_stage_rtorrent "${default_client_args[@]}" \
                    --torrents-disksize $(( 2 * 1024 * 1024 )) \
                    "${test_df_2mb_clients[@]}"
 
-rdo_network_tc_replace_root_tbf --rate 8kbit "${test_clients[@]}"
-
 rdo_stage_append_rc \
-  --node "rt-low-diskspace-none-df-unlimited" \
-  --node "rt-low-diskspace-none-df-2mb" \
+  --node "rt-df-2mb-low-diskspace-none" \
   "schedule_remove2 = low_diskspace"
-
 rdo_stage_append_rc \
-  --node "rt-low-diskspace-500k-df-unlimited" \
-  --node "rt-low-diskspace-500k-df-2mb" \
+  --node "rt-df-2mb-low-diskspace-500k" \
   "schedule2 = low_diskspace,1,1,((close_low_diskspace,500K))"
-
 rdo_stage_append_rc \
-  --node "rt-low-diskspace-1500k-df-unlimited" \
-  --node "rt-low-diskspace-1500k-df-2mb" \
+  --node "rt-df-2mb-low-diskspace-1500k" \
   "schedule2 = low_diskspace,1,1,((close_low_diskspace,1500K))"
+
+
+# Add multiple torrents.
+
+#
+# Run low diskspace tests:
+#
+
+rdo_network_tc_replace_root_tbf --rate-epsilon "${test_clients[@]}"
 
 rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-1m"
 
@@ -95,16 +125,7 @@ rdo_stage_deploy
 rdo_torrent_wait --print --wait-all $(printf -- " --hash-done %s:torrent-1m" "${test_clients[@]}")
 
 rdo_network_tc_replace_root_tbf --rate 800kbit "${test_clients[@]}"
+rdo_torrent_wait --print --wait-all "${test_torrent_results[@]}"
 
-rdo_torrent_wait --print --wait-all \
-                 \
-                 --completed     "rt-low-diskspace-none-df-unlimited:torrent-1m" \
-                 --completed     "rt-low-diskspace-none-df-2mb:torrent-1m" \
-                 --completed     "rt-low-diskspace-default-df-unlimited:torrent-1m" \
-                 --not-completed "rt-low-diskspace-default-df-2mb:torrent-1m" \
-                 --completed     "rt-low-diskspace-500k-df-unlimited:torrent-1m" \
-                 --completed     "rt-low-diskspace-500k-df-2mb:torrent-1m" \
-                 --completed     "rt-low-diskspace-1500k-df-unlimited:torrent-1m" \
-                 --not-completed "rt-low-diskspace-1500k-df-2mb:torrent-1m" \
 
 rdo_test_end
