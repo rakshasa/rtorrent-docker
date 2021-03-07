@@ -55,12 +55,31 @@ rdo_stage_rtorrent "${default_client_args[@]}" "${test_clients[@]}"
 rdo_network_tc_replace_root_tbf --rate-epsilon "${test_clients[@]}"
 
 rdo_stage_append_rc \
+  $(printf -- " --node %s" "${test_clients[@]}") \
+  '# Log priority changes and piece downloads.
+log.open_file = "ci-priority", /run/self/logs/ci-priority.log
+log.add_output = "torrent_info", "ci-priority"
+log.add_output = "protocol_piece_events", "ci-priority"'
+
+rdo_stage_append_rc \
   --node "rt-priority-off" \
-  'method.set_key = event.download.inserted,priority_off,{(d.priority.set,0)}'
+  '# Set download choke queue priority to 0 and update it very second.
+method.set_key = event.download.inserted,priority_off,{(d.priority.set,0)}
 
-  # 'method.set_key = event.download.inserted,priority_off,{(d.priority.set,0),(d.update_priorities)}'
+# TODO: This crashes the client.
+# schedule2 = update_choke_queue,1,1,((choke_group.down.update_balance,0))
 
-  # 'method.set_key = event.download.inserted,priority_off, {(branch,((equal,(d.name),"torrent-1m")),((d.priority.set,0)))}'
+# TODO: This does not produce logs.
+# schedule2 = update_choke_queue,1,1,((choke_group.down.update_balance,"default"))
+
+# TODO: Test that invalid name produces errors.
+schedule2 = update_choke_queue,1,1,((choke_group.down.update_balance,"default-foo"))
+'
+
+# Set min down unchoked to zero.
+
+# TODO: Use this to select priority for torrents.
+# method.set_key = event.download.inserted,priority_off, {(branch,((equal,(d.name),"torrent-1m")),((d.priority.set,0)))}
 
 rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-1m"
 
