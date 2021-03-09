@@ -71,16 +71,7 @@ test_throttle_clients=(
 )
 
 test_clients+=("${test_throttle_clients[@]}")
-test_torrent_results+=(
-  --completed     "rt-throttle-unlimited-tc-unlimited:torrent-1m"
-  --not-completed "rt-throttle-unlimited-tc-80kbit:torrent-1m"
-  --completed     "rt-throttle-unlimited-tc-800kbit:torrent-1m"
-  --not-completed "rt-throttle-10k-tc-unlimited:torrent-1m"
-  --not-completed "rt-throttle-10k-tc-800kbit:torrent-1m"
-  --completed     "rt-throttle-200k-tc-unlimited:torrent-1m"
-  --not-completed "rt-throttle-200k-tc-80kbit:torrent-1m"
-  --completed     "rt-throttle-200k-tc-800kbit:torrent-1m"
-)
+
 test_tc_rate_none+=(
   "rt-throttle-unlimited-tc-unlimited"
   "rt-throttle-10k-tc-unlimited"
@@ -94,6 +85,17 @@ test_tc_rate_800k+=(
   "rt-throttle-unlimited-tc-800kbit"
   "rt-throttle-10k-tc-800kbit"
   "rt-throttle-200k-tc-800kbit"
+)
+
+test_torrent_results+=(
+  --completed     "rt-throttle-unlimited-tc-unlimited:torrent-1m"
+  --not-completed "rt-throttle-unlimited-tc-80kbit:torrent-1m"
+  --completed     "rt-throttle-unlimited-tc-800kbit:torrent-1m"
+  --not-completed "rt-throttle-10k-tc-unlimited:torrent-1m"
+  --not-completed "rt-throttle-10k-tc-800kbit:torrent-1m"
+  --completed     "rt-throttle-200k-tc-unlimited:torrent-1m"
+  --not-completed "rt-throttle-200k-tc-80kbit:torrent-1m"
+  --completed     "rt-throttle-200k-tc-800kbit:torrent-1m"
 )
 
 rdo_stage_rtorrent "${default_client_args[@]}" "${test_throttle_clients[@]}"
