@@ -73,7 +73,9 @@ method.set_key = event.download.inserted,priority_off,{(d.priority.set,0)}
 # schedule2 = update_choke_queue,1,1,((choke_group.down.update_balance,"default"))
 
 # TODO: Test that invalid name produces errors.
-schedule2 = update_choke_queue,1,1,((choke_group.down.update_balance,"default-foo"))
+#schedule2 = update_choke_queue,1,1,((choke_group.down.update_balance,"default-foo"))
+
+schedule2 = update_choke_queue,1,1,((choke_group.all.down.update_balance))
 '
 
 # Set min down unchoked to zero.
@@ -87,7 +89,7 @@ rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
                  $(printf -- " --hash-done %s:torrent-1m" "${test_clients[@]}")
 
-rdo_network_tc_del_root "${test_clients[@]}"
+rdo_network_tc_replace_root_tbf --rate 800kbit "${test_clients[@]}"
 
 rdo_torrent_wait --print --wait-all \
                  --completed     "rt-priority-default:torrent-1m" \
