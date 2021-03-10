@@ -12,26 +12,34 @@ PROJECT_PATH="."
 DATA_PATH="./data"
 
 source "./functions/common/init"
-is_header_included common/args || source "./functions/common/args"
-is_header_included common/utils || source "./functions/common/utils"
 
-is_header_included common.init || source "./functions/common.init"
-is_header_included common.container || source "./functions/common.container"
-is_header_included common.image || source "./functions/common.image"
-is_header_included common.system || source "./functions/common.system"
+include_source=(
+  common/args
+  common/utils
 
-# Preload any headers for commands that are likely to be executed
-# multiple times.
-is_header_included build || source "./functions/build"
-is_header_included docker || source "./functions/docker"
-is_header_included docker.clean || source "./functions/docker.clean"
-is_header_included docker.context || source "./functions/docker.context"
-is_header_included init || source "./functions/init"
-is_header_included network || source "./functions/network"
-is_header_included node || source "./functions/node"
-is_header_included run || source "./functions/run"
-is_header_included stage || source "./functions/stage"
-is_header_included torrent || source "./functions/torrent"
+  common.init
+  common.container
+  common.image
+  common.system
+
+  # Preload any headers for commands that are likely to be executed
+  # multiple times.
+  build
+  docker
+  docker.clean
+  docker.context
+  init
+  network
+  node
+  run
+  stage
+  torrent
+  torrent.wait
+)
+
+for src in "${include_source[@]}"; do
+  is_header_included "${src}" || source "./functions/${src}"
+done
 
 rdo() {
   # eval "$(args::init_subcommand "rdo" "RTorrent docker test environment")"
