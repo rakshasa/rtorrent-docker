@@ -66,10 +66,7 @@ test_torrent_results+=(
   --completed     "rt-choke-group-default-2t-complete-both:torrent-2"
   --not-completed "rt-choke-group-default-2t-starve-both:torrent-1"
   --not-completed "rt-choke-group-default-2t-starve-both:torrent-2"
-
-  # --complete-one/any with multiple torrents
-  --completed "rt-choke-group-default-2t-starve-one:torrent-1"
-  --completed "rt-choke-group-default-2t-starve-one:torrent-2"
+  --one-completed "rt-choke-group-default-2t-starve-one:torrent-1:torrent-2"
 )
 
 rdo_stage_rtorrent "${default_client_args[@]}" "${test_clients[@]}"
