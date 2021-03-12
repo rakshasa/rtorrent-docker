@@ -185,9 +185,47 @@ rdo_test_end() {
 }
 
 rdo_batch() {
-  eval "$(args::init_options_string "rdo batch FILENAME" "filename" "Run batch file")"
+  # eval "$(args::init_options_string "rdo batch FILENAME" "filename" "Run batch file")"
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo batch FILENAME'
+
+  while true; do
+    case "${1}" in
+      --help|-h)
+        echo "Usage: rdo batch FILENAME"
+        echo
+        echo "Run batch file"
+        echo
+        echo "Run 'rdo batch FILENAME COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo batch FILENAME: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
+    print_error "rdo batch FILENAME: missing or empty argument"
+    exit 1
+  fi
+
+  local filename="${1}"
+  shift
+
+  # end of generated bash args 'rdo batch FILENAME'
 
   source "${filename}"
 }

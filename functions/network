@@ -8,43 +8,144 @@ default_iptables_args=(
 )
 
 rdo_network() {
-  eval "$(args::init_subcommand "rdo network" "Manage networks.")"
+  # eval "$(args::init_subcommand "rdo network" "Manage networks.")"
 
-  args::new_command "clean" empty "Remove all networks" \
-                    'rdo_network_clean "${@}"'
-  args::new_command "ls" default "List networks" \
-                    'rdo_network_ls "${@}"'
+  # args::new_command "clean" empty "Remove all networks" \
+  #                   'rdo_network_clean "${@}"'
+  # args::new_command "ls" default "List networks" \
+  #                   'rdo_network_ls "${@}"'
 
-  args::new_command "address" default "Get network address" \
-                    'rdo_network_address "${@}"'
-  args::new_command "bridge" default "Get bridge name" \
-                    'rdo_network_bridge "${@}"'
-  args::new_command "interface-name" default "Get interface name" \
-                    'rdo_network_interface_name "${@}"'
-  args::new_command "prefix" default "Get network prefix" \
-                    'rdo_network_prefix "${@}"'
-  args::new_command "subnet" default "Get network subnet" \
-                    'rdo_network_subnet "${@}"'
+  # args::new_command "address" default "Get network address" \
+  #                   'rdo_network_address "${@}"'
+  # args::new_command "bridge" default "Get bridge name" \
+  #                   'rdo_network_bridge "${@}"'
+  # args::new_command "interface-name" default "Get interface name" \
+  #                   'rdo_network_interface_name "${@}"'
+  # args::new_command "prefix" default "Get network prefix" \
+  #                   'rdo_network_prefix "${@}"'
+  # args::new_command "subnet" default "Get network subnet" \
+  #                   'rdo_network_subnet "${@}"'
 
-  args::new_command "iptables" default "Call iptables on docker host" \
-                    'rdo_network_iptables "${@}"'
-  args::new_command "iptables-flush" empty "Flush rdo-specific iptables rules on docker host" \
-                    'rdo_network_iptables_flush'
-  args::new_command "iptables-list" empty "List rdo-specific iptables rules on docker host" \
-                    'rdo_network_iptables_list'
-  args::new_command "iptables-save" default "Call iptables-save on docker host" \
-                    'rdo_network_iptables_save "${@}"'
-  args::new_command "nat" default "Add nat between networks" \
-                    'rdo_network_nat "${@}"'
+  # args::new_command "iptables" default "Call iptables on docker host" \
+  #                   'rdo_network_iptables "${@}"'
+  # args::new_command "iptables-flush" empty "Flush rdo-specific iptables rules on docker host" \
+  #                   'rdo_network_iptables_flush'
+  # args::new_command "iptables-list" empty "List rdo-specific iptables rules on docker host" \
+  #                   'rdo_network_iptables_list'
+  # args::new_command "iptables-save" default "Call iptables-save on docker host" \
+  #                   'rdo_network_iptables_save "${@}"'
+  # args::new_command "nat" default "Add nat between networks" \
+  #                   'rdo_network_nat "${@}"'
 
-  args::new_command "tc" default "Call tc on docker host" \
-                    'rdo_network_tc "${@}"'
-  args::new_command "tc-replace-root-tbf" default "Replace tc root tbf rule of node" \
-                    'rdo_network_tc_replace_root_tbf "${@}"'
-  args::new_command "tc-del-root" default "Delete root rule of node" \
-                    'rdo_network_tc_del_root "${@}"'
+  # args::new_command "tc" default "Call tc on docker host" \
+  #                   'rdo_network_tc "${@}"'
+  # args::new_command "tc-replace-root-tbf" default "Replace tc root tbf rule of node" \
+  #                   'rdo_network_tc_replace_root_tbf "${@}"'
+  # args::new_command "tc-del-root" default "Delete root rule of node" \
+  #                   'rdo_network_tc_del_root "${@}"'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo network'
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo network"
+        echo
+        echo "Manage networks."
+        echo
+        echo "Commands:"
+        echo "  clean                 Remove all networks"
+        echo "  ls                    List networks"
+        echo "  address               Get network address"
+        echo "  bridge                Get bridge name"
+        echo "  interface-name        Get interface name"
+        echo "  prefix                Get network prefix"
+        echo "  subnet                Get network subnet"
+        echo "  iptables              Call iptables on docker host"
+        echo "  iptables-flush        Flush rdo-specific iptables rules on docker host"
+        echo "  iptables-list         List rdo-specific iptables rules on docker host"
+        echo "  iptables-save         Call iptables-save on docker host"
+        echo "  nat                   Add nat between networks"
+        echo "  tc                    Call tc on docker host"
+        echo "  tc-replace-root-tbf   Replace tc root tbf rule of node"
+        echo "  tc-del-root           Delete root rule of node"
+        echo
+        echo "Run 'rdo network COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo network"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    clean)
+      args::verify_command_empty "${@}"
+      rdo_network_clean "${@}"
+      ;;
+    ls)
+      rdo_network_ls "${@}"
+      ;;
+    address)
+      rdo_network_address "${@}"
+      ;;
+    bridge)
+      rdo_network_bridge "${@}"
+      ;;
+    interface-name)
+      rdo_network_interface_name "${@}"
+      ;;
+    prefix)
+      rdo_network_prefix "${@}"
+      ;;
+    subnet)
+      rdo_network_subnet "${@}"
+      ;;
+    iptables)
+      rdo_network_iptables "${@}"
+      ;;
+    iptables-flush)
+      args::verify_command_empty "${@}"
+      rdo_network_iptables_flush
+      ;;
+    iptables-list)
+      args::verify_command_empty "${@}"
+      rdo_network_iptables_list
+      ;;
+    iptables-save)
+      rdo_network_iptables_save "${@}"
+      ;;
+    nat)
+      rdo_network_nat "${@}"
+      ;;
+    tc)
+      rdo_network_tc "${@}"
+      ;;
+    tc-replace-root-tbf)
+      rdo_network_tc_replace_root_tbf "${@}"
+      ;;
+    tc-del-root)
+      rdo_network_tc_del_root "${@}"
+      ;;
+    *)
+      print_error "rdo network: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
+
+  # end of generated bash args 'rdo network'
 }
 
 rdo_network_clean() {
@@ -264,15 +365,63 @@ rdo_network_tc() {
 }
 
 rdo_network_tc_replace_root_tbf() {
-  eval "$(args::init_options_default "rdo network tc-replace-root-tbf [NODE-NAME]..." "Replace tc root tbf rule of nodes.")"
+  # eval "$(args::init_options_default "rdo network tc-replace-root-tbf [NODE-NAME]..." "Replace tc root tbf rule of nodes.")"
 
-  # Using rate < 8kbit kills docker containers.
-  args::new_option "rate" req_string "" "Limit ingress traffic rate" \
-                   'local rate' 'rate="${args__1}"'
-  args::new_option "rate-epsilon" empty "" "Limit ingress traffic rate to lowest possible" \
-                   'local rate' 'rate=8kbit; args__opt_value__rate=8kbit'
+  # # Using rate < 8kbit kills docker containers.
+  # args::new_option "rate" req_string "" "Limit ingress traffic rate" \
+  #                  'local rate' 'rate="${args__1}"'
+  # args::new_option "rate-epsilon" empty "" "Limit ingress traffic rate to lowest possible" \
+  #                  'local rate' 'rate=8kbit; args__opt_value__rate=8kbit'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo network tc-replace-root-tbf [NODE-NAME]...'
+
+  local rate
+  local rate
+  local args__opt_value__rate=
+
+  while true; do
+    case "${1}" in
+      --rate)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        local args__opt_value__rate="${args__1}"
+        shift 2
+        rate="${args__1}"
+        ;;
+      --rate-epsilon)
+        shift
+        rate=8kbit; args__opt_value__rate=8kbit
+        ;;
+      --help|-h)
+        echo "Usage: rdo network tc-replace-root-tbf [NODE-NAME]..."
+        echo
+        echo "Replace tc root tbf rule of nodes."
+        echo
+        echo "Options:"
+        echo "      --rate           Limit ingress traffic rate"
+        echo "      --rate-epsilon   Limit ingress traffic rate to lowest possible"
+        echo
+        echo "Run 'rdo network tc-replace-root-tbf [NODE-NAME]... COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if [[ -z "${args__opt_value__rate}" ]]; then
+    print_error "${args__root}: missing required flag: --rate"
+    return 1
+  fi
+
+  # end of generated bash args 'rdo network tc-replace-root-tbf [NODE-NAME]...'
 
   local commands
 
@@ -296,9 +445,34 @@ rdo_network_tc_replace_root_tbf() {
 }
 
 rdo_network_tc_del_root() {
-  eval "$(args::init_options_default "rdo network tc-del-root [NODE-NAME]..." "Delete root rule of nodes.")"
+  # eval "$(args::init_options_default "rdo network tc-del-root [NODE-NAME]..." "Delete root rule of nodes.")"
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo network tc-del-root [NODE-NAME]...'
+
+  while true; do
+    case "${1}" in
+      --help|-h)
+        echo "Usage: rdo network tc-del-root [NODE-NAME]..."
+        echo
+        echo "Delete root rule of nodes."
+        echo
+        echo "Run 'rdo network tc-del-root [NODE-NAME]... COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  # end of generated bash args 'rdo network tc-del-root [NODE-NAME]...'
 
   local commands
 

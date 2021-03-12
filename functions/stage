@@ -6,29 +6,102 @@ rdo_stage() {
   local project_path
   project_path="$(get_project_path)"
 
-  eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
+  # eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
 
-  args::new_command "init" empty "Initialize new environment for staging" \
-                    'rdo_stage_init'
-  args::new_command "deploy" empty "Deploy environment" \
-                    'rdo_stage_deploy'
-  args::new_command "clean" empty "Remove environment" \
-                    'rdo_stage_clean'
+  # args::new_command "init" empty "Initialize new environment for staging" \
+  #                   'rdo_stage_init'
+  # args::new_command "deploy" empty "Deploy environment" \
+  #                   'rdo_stage_deploy'
+  # args::new_command "clean" empty "Remove environment" \
+  #                   'rdo_stage_clean'
 
-  args::new_command "append-rc" default "Append to node's rc file" \
-                    'rdo_stage_append_rc "${@}"'
+  # args::new_command "append-rc" default "Append to node's rc file" \
+  #                   'rdo_stage_append_rc "${@}"'
 
-  args::new_command "network" default "Add network" \
-                    'rdo_stage_network "${@}"'
+  # args::new_command "network" default "Add network" \
+  #                   'rdo_stage_network "${@}"'
 
-  args::new_command "dns" default "Add dns" \
-                    'rdo_stage_dns "${@}"'
-  args::new_command "rtorrent" default "Add node" \
-                    'rdo_stage_rtorrent "${@}"'
-  args::new_command "tracker" default "Add tracker" \
-                    'rdo_stage_tracker "${@}"'
+  # args::new_command "dns" default "Add dns" \
+  #                   'rdo_stage_dns "${@}"'
+  # args::new_command "rtorrent" default "Add node" \
+  #                   'rdo_stage_rtorrent "${@}"'
+  # args::new_command "tracker" default "Add tracker" \
+  #                   'rdo_stage_tracker "${@}"'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo stage'
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo stage"
+        echo
+        echo "Manage staging of environments."
+        echo
+        echo "Commands:"
+        echo "  init        Initialize new environment for staging"
+        echo "  deploy      Deploy environment"
+        echo "  clean       Remove environment"
+        echo "  append-rc   Append to node's rc file"
+        echo "  network     Add network"
+        echo "  dns         Add dns"
+        echo "  rtorrent    Add node"
+        echo "  tracker     Add tracker"
+        echo
+        echo "Run 'rdo stage COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo stage"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    init)
+      args::verify_command_empty "${@}"
+      rdo_stage_init
+      ;;
+    deploy)
+      args::verify_command_empty "${@}"
+      rdo_stage_deploy
+      ;;
+    clean)
+      args::verify_command_empty "${@}"
+      rdo_stage_clean
+      ;;
+    append-rc)
+      rdo_stage_append_rc "${@}"
+      ;;
+    network)
+      rdo_stage_network "${@}"
+      ;;
+    dns)
+      rdo_stage_dns "${@}"
+      ;;
+    rtorrent)
+      rdo_stage_rtorrent "${@}"
+      ;;
+    tracker)
+      rdo_stage_tracker "${@}"
+      ;;
+    *)
+      print_error "rdo stage: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
+
+  # end of generated bash args 'rdo stage'
 }
 
 rdo_stage_init() {
@@ -150,11 +223,82 @@ rdo_stage_network() {
 rdo_stage_dns() {
   local create_args=()
 
-  eval "$(args::init_options_string "rdo stage dns NODE-NAME" "node_name" "Add dns to staging of environments.")"
+  # eval "$(args::init_options_string "rdo stage dns NODE-NAME" "node_name" "Add dns to staging of environments.")"
 
-  rdo_stage__container__default_args
+  # rdo_stage__container__default_args
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo stage dns NODE-NAME'
+
+  local resolve_conf
+  local networks=()
+  local run_template
+
+  while true; do
+    case "${1}" in
+      --dns-inet)
+        local args__1="${2%%:*}"
+        local args__2="${2##*:}"
+        local args__1="${args__1:?Missing argument for '${1}'.}"
+        local args__2="${args__2:?Missing argument for '${1}'.}"
+
+        if [[ "${args__1}:${args__2}" != "${2}" ]]; then
+          print_error "${args__root}: invalid option format: ${1} ${2}"
+          return 1
+        fi
+
+        shift 2
+        resolve_conf="nameserver $(cat ./run/current/dns/${args__1}/interfaces/${args__2}/inet)"
+        ;;
+      --network|-n)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        networks+=("${args__1}")
+        ;;
+      --run-template|-r)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        run_template=("${args__1}")
+        ;;
+      --help|-h)
+        echo "Usage: rdo stage dns NODE-NAME"
+        echo
+        echo "Add dns to staging of environments."
+        echo
+        echo "Options:"
+        echo "      --dns-inet       Set dns resolver to a 'dns_node:network'"
+        echo "  -n, --network        Connect tracker to network"
+        echo "  -r, --run-template   Use template to create run script"
+        echo
+        echo "Run 'rdo stage dns NODE-NAME COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo stage dns NODE-NAME: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
+    print_error "rdo stage dns NODE-NAME: missing or empty argument"
+    exit 1
+  fi
+
+  local node_name="${1}"
+  shift
+
+  # end of generated bash args 'rdo stage dns NODE-NAME'
 
   local self_type="dns"
   local image_name="rdo/run/dns:global"
@@ -173,14 +317,79 @@ rdo_stage_dns() {
 rdo_stage_rtorrent() {
   local create_args=()
 
-  eval "$(args::init_options_default "rdo stage rtorrent [NODE-NAME]..." "Stage rtorrent clients.")"
+  # eval "$(args::init_options_default "rdo stage rtorrent [NODE-NAME]..." "Stage rtorrent clients.")"
 
-  rdo_stage__container__default_args
+  # rdo_stage__container__default_args
 
-  args::new_option "torrents-disksize" string "" "Torrents volume disksize" \
-                   'local torrents_disksize' 'torrents_disksize="${args__1}"'
+  # args::new_option "torrents-disksize" string "" "Torrents volume disksize" \
+  #                  'local torrents_disksize' 'torrents_disksize="${args__1}"'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo stage rtorrent [NODE-NAME]...'
+
+  local resolve_conf
+  local networks=()
+  local run_template
+  local torrents_disksize
+
+  while true; do
+    case "${1}" in
+      --dns-inet)
+        local args__1="${2%%:*}"
+        local args__2="${2##*:}"
+        local args__1="${args__1:?Missing argument for '${1}'.}"
+        local args__2="${args__2:?Missing argument for '${1}'.}"
+
+        if [[ "${args__1}:${args__2}" != "${2}" ]]; then
+          print_error "${args__root}: invalid option format: ${1} ${2}"
+          return 1
+        fi
+
+        shift 2
+        resolve_conf="nameserver $(cat ./run/current/dns/${args__1}/interfaces/${args__2}/inet)"
+        ;;
+      --network|-n)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        networks+=("${args__1}")
+        ;;
+      --run-template|-r)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        run_template=("${args__1}")
+        ;;
+      --torrents-disksize)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        torrents_disksize="${args__1}"
+        ;;
+      --help|-h)
+        echo "Usage: rdo stage rtorrent [NODE-NAME]..."
+        echo
+        echo "Stage rtorrent clients."
+        echo
+        echo "Options:"
+        echo "      --dns-inet            Set dns resolver to a 'dns_node:network'"
+        echo "  -n, --network             Connect tracker to network"
+        echo "  -r, --run-template        Use template to create run script"
+        echo "      --torrents-disksize   Torrents volume disksize"
+        echo
+        echo "Run 'rdo stage rtorrent [NODE-NAME]... COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  # end of generated bash args 'rdo stage rtorrent [NODE-NAME]...'
 
   local self_type="clients"
   local image_name="rdo/run/rtorrent:default"
@@ -210,11 +419,82 @@ rdo_stage_rtorrent() {
 rdo_stage_tracker() {
   local create_args=()
 
-  eval "$(args::init_options_string "rdo stage tracker NODE-NAME" "node_name" "Add tracker to staging of environments.")"
+  # eval "$(args::init_options_string "rdo stage tracker NODE-NAME" "node_name" "Add tracker to staging of environments.")"
 
-  rdo_stage__container__default_args
+  # rdo_stage__container__default_args
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo stage tracker NODE-NAME'
+
+  local resolve_conf
+  local networks=()
+  local run_template
+
+  while true; do
+    case "${1}" in
+      --dns-inet)
+        local args__1="${2%%:*}"
+        local args__2="${2##*:}"
+        local args__1="${args__1:?Missing argument for '${1}'.}"
+        local args__2="${args__2:?Missing argument for '${1}'.}"
+
+        if [[ "${args__1}:${args__2}" != "${2}" ]]; then
+          print_error "${args__root}: invalid option format: ${1} ${2}"
+          return 1
+        fi
+
+        shift 2
+        resolve_conf="nameserver $(cat ./run/current/dns/${args__1}/interfaces/${args__2}/inet)"
+        ;;
+      --network|-n)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        networks+=("${args__1}")
+        ;;
+      --run-template|-r)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        run_template=("${args__1}")
+        ;;
+      --help|-h)
+        echo "Usage: rdo stage tracker NODE-NAME"
+        echo
+        echo "Add tracker to staging of environments."
+        echo
+        echo "Options:"
+        echo "      --dns-inet       Set dns resolver to a 'dns_node:network'"
+        echo "  -n, --network        Connect tracker to network"
+        echo "  -r, --run-template   Use template to create run script"
+        echo
+        echo "Run 'rdo stage tracker NODE-NAME COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo stage tracker NODE-NAME: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
+    print_error "rdo stage tracker NODE-NAME: missing or empty argument"
+    exit 1
+  fi
+
+  local node_name="${1}"
+  shift
+
+  # end of generated bash args 'rdo stage tracker NODE-NAME'
 
   local self_type="trackers"
   local image_name="rdo/run/opentracker:global"

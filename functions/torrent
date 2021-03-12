@@ -65,16 +65,77 @@ rdo_torrent() {
 rdo_torrent_create() {
   rdo_torrent__init
 
-  eval "$(args::init_options_string "rdo torrent create NAME" "name" "Create a torrent.")"
+  # eval "$(args::init_options_string "rdo torrent create NAME" "name" "Create a torrent.")"
 
-  args::new_option "domain" string "" "Tracker domain name" \
-                   'local url' 'url="http://${args__1}:6969/announce.php"'
-  args::new_option "size-kb" string "" "Size in kilobytes" \
-                   'local torrent_size=$(( 1024 * 1024 ))' 'torrent_size=$(( args__1 * 1024 ))'
-  args::new_option "size-mb" string "" "Size in megabytes" \
-                   '' 'torrent_size=$(( args__1 * 1024 * 1024 ))'
+  # args::new_option "domain" string "" "Tracker domain name" \
+  #                  'local url' 'url="http://${args__1}:6969/announce.php"'
+  # args::new_option "size-kb" string "" "Size in kilobytes" \
+  #                  'local torrent_size=$(( 1024 * 1024 ))' 'torrent_size=$(( args__1 * 1024 ))'
+  # args::new_option "size-mb" string "" "Size in megabytes" \
+  #                  '' 'torrent_size=$(( args__1 * 1024 * 1024 ))'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo torrent create NAME'
+
+  local url
+  local torrent_size=$(( 1024 * 1024 ))
+
+  while true; do
+    case "${1}" in
+      --domain)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        url="http://${args__1}:6969/announce.php"
+        ;;
+      --size-kb)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        torrent_size=$(( args__1 * 1024 ))
+        ;;
+      --size-mb)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        torrent_size=$(( args__1 * 1024 * 1024 ))
+        ;;
+      --help|-h)
+        echo "Usage: rdo torrent create NAME"
+        echo
+        echo "Create a torrent."
+        echo
+        echo "Options:"
+        echo "      --domain    Tracker domain name"
+        echo "      --size-kb   Size in kilobytes"
+        echo "      --size-mb   Size in megabytes"
+        echo
+        echo "Run 'rdo torrent create NAME COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo torrent create NAME: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
+    print_error "rdo torrent create NAME: missing or empty argument"
+    exit 1
+  fi
+
+  local name="${1}"
+  shift
+
+  # end of generated bash args 'rdo torrent create NAME'
 
   local self_path="./run/torrents/${name}"
 
@@ -100,14 +161,69 @@ rdo_torrent_create() {
 }
 
 rdo_torrent_node() {
-  eval "$(args::init_options_string "rdo torrent node TORRENT-NAME" "torrent_name" "Add torrent to client nodes.")"
+  # eval "$(args::init_options_string "rdo torrent node TORRENT-NAME" "torrent_name" "Add torrent to client nodes.")"
 
-  args::new_option "leecher" string "" "Add leecher node" \
-                   'local leecher=()' 'leecher+=("${args__1}")'
-  args::new_option "seeder" string "" "Add seeder node" \
-                   'local seeder=()' 'seeder+=("${args__1}")'
+  # args::new_option "leecher" string "" "Add leecher node" \
+  #                  'local leecher=()' 'leecher+=("${args__1}")'
+  # args::new_option "seeder" string "" "Add seeder node" \
+  #                  'local seeder=()' 'seeder+=("${args__1}")'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo torrent node TORRENT-NAME'
+
+  local leecher=()
+  local seeder=()
+
+  while true; do
+    case "${1}" in
+      --leecher)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        leecher+=("${args__1}")
+        ;;
+      --seeder)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        seeder+=("${args__1}")
+        ;;
+      --help|-h)
+        echo "Usage: rdo torrent node TORRENT-NAME"
+        echo
+        echo "Add torrent to client nodes."
+        echo
+        echo "Options:"
+        echo "      --leecher   Add leecher node"
+        echo "      --seeder    Add seeder node"
+        echo
+        echo "Run 'rdo torrent node TORRENT-NAME COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo torrent node TORRENT-NAME: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
+    print_error "rdo torrent node TORRENT-NAME: missing or empty argument"
+    exit 1
+  fi
+
+  local torrent_name="${1}"
+  shift
+
+  # end of generated bash args 'rdo torrent node TORRENT-NAME'
 
   local self_path="./run/torrents/${torrent_name}"
 
