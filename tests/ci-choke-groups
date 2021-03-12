@@ -30,15 +30,14 @@ default_client_args=(
 
 rdo_stage_rtorrent "${default_client_args[@]}" "rt-seed-global"
 
-rdo_torrent_create --domain "rt-tracker-global.rt" --size-mb "1" "torrent-1"
-rdo_torrent_create --domain "rt-tracker-global.rt" --size-mb "1" "torrent-2"
-rdo_torrent_node   --seeder "rt-seed-global" "torrent-1"
-rdo_torrent_node   --seeder "rt-seed-global" "torrent-2"
+for i in {1..3}; do
+  rdo_torrent_create --domain "rt-tracker-global.rt" --size-mb "1" "torrent-${i}"
+  rdo_torrent_node   --seeder "rt-seed-global" "torrent-${i}"
+done
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
-                 --seeding       "rt-seed-global:torrent-1" \
-                 --seeding       "rt-seed-global:torrent-2"
+                 $(printf -- " --seeding rt-seed-global:torrent-%s" {1..3})
 
 
 #
@@ -66,7 +65,11 @@ test_torrent_results+=(
   --completed     "rt-choke-group-default-2t-complete-both:torrent-2"
   --not-completed "rt-choke-group-default-2t-starve-both:torrent-1"
   --not-completed "rt-choke-group-default-2t-starve-both:torrent-2"
-  --one-completed "rt-choke-group-default-2t-starve-one:torrent-1:torrent-2"
+
+  # --one-completed "rt-choke-group-default-2t-starve-one:torrent-1+torrent-2"
+
+  # --one-completed "rt-choke-group-default-2t-complete-both:torrent-1+torrent-2"
+  # --one-completed "rt-choke-group-default-2t-starve-both:torrent-1+torrent-2"
 )
 
 rdo_stage_rtorrent "${default_client_args[@]}" "${test_clients[@]}"
@@ -83,6 +86,13 @@ log.add_output = "protocol_piece_events", "ci"'
 rdo_stage_append_rc \
   $(printf -- " --node %s" "${test_clients[@]}") \
   'schedule2 = update_choke_queue_balance,1,1,((choke_group.all.down.update_balance))'
+
+# Prioritize only one torrent:
+rdo_stage_append_rc \
+  --node "rt-choke-group-default-2t-starve-both" \
+  --node "rt-choke-group-default-2t-starve-one" \
+  --node "rt-choke-group-default-2t-complete-both" \
+  'method.set_key = event.download.inserted,starve_torrent_2, {(branch,((equal,(d.name),"torrent-2")),((d.priority.set,0)))}'
 
 rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-1"
 rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-2"

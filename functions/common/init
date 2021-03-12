@@ -73,4 +73,8 @@ print_space() {
   echo >&2
 }
 
+printf_normal() {
+  printf "${@}" >&2
+}
+
 include_header common

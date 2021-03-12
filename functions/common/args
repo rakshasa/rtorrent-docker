@@ -456,6 +456,8 @@ EOF
 }
 
 args::process() {
+  # print_normal "args::process->${args__root}" >&2
+
   local args__need_seperator=no
 
   if [[ "${args__has_options}" == "yes" ]]; then
