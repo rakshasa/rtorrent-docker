@@ -141,12 +141,60 @@ rdo_stage_clean() {
 }
 
 rdo_stage_append_rc() {
-  eval "$(args::init_options_string "rdo stage append-rc APPEND-TEXT" "append_text" "Append to node's rc file")"
+  # eval "$(args::init_options_string "rdo stage append-rc APPEND-TEXT" "append_text" "Append to node's rc file")"
 
-  args::new_option "node" string "" "Name of the node" \
-                   'local node_list=()' 'node_list+=("${args__1}")'
+  # args::new_option "node" string "" "Name of the node" \
+  #                  'local node_list=()' 'node_list+=("${args__1}")'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo stage append-rc APPEND-TEXT'
+
+  local node_list=()
+
+  while true; do
+    case "${1}" in
+      --node)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        node_list+=("${args__1}")
+        ;;
+      --help|-h)
+        echo "Usage: rdo stage append-rc APPEND-TEXT"
+        echo
+        echo "Append to node's rc file"
+        echo
+        echo "Options:"
+        echo "      --node   Name of the node"
+        echo
+        echo "Run 'rdo stage append-rc APPEND-TEXT COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo stage append-rc APPEND-TEXT: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
+    print_error "rdo stage append-rc APPEND-TEXT: missing or empty argument"
+    exit 1
+  fi
+
+  local append_text="${1}"
+  shift
+
+  # end of generated bash args 'rdo stage append-rc APPEND-TEXT'
 
   local node
   for node in "${node_list[@]}"; do

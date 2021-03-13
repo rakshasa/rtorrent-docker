@@ -189,9 +189,9 @@ rdo_torrent_wait() {
   local failed
 
   local start_time=$(( SECONDS ))
-  local timeout_hash_done=$(( SECONDS + 15 ))
-  local timeout_seeding=$(( SECONDS + 15 ))
-  local timeout_completed=$(( SECONDS + 20 ))
+  local timeout_hash_done=$(( SECONDS + 10 ))
+  local timeout_seeding=$(( SECONDS + 10 ))
+  local timeout_completed=$(( SECONDS + 25 ))
 
   local current_category="hash_done"
   local current_timeout=$(( timeout_hash_done ))
@@ -259,12 +259,15 @@ rdo__file_exists__one() {
   for filepath in "${@}"; do
     if [[ -f "${filepath}" ]]; then
       if [[ "${match}" == "yes" ]]; then
+        print_normal "rdo__file_exists__one: over-match ${filepath}"
         return 1
       fi
 
       match=yes
     fi
   done
+
+  print_normal "rdo__file_exists__one: result:$([[ "${match}" == "yes" ]] && echo "success" || echo "none") ${filepath}"
 
   [[ "${match}" == "yes" ]]
 }

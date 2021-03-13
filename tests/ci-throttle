@@ -14,6 +14,9 @@ rdo_test_begin
 #
 
 rdo_stage_network "rt-global"
+rdo_stage_network "rt-isolated"
+
+rdo_network_nat   --network "rt-isolated" "rt-global"
 
 rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
 rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
@@ -22,7 +25,6 @@ rdo_stage_deploy
 
 default_client_args=(
   --run-template "rt-default"
-  --network "rt-global"
   --dns-inet "rt-dns-global:rt-global"
 )
 
@@ -31,102 +33,106 @@ default_client_args=(
 # Seeders:
 #
 
-rdo_stage_rtorrent "${default_client_args[@]}" "rt-seed-global"
+rdo_stage_rtorrent \
+  "${default_client_args[@]}" \
+  --network "rt-global" \
+  "rt-seed-global"
 
-rdo_torrent_create --domain "rt-tracker-global.rt" --size-mb "1" "torrent-1m"
-rdo_torrent_node   --seeder "rt-seed-global" "torrent-1m"
+rdo_torrent_create --domain "rt-tracker-global.rt" --size-mb "10" "torrent-10m"
+rdo_torrent_node   --seeder "rt-seed-global" "torrent-10m"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
-                 --hash-done     "rt-seed-global:torrent-1m" \
-                 --seeding       "rt-seed-global:torrent-1m"
+                 --hash-done     "rt-seed-global:torrent-10m" \
+                 --seeding       "rt-seed-global:torrent-10m"
 
 
 test_clients=()
 test_torrent_results=()
 test_tc_rate_none=()
-test_tc_rate_80k=()
-test_tc_rate_800k=()
+test_tc_rate_100k=()
+test_tc_rate_1000k=()
 
 #
 # Test throttle:
 #
 
-# Throttled clients have a TC setting so as to ensures that the
-# client-side throttle has time to kick in.
-#
-# 1mbyte /   80kbit/s = 100s
-# 1mbyte / 800kbit/s = 5s
+# TODO: Adjust to make sure it throttles properly both in short and
+# long intervals.
 
+# TODO: Do test with and without leecher-to-leecher bw usage.
 
 test_throttle_clients=(
+  "rt-throttle-unlimited-tc-100k"
+  "rt-throttle-unlimited-tc-1000k"
   "rt-throttle-unlimited-tc-unlimited"
-  "rt-throttle-unlimited-tc-80kbit"
-  "rt-throttle-unlimited-tc-800kbit"
-  "rt-throttle-10k-tc-unlimited"
-  "rt-throttle-10k-tc-800kbit"
-  "rt-throttle-200k-tc-unlimited"
-  "rt-throttle-200k-tc-80kbit"
-  "rt-throttle-200k-tc-800kbit"
+  "rt-throttle-100k-tc-1000k"
+  "rt-throttle-100k-tc-unlimited"
+  "rt-throttle-2m-tc-100k"
+  "rt-throttle-2m-tc-1000k"
+  "rt-throttle-2m-tc-unlimited"
 )
 
 test_clients+=("${test_throttle_clients[@]}")
 
 test_tc_rate_none+=(
+  "rt-throttle-100k-tc-unlimited"
+  "rt-throttle-2m-tc-unlimited"
   "rt-throttle-unlimited-tc-unlimited"
-  "rt-throttle-10k-tc-unlimited"
-  "rt-throttle-200k-tc-unlimited"
 )
-test_tc_rate_80k+=(
-  "rt-throttle-unlimited-tc-80kbit"
-  "rt-throttle-200k-tc-80kbit"
+test_tc_rate_100k+=(
+  "rt-throttle-2m-tc-100k"
+  "rt-throttle-unlimited-tc-100k"
 )
-test_tc_rate_800k+=(
-  "rt-throttle-unlimited-tc-800kbit"
-  "rt-throttle-10k-tc-800kbit"
-  "rt-throttle-200k-tc-800kbit"
+test_tc_rate_1000k+=(
+  "rt-throttle-100k-tc-1000k"
+  "rt-throttle-2m-tc-1000k"
+  "rt-throttle-unlimited-tc-1000k"
 )
 
 test_torrent_results+=(
-  --completed     "rt-throttle-unlimited-tc-unlimited:torrent-1m"
-  --not-completed "rt-throttle-unlimited-tc-80kbit:torrent-1m"
-  --completed     "rt-throttle-unlimited-tc-800kbit:torrent-1m"
-  --not-completed "rt-throttle-10k-tc-unlimited:torrent-1m"
-  --not-completed "rt-throttle-10k-tc-800kbit:torrent-1m"
-  --completed     "rt-throttle-200k-tc-unlimited:torrent-1m"
-  --not-completed "rt-throttle-200k-tc-80kbit:torrent-1m"
-  --completed     "rt-throttle-200k-tc-800kbit:torrent-1m"
+  --not-completed "rt-throttle-100k-tc-unlimited:torrent-10m"
+  --not-completed "rt-throttle-100k-tc-1000k:torrent-10m"
+  --completed     "rt-throttle-2m-tc-unlimited:torrent-10m"
+  --not-completed "rt-throttle-2m-tc-100k:torrent-10m"
+  --completed     "rt-throttle-2m-tc-1000k:torrent-10m"
+  --completed     "rt-throttle-unlimited-tc-unlimited:torrent-10m"
+  --not-completed "rt-throttle-unlimited-tc-100k:torrent-10m"
+  --completed     "rt-throttle-unlimited-tc-1000k:torrent-10m"
 )
 
-rdo_stage_rtorrent "${default_client_args[@]}" "${test_throttle_clients[@]}"
+rdo_stage_rtorrent \
+  "${default_client_args[@]}" \
+  --network "rt-isolated" \
+  "${test_throttle_clients[@]}"
 
 rdo_stage_append_rc \
-  --node "rt-throttle-10k-tc-unlimited" \
-  --node "rt-throttle-10k-tc-800kbit" \
-  "throttle.global_down.max_rate.set_kb = 10"
+  --node "rt-throttle-100k-tc-1000k" \
+  --node "rt-throttle-100k-tc-unlimited" \
+  "throttle.global_down.max_rate.set_kb = 100"
 
 rdo_stage_append_rc \
-  --node "rt-throttle-200k-tc-unlimited" \
-  --node "rt-throttle-200k-tc-80kbit" \
-  --node "rt-throttle-200k-tc-800kbit" \
-  "throttle.global_down.max_rate.set_kb = 200"
+  --node "rt-throttle-2m-tc-100k" \
+  --node "rt-throttle-2m-tc-1000k" \
+  --node "rt-throttle-2m-tc-unlimited" \
+  "throttle.global_down.max_rate.set_kb = 2000"
 
 
 #
 # Run throttle tests:
 #
 
-# Using rate < 8kbit(?) kills docker containers, or other issues.
+# Using rate < 8k(?) kills docker containers, or other issues.
 rdo_network_tc_replace_root_tbf --rate-epsilon "${test_throttle_clients[@]}"
 
-rdo_torrent_node $(printf -- " --leecher %s" "${test_throttle_clients[@]}") "torrent-1m"
+rdo_torrent_node $(printf -- " --leecher %s" "${test_throttle_clients[@]}") "torrent-10m"
 
 rdo_stage_deploy
-rdo_torrent_wait --print --wait-all $(printf -- " --hash-done %s:torrent-1m" "${test_throttle_clients[@]}")
+rdo_torrent_wait --print --wait-all $(printf -- " --hash-done %s:torrent-10m" "${test_throttle_clients[@]}")
 
 rdo_network_tc_del_root                         "${test_tc_rate_none[@]}"
-rdo_network_tc_replace_root_tbf --rate 80kbit   "${test_tc_rate_80k[@]}"
-rdo_network_tc_replace_root_tbf --rate 800kbit  "${test_tc_rate_800k[@]}"
+rdo_network_tc_replace_root_tbf --rate 800kbit  "${test_tc_rate_100k[@]}"
+rdo_network_tc_replace_root_tbf --rate 8000kbit "${test_tc_rate_1000k[@]}"
 
 rdo_torrent_wait --print --wait-all "${test_torrent_results[@]}"
 
