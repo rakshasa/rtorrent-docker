@@ -435,7 +435,9 @@ rdo_network_tc_replace_root_tbf() {
       root tbf
       rate "'${rate}'"
       latency 50ms
-      burst 1540
+
+      # burst 1540 # causes(?) eh_no_peer_info when using NAT (ci-throttle)
+      burst $(( 1540 * 10 ))
     )
 
     commands+="$(echo "echo 'tc_replace_root_tbf/${node_name}/${node_ifname}/rate:${rate}' && ${tc_command[@]} && ")"
