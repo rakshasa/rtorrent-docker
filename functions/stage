@@ -252,6 +252,8 @@ rdo_stage_network() {
 
   local args=(
     --label "project=rdo"
+
+    --opt "com.docker.network.bridge.enable_ip_masquerade=false"
   )
 
   docker network create "${args[@]}" "${name}" > /dev/null
@@ -264,6 +266,9 @@ rdo_stage_network() {
   echo "$(rdo_network subnet "${name}")" > "${self_path}/subnet"
   echo "$(rdo_network address "${name}")" > "${self_path}/address"
   echo "$(rdo_network prefix "${name}")" > "${self_path}/prefix"
+
+  local current_networks=($(shopt -s nullglob && cd ./run/current/networks/ && echo *))
+  echo "${#current_networks[@]}" > "${self_path}/index"
 
   echo "networks/${name}"
 }
