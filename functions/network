@@ -264,12 +264,13 @@ rdo_network_iptables() {
 }
 
 rdo_network_iptables_flush() {
-  local nat_rules filter_rules
+  local rules nat_rules filter_rules
   nat_rules="$(rdo_network_iptables_list --table nat | sed -e 's/^-A /sudo iptables --table nat -D /')"
   filter_rules="$(rdo_network_iptables_list --table filter | sed -e 's/^-A /sudo iptables --table filter -D /')"
+  rules="$(printf "%s\n%s\n" "${nat_rules}" "${filter_rules}")"
 
   if [[ -n "${rules}" ]]; then
-    rdo__call_host bash -c "echo '${nat_rules}' && echo '${filter_rules}' && ${nat_rules} && ${filter_rules}"
+    rdo__call_host bash -c "echo '${rules}'; ${rules}"
   fi
 }
 
