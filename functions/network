@@ -264,16 +264,17 @@ rdo_network_iptables() {
 }
 
 rdo_network_iptables_flush() {
-  local rules
-  rules="$(rdo_network_iptables_list | sed -e 's/^-[AI] /sudo iptables -D /')"
+  local nat_rules filter_rules
+  nat_rules="$(rdo_network_iptables_list --table nat | sed -e 's/^-A /sudo iptables --table nat -D /')"
+  filter_rules="$(rdo_network_iptables_list --table filter | sed -e 's/^-A /sudo iptables --table filter -D /')"
 
   if [[ -n "${rules}" ]]; then
-    rdo__call_host bash -c "echo '${rules}'; ${rules}"
+    rdo__call_host bash -c "echo '${nat_rules}' && echo '${filter_rules}' && ${nat_rules} && ${filter_rules}"
   fi
 }
 
 rdo_network_iptables_list() {
-  rdo__call_host sudo iptables-save | sed -n -e '/ -m comment --comment "rdo network" /p'
+  rdo__call_host sudo iptables-save "${@}" | sed -n -e '/ -m comment --comment "rdo network" /p'
 }
 
 rdo_network_iptables_save() {
@@ -353,10 +354,17 @@ rdo_network_nat() {
   local network
   for network in "${inner_networks[@]}"; do
     local inner_network_bridge
-    inner_network_bridge+=("$(rdo_network_bridge "${network}")")
+    local inner_network_index
+    inner_network_bridge="$(rdo_network_bridge "${network}")"
+    inner_network_index="$(cat "./run/current/networks/${network}"/index)"
+
+    local mark=$(( 0x30000 + inner_network_index ))
+
+    rdo_network_iptables "${default_iptables_args[@]}" -t nat -I POSTROUTING -m mark --mark "${mark}" -o "${outer_network_bridge}" -j MASQUERADE
 
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -m state --state RELATED,ESTABLISHED -j ACCEPT
+    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j MARK --set-mark "${mark}"
   done
 }
 
@@ -365,63 +373,17 @@ rdo_network_tc() {
 }
 
 rdo_network_tc_replace_root_tbf() {
-  # eval "$(args::init_options_default "rdo network tc-replace-root-tbf [NODE-NAME]..." "Replace tc root tbf rule of nodes.")"
+  eval "$(args::init_options_default "rdo network tc-replace-root-tbf [NODE-NAME]..." "Replace tc root tbf rule of nodes.")"
 
-  # # Using rate < 8kbit kills docker containers.
-  # args::new_option "rate" req_string "" "Limit ingress traffic rate" \
-  #                  'local rate' 'rate="${args__1}"'
-  # args::new_option "rate-epsilon" empty "" "Limit ingress traffic rate to lowest possible" \
-  #                  'local rate' 'rate=8kbit; args__opt_value__rate=8kbit'
+  # Using rate < 8kbit kills docker containers.
+  args::new_option "rate" req_string "" "Limit ingress traffic rate" \
+                   'local rate' 'rate="${args__1}"'
 
-  # eval "$(args::process)"
+  # TODO: TC and handshakes seem to cause issues with 8kbit.
+  args::new_option "rate-epsilon" empty "" "Limit ingress traffic rate to lowest possible (200kbit)" \
+                   'local rate' 'rate=200kbit; args__opt_value__rate=200kbit'
 
-  # start of generated bash args 'rdo network tc-replace-root-tbf [NODE-NAME]...'
-
-  local rate
-  local rate
-  local args__opt_value__rate=
-
-  while true; do
-    case "${1}" in
-      --rate)
-        local args__1="${2:?Missing argument for '${1}'.}"
-        local args__opt_value__rate="${args__1}"
-        shift 2
-        rate="${args__1}"
-        ;;
-      --rate-epsilon)
-        shift
-        rate=8kbit; args__opt_value__rate=8kbit
-        ;;
-      --help|-h)
-        echo "Usage: rdo network tc-replace-root-tbf [NODE-NAME]..."
-        echo
-        echo "Replace tc root tbf rule of nodes."
-        echo
-        echo "Options:"
-        echo "      --rate           Limit ingress traffic rate"
-        echo "      --rate-epsilon   Limit ingress traffic rate to lowest possible"
-        echo
-        echo "Run 'rdo network tc-replace-root-tbf [NODE-NAME]... COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  if [[ -z "${args__opt_value__rate}" ]]; then
-    print_error "${args__root}: missing required flag: --rate"
-    return 1
-  fi
-
-  # end of generated bash args 'rdo network tc-replace-root-tbf [NODE-NAME]...'
+  eval "$(args::process)"
 
   local commands
 
@@ -436,8 +398,8 @@ rdo_network_tc_replace_root_tbf() {
       rate "'${rate}'"
       latency 50ms
 
-      # burst 1540 # causes(?) eh_no_peer_info when using NAT (ci-throttle)
-      burst $(( 1540 * 10 ))
+      # burst 1540 # causes(?) eh_no_peer_info when using NAT (tests/ci-throttle 9a0bd9c078381892f11c662a1f52a83855223334)
+      burst 1540
     )
 
     commands+="$(echo "echo 'tc_replace_root_tbf/${node_name}/${node_ifname}/rate:${rate}' && ${tc_command[@]} && ")"

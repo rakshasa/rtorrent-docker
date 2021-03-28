@@ -250,7 +250,7 @@ rdo_torrent__wait_torrents__print_result() {
 }
 
 rdo_torrent__wait_torrents__print_waiting() {
-  printf_normal "waiting %-10s %s:%s:%s %ss\n" "${1}" "${current_category}" "${node}" "${torrent}"
+  printf_normal "waiting %-10s %s:%s:%s\n" "${1}" "${current_category}" "${node}" "${torrent}"
 }
 
 rdo__file_exists__one() {

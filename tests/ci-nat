@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Test default behavior of rtorrent in various network setttings.
+# Test rtorrent with NAT.
 #
 
 rdo_test_begin
@@ -11,10 +11,14 @@ rdo_test_begin
 # Topology, trackers and torrents:
 #
 
-rdo_stage_network "rt-global"
-rdo_stage_network "rt-nat"
+# TODO: Need to add support for different ip addresses for NATs.
 
-rdo_network_nat   --network "rt-nat" "rt-global"
+rdo_stage_network "rt-global"
+
+for i in {1..3}; do
+  rdo_stage_network "rt-nat-${i}"
+  rdo_network_nat   --network "rt-nat-${i}" "rt-global"
+done
 
 rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
 rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
@@ -43,37 +47,34 @@ rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
                  \
                  --hash-done     "rt-seed-global:torrent-global" \
-                 --seeding       "rt-seed-global:torrent-global" \
-                 --not-completed "rt-seed-global:torrent-global"
+                 --seeding       "rt-seed-global:torrent-global"
 
 
 #
 # Leechers:
 #
 
+# Use NAT to isolate all clients from eachother, except for the global
+# seed.
+
 # TODO: Test multiple NAT leechers, seems peer_list might have an
 # issue with multiple connectes from the same IP at the same
 # time. (Use TC for proper testing, add a separate ci-nat test)
 
 test_clients=(
-  "rt-leech-global"
-  "rt-leech-nat"
+  "rt-leech-nat-1-1"
+  "rt-leech-nat-2-"{1..2}
+  "rt-leech-nat-3-"{1..4}
 )
 
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global" "rt-leech-global"
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat"    "rt-leech-nat"
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat-1" "rt-leech-nat-1-1"
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat-2" "rt-leech-nat-2-"{1..2}
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat-3" "rt-leech-nat-3-"{1..4}
 
 rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-global"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
-                 \
-                 --hash-done     "rt-leech-global:torrent-global" \
-                 --not-seeding   "rt-leech-global:torrent-global" \
-                 --completed     "rt-leech-global:torrent-global" \
-                 \
-                 --hash-done     "rt-leech-nat:torrent-global" \
-                 --not-seeding   "rt-leech-nat:torrent-global" \
-                 --completed     "rt-leech-nat:torrent-global"
+                 $(printf -- " --completed %s:torrent-global" "${test_clients[@]}")
 
 rdo_test_end
