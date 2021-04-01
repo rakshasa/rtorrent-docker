@@ -34,8 +34,10 @@ rdo_network() {
   #                   'rdo_network_iptables_list'
   # args::new_command "iptables-save" default "Call iptables-save on docker host" \
   #                   'rdo_network_iptables_save "${@}"'
-  # args::new_command "nat" default "Add nat between networks" \
+  # args::new_command "nat" default "Add nat rules between networks" \
   #                   'rdo_network_nat "${@}"'
+  # args::new_command "forward" default "Add forward rules between networks" \
+  #                   'rdo_network_forward "${@}"'
 
   # args::new_command "tc" default "Call tc on docker host" \
   #                   'rdo_network_tc "${@}"'
@@ -67,7 +69,8 @@ rdo_network() {
         echo "  iptables-flush        Flush rdo-specific iptables rules on docker host"
         echo "  iptables-list         List rdo-specific iptables rules on docker host"
         echo "  iptables-save         Call iptables-save on docker host"
-        echo "  nat                   Add nat between networks"
+        echo "  nat                   Add nat rules between networks"
+        echo "  forward               Add forward rules between networks"
         echo "  tc                    Call tc on docker host"
         echo "  tc-replace-root-tbf   Replace tc root tbf rule of node"
         echo "  tc-del-root           Delete root rule of node"
@@ -129,6 +132,9 @@ rdo_network() {
       ;;
     nat)
       rdo_network_nat "${@}"
+      ;;
+    forward)
+      rdo_network_forward "${@}"
       ;;
     tc)
       rdo_network_tc "${@}"
@@ -366,6 +372,31 @@ rdo_network_nat() {
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -m state --state RELATED,ESTABLISHED -j ACCEPT
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j MARK --set-mark "${mark}"
+  done
+}
+
+rdo_network_forward() {
+  eval "$(args::init_options_string "rdo network forward OUTER-NETWORK" "outer_network" "Add FORWARD route between networks.")"
+
+  args::new_option "network" req_string "n" "Add inner network" 'local inner_networks=()' 'inner_networks+=("${args__1}")'
+
+  eval "$(args::process)"
+
+  if (( ${#inner_networks[@]} == 0 )); then
+    print_error "rdo network nat: Missing inner networks."
+    return 1
+  fi
+
+  local outer_network_bridge
+  outer_network_bridge="$(rdo_network_bridge "${outer_network}")"
+
+  local network
+  for network in "${inner_networks[@]}"; do
+    local inner_network_bridge
+    inner_network_bridge="$(rdo_network_bridge "${network}")"
+
+    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -j ACCEPT
+    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
   done
 }
 
