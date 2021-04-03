@@ -5,7 +5,7 @@
 
 include_header git
 
-do_git() {
+rdo_git() {
   eval "$(args::init_subcommand "rdo build" "Build project.")"
 
   args::new_command "clone" empty "Clone all repositories" \
@@ -14,7 +14,14 @@ do_git() {
   eval "$(args::process)"
 }
 
-git_clone_repository() {
+rdo_git_clone() {
+  rdo_git__clone_repository "libtorrent" "git@github.com:rakshasa/libtorrent.git"
+  rdo_git__clone_repository "rtorrent" "git@github.com:rakshasa/rtorrent.git"
+}
+
+# Helper functions
+
+rdo_git__clone_repository() {
   local name="${1:?Missing name argument.}"
   local repository="${2:?Missing repository argument.}"
 
@@ -29,9 +36,4 @@ git_clone_repository() {
   if ! (cd "${path}" && git status) &> /dev/null; then
     print_progress "repository '${repository}' is not valid, git status failed"
   fi
-}
-
-git_clone() {
-  git_clone_repository "libtorrent" "git@github.com:rakshasa/libtorrent.git"
-  git_clone_repository "rtorrent" "git@github.com:rakshasa/rtorrent.git"
 }

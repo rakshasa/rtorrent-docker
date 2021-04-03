@@ -204,7 +204,7 @@ EOF
       local args__2="\${args__2:?Missing argument for '\${1}'.}"
 
       if [[ "\${args__1}${opt_type#string2}\${args__2}" != "\${2}" ]]; then
-        print_error "\${args__root}: invalid option format: \${1} \${2}"
+        ${args__print_error} "\${args__root}: invalid option format: \${1} \${2}"
         return 1
       fi
 
@@ -240,7 +240,7 @@ EOF
       local args__opt_value__${name}_2="\${args__2}"
 
       if [[ "\${args_1}${opt_type#string2}\${args_2}" != "\${2}" ]]; then
-        print_error "\${args__root}: invalid option format: \${1} \${2}"
+        ${args__print_error} "\${args__root}: invalid option format: \${1} \${2}"
         return 1
       fi
 
@@ -283,6 +283,11 @@ EOF
       args::print_process
       return
       ;;
+    ---print-self-bare)
+      local args__print_error="echo"
+      args::print_process
+      return
+      ;;
 EOF
   fi
 
@@ -293,7 +298,7 @@ EOF
   if [[ "${args__skip_unknown}" != "yes" ]]; then
     cat - <<EOF
       if [[ -n "\${1}" ]] && [[ -z "\${1##-*}" ]]; then
-        print_error "\${args__root}: unknown flag: \${1}"
+        ${args__print_error} "\${args__root}: unknown flag: \${1}"
         return 1
       fi
 
@@ -314,7 +319,7 @@ EOF
         cat - <<EOF
 
 if [[ -z "\${args__opt_value__${name}}" ]]; then
-  print_error "\${args__root}: missing required flag: --${name}"
+  ${args__print_error} "\${args__root}: missing required flag: --${name}"
   return 1
 fi
 EOF
@@ -323,7 +328,7 @@ EOF
         cat - <<EOF
 
 if [[ -z "\${args__opt_value__${name}}_1" ]] || [[ -z "\${args__opt_value__${name}}_2" ]]; then
-  print_error "\${args__root}: missing required flag: --${name}"
+  ${args__print_error} "\${args__root}: missing required flag: --${name}"
   return 1
 fi
 EOF
@@ -389,7 +394,7 @@ EOF
 
   cat - <<EOF
   *)
-    print_error "${args__root}: unknown command: \${args__cmd}"
+    ${args__print_error} "${args__root}: unknown command: \${args__cmd}"
     exit 1
     ;;
 esac
@@ -458,7 +463,8 @@ EOF
 args::process() {
   # print_normal "args::process->${args__root}" >&2
 
-  local args__need_seperator=no
+  local args__need_seperator="no"
+  local args__print_error="${args__print_error:-print_error}"
 
   if [[ "${args__has_options}" == "yes" ]]; then
     args::process_options
@@ -482,7 +488,7 @@ args::process() {
       cat - <<EOF
 
 if (( \${#} > 0 )); then
-  print_error "${args__root}: too many arguments"
+  ${args__print_error} "${args__root}: too many arguments"
   exit 1
 fi
 
@@ -492,12 +498,12 @@ EOF
       cat - <<EOF
 
 if (( \${#} > 1 )); then
-  print_error "${args__root}: too many arguments"
+  ${args__print_error} "${args__root}: too many arguments"
   exit 1
 fi
 
 if (( \${#} == 0 )) || [[ -z "\${1}" ]]; then
-  print_error "${args__root}: missing or empty argument"
+  ${args__print_error} "${args__root}: missing or empty argument"
   exit 1
 fi
 

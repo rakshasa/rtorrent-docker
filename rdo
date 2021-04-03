@@ -141,7 +141,7 @@ rdo() {
       is_header_included env || source "./functions/env"; rdo_env "${@}"
       ;;
     git)
-      is_header_included git || source "./functions/git"; do_git "${@}"
+      is_header_included git || source "./functions/git"; rdo_git "${@}"
       ;;
     init)
       rdo_init "${@}"
