@@ -261,12 +261,14 @@ rdo_torrent__init() {
 
   mkdir -p "./run/torrents"
 
+  : "${RDO_RUN_PATH:?Missing environment variable.}"
+
   docker run \
          --name "rdo-utils-mktorrent" \
          --rm \
          --detach \
          --network none \
-         --mount "type=bind,src=$(project_absolute_unix_path)/run/torrents/,dst=/torrents" \
+         --mount "type=bind,src=${RDO_RUN_PATH}/torrents/,dst=/torrents" \
          "rdo/run/mktorrent:global"
 }
 
