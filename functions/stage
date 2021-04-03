@@ -596,11 +596,13 @@ rdo_stage__container__create() {
     echo "${resolve_conf}" > "${self_path}/resolv.conf"
   fi
 
+  : "${RDO_RUN_PATH:?Missing environment variable.}"
+
   create_args+=(
     --name "${node_name}"
     --tty
     --network "none"
-    --mount "type=bind,source=$(project_absolute_unix_path)/run/current/nodes/${node_name}/,target=/run/self/"
+    --mount "type=bind,source=${RDO_RUN_PATH}/current/nodes/${node_name}/,target=/run/self/"
   )
 
   docker container create --label "project=rdo" "${create_args[@]}" "${image_name}" > /dev/null

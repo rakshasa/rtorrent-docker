@@ -37,55 +37,62 @@ rdo_machine_create() {
 
   eval "$(args::process)"
 
-  if [[ "${OSTYPE}" == "cygwin" ]]; then
-    # create_args+=("--virtualbox-share-folder" "$(rdo__project_absolute_path)")
-    create_args+=("--virtualbox-share-folder" 'c:\cygwin64:cygwin64')
+  print_progress "creating docker machine '${arg_docker_machine}' (cpu:${arg_cpu_count} memory:${arg_memory} disk_size:${arg_disk_size})"
+
+  if docker-machine inspect "${arg_docker_machine}" &> /dev/null; then
+    print_error "docker machine vm already exists"
+    exit 1
   fi
 
   create_args+=(
+    --driver "virtualbox"
     --virtualbox-cpu-count "${arg_cpu_count}"
     --virtualbox-disk-size "${arg_disk_size}"
     --virtualbox-memory "${arg_memory}"
     --virtualbox-boot2docker-url "https://releases.rancher.com/os/latest/rancheros.iso"
   )
 
-  print_progress "creating docker machine '${arg_docker_machine}' (cpu:${arg_cpu_count} memory:${arg_memory} disk_size:${arg_disk_size})"
+  local run_path
 
-  if [[ -f "${DATA_PATH}/env.machine" ]] && [[ -z "$(rdo_machine__current)" ]]; then
-    print_error "removing invalid env.machine file"
-    rm -f "${DATA_PATH}/env.machine"
-  fi
-
-  rdo_machine__attempt_start "${arg_docker_machine}"
-
-  if [[ -z "$(docker-machine inspect "${arg_docker_machine}")" ]]; then
-    print_normal "creating docker machine '${arg_docker_machine}': ${create_args[*]}"
-
-    docker-machine create --driver virtualbox "${create_args[@]}" "${arg_docker_machine}"
-    docker-machine ssh rdo sudo ros service enable virtualbox-tools
-    docker-machine ssh rdo sudo ros service up virtualbox-tools
-    docker-machine ssh rdo sudo mkdir /cygwin64
-
-    print_normal "waiting for virtualbox mount command to become available"
-
-    while ! docker-machine ssh rdo command -v mount.vboxsf 2> /dev/null; do
-      printf '.'
-      sleep 1
-    done
-
-    docker-machine ssh rdo sudo mount.vboxsf cygwin64 /cygwin64
-
+  if [[ "${OSTYPE}" == "cygwin" ]]; then
+    #create_args+=("--virtualbox-share-folder" 'c:\cygwin64:cygwin64')
+    print_error "fixme cygwin support..."
+    #run_path=
+    exit 1
   else
-    print_normal "docker machine '${arg_docker_machine}' already exists, skipping creation"
+    run_path="/rdo/run"
+    create_args+=("--virtualbox-share-folder" "$(cd ./run && pwd):rdo-run")
   fi
+
+  print_progress "creating docker machine '${arg_docker_machine}': ${create_args[*]}"
+
+  docker-machine create "${create_args[@]}" "${arg_docker_machine}"
+
+  print_progress "enabling virtualbox-tools"
+
+  docker-machine ssh rdo sudo mkdir -p /rdo/run
+  docker-machine ssh rdo sudo ros service enable virtualbox-tools
+  docker-machine ssh rdo sudo ros service up virtualbox-tools
+
+  print_normal "waiting for virtualbox mount command to become available"
+
+  while ! docker-machine ssh rdo command -v mount.vboxsf &> /dev/null; do
+    printf '.'
+    sleep 1
+  done
+
+  print_normal "mounting /rdo/run"
+  docker-machine ssh rdo sudo mount.vboxsf rdo-run /rdo/run
 
   if rdo_machine__is_error "${arg_docker_machine}"; then
     print_error "unable to create docker machine"
     exit 1
   fi
 
-  print_normal "updating env.machine with '${arg_docker_machine}'"
-  docker-machine env "${arg_docker_machine}" > "${DATA_PATH}/env.machine"
+  print_progress "updating env.machine with '${arg_docker_machine}'"
+
+  echo "export RDO_RUN_PATH='${run_path}'" > "./data/env.machine"
+  docker-machine env "${arg_docker_machine}" >> "./data/env.machine"
 }
 
 rdo_machine_destroy() {

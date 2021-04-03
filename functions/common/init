@@ -17,20 +17,12 @@ COLOR_NC='\033[0m'
 COLOR_RED='\033[0;31m'
 COLOR_GREEN='\033[0;32m'
 
+if [[ -n "${__INCLUDED_HEADERS[@]}" ]]; then
+  echo "bash source file 'common/init' could failed: __INCLUDED_HEADERS environment variable already declared"
+  exit 1
+fi
+
 declare -A __INCLUDED_HEADERS
-
-project_absolute_unix_path() {
-  : "${PROJECT_PATH:?Missing project path variable.}"
-
-  if [[ "${OSTYPE}" == "cygwin" ]]; then
-    PROJECT_ABSOLUTE_UNIX_PATH="$(cd "${PROJECT_PATH}" && cygpath -au .)"
-    PROJECT_ABSOLUTE_UNIX_PATH="/cygwin64${PROJECT_ABSOLUTE_UNIX_PATH%/}"
-  else
-    PROJECT_ABSOLUTE_UNIX_PATH="$(cd "${PROJECT_PATH}" && pwd)"
-  fi
-
-  echo "${PROJECT_ABSOLUTE_UNIX_PATH}"
-}
 
 include_header() {
   local header_name="${1:?Missing header name argument.}"
@@ -47,6 +39,8 @@ include_header() {
 
   __INCLUDED_HEADERS[${header_name}]="yes"
 }
+
+include_header common/init
 
 is_header_included() {
   local header_name="${1:?Missing header name argument.}"
@@ -76,5 +70,3 @@ print_space() {
 printf_normal() {
   printf "${@}" >&2
 }
-
-include_header common
