@@ -1,5 +1,37 @@
 #!/bin/bash
 
 cat - <<EOF
-rtorrent -o "system.daemon.set=true,import=/run/self/rc"
+set -x
+
+echo 0 > /proc/sys/kernel/yama/ptrace_scope
+
+lldb-server platform \
+  --server \
+  --listen localhost:3000 &
+
+lldb-server gdbserver localhost:3000 \
+  --native-regs \
+  --setsid &
+
+
+
+# lldb \
+#   --one-line "settings set target.disable-aslr false" \
+#   --one-line run \
+#   --one-line-on-crash "thread backtrace all" \
+#   --file "rtorrent" \
+#   -- -o "system.daemon.set=true,import=/run/self/rc"
+
+  --one-line 'gdb-remote localhost:3000' \
+
+lldb \
+  --one-line 'platform select remote-linux' \
+  --one-line 'platform connect connect://localhost:3000' \
+  --one-line 'target create "/prefix/bin/rtorrent"' \
+  --one-line 'settings set -- target.run-args "-o" "system.daemon.set=true,import=/run/self/rc"' \
+  --one-line 'settings set target.disable-aslr false' \
+  --one-line 'settings set target.process.detach-keeps-stopped true' \
+  --one-line 'run' \
+  --one-line-on-crash 'thread backtrace all'
+
 EOF

@@ -22,7 +22,7 @@ rdo_machine() {
 }
 
 rdo_machine_create() {
-  local arg_disk_size=100000
+  local arg_disk_size=200000
 
   local arg_cpu_count arg_memory
   arg_cpu_count=$(( $(rdo__cpu_count) - 2 ))

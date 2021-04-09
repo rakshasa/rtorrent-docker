@@ -29,7 +29,7 @@ source /env.configure; \
 eval ${RDO_TIMESTAMP_LS} "/build/rtorrent/source/src"; \
 eval ${RDO_TIMESTAMP_UPDATE}; \
 \
-/build/rtorrent/source/configure --prefix=/prefix --disable-backtrace; \
+/build/rtorrent/source/configure --prefix=/prefix --enable-debug --enable-extra-debug; \
 \
 eval ${RDO_TIMESTAMP_LS} "."; \
 \
@@ -80,6 +80,8 @@ eval ${RDO_TIMESTAMP_LS} "/build/rtorrent/output/src"; \
 eval ${RDO_TIMESTAMP_UPDATE}; \
 \
 rm -f ./status.{success,failure}; \
+\
+cat config.h; \
 \
 #if make -j12 && make -j12 install && make -j12 check TESTS=; then \
 if make -j12 && make -j12 install; then \
