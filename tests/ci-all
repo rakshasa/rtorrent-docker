@@ -40,7 +40,7 @@ for t in "${SUCCESSFUL_TESTS[@]}"; do
 done
 
 for t in "${FAILED_TESTS[@]}"; do
-  print_error "failed: ${t}"
+  print_error "failed:    ${t}"
 done
 
 print_progress

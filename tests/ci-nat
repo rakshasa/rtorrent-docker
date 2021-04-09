@@ -24,11 +24,16 @@ rdo_network_nat   --network "rt-nat-2" "rt-global"
 rdo_stage_network   "rt-nat-3"
 rdo_stage_network   "rt-nat-outer-3"
 # rdo_network_nat     --network "rt-nat-3"       "rt-nat-outer-3"
-rdo_network_forward     --network "rt-nat-3"       "rt-nat-outer-3"
+#rdo_network_forward --network "rt-nat-3"       "rt-nat-outer-3"
 rdo_network_forward --network "rt-nat-outer-3" "rt-global"
 
 rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
 rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
+
+
+# Use NAT instead
+#rdo_stage_router  --run-template "router-forward"  --network "rt-global" --network "rt-nat-outer-1" "rt-router-test"
+
 
 rdo_stage_deploy
 

@@ -6,22 +6,6 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/ancestor/run:global"
 
-RUN printf '%s\n' \
-'#!/bin/bash' \
-'' \
-'set -xe' \
-'' \
-'INTERFACES="$(ip -o link | sed -ne "s/[[:digit:]]*: \\(eth[[:digit:]]*\\)[^$]*/\\1/p")"' \
-'' \
-'echo "${INTERFACES}"' \
-'' \
-'tail -f /dev/null' \
-\
-> /entrypoint.sh && chmod a+x /entrypoint.sh
+COPY entrypoint.sh /
 
-# 'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE' \
-# 'iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT' \
-# 'iptables -A FORWARD -i eth0 -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT' \
-# '' \
-
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT /entrypoint.sh

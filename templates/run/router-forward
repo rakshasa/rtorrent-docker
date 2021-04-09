@@ -1,0 +1,10 @@
+#!/bin/bash
+
+cat - <<EOF
+iptables -A FORWARD -i eth0 -o eth1 -j ACCEPT
+iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT
+
+echo "router forwarding between eth0 and eth1"
+
+tail -f /dev/null
+EOF
