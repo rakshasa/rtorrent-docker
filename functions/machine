@@ -52,15 +52,9 @@ rdo_machine_create() {
     --virtualbox-boot2docker-url "https://releases.rancher.com/os/latest/rancheros.iso"
   )
 
-  local run_path
-
   if [[ "${OSTYPE}" == "cygwin" ]]; then
-    #create_args+=("--virtualbox-share-folder" 'c:\cygwin64:cygwin64')
-    print_error "fixme cygwin support..."
-    #run_path=
-    exit 1
+    create_args+=("--virtualbox-share-folder" "$(cd ./run && cygpath -aw .):rdo-run")
   else
-    run_path="/rdo/run"
     create_args+=("--virtualbox-share-folder" "$(cd ./run && pwd):rdo-run")
   fi
 
@@ -91,7 +85,7 @@ rdo_machine_create() {
 
   print_progress "updating env.machine with '${arg_docker_machine}'"
 
-  echo "export RDO_RUN_PATH='${run_path}'" > "./data/env.machine"
+  echo "export RDO_RUN_PATH=/rdo/run" > "./data/env.machine"
   docker-machine env "${arg_docker_machine}" >> "./data/env.machine"
 }
 

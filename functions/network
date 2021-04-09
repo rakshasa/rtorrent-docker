@@ -2,11 +2,6 @@
 
 include_header network
 
-default_iptables_args=(
-  -m comment
-  --comment "'rdo network'"
-)
-
 rdo_network() {
   # eval "$(args::init_subcommand "rdo network" "Manage networks.")"
 
@@ -281,7 +276,7 @@ rdo_network_iptables_flush() {
 }
 
 rdo_network_iptables_list() {
-  rdo__call_host sudo iptables-save "${@}" | sed -n -e '/ -m comment --comment "rdo network" /p'
+  rdo__call_host sudo iptables-save "${@}" | sed -n -e '/ -m comment --comment "rdo network/p'
 }
 
 rdo_network_iptables_save() {
@@ -358,14 +353,18 @@ rdo_network_nat() {
   local outer_network_bridge
   outer_network_bridge="$(rdo_network_bridge "${outer_network}")"
 
-  local network
-  for network in "${inner_networks[@]}"; do
+  local inner_network
+  for inner_network in "${inner_networks[@]}"; do
     local inner_network_bridge
     local inner_network_index
-    inner_network_bridge="$(rdo_network_bridge "${network}")"
-    inner_network_index="$(cat "./run/current/networks/${network}"/index)"
+    inner_network_bridge="$(rdo_network_bridge "${inner_network}")"
+    inner_network_index="$(cat "./run/current/networks/${inner_network}"/index)"
 
     local mark=$(( 0x30000 + inner_network_index ))
+    local default_iptables_args=(
+      -m comment
+      --comment "'rdo network nat ${inner_network}->${outer_network}'"
+    )
 
     rdo_network_iptables "${default_iptables_args[@]}" -t nat -I POSTROUTING -m mark --mark "${mark}" -o "${outer_network_bridge}" -j MASQUERADE
 
@@ -390,10 +389,15 @@ rdo_network_forward() {
   local outer_network_bridge
   outer_network_bridge="$(rdo_network_bridge "${outer_network}")"
 
-  local network
-  for network in "${inner_networks[@]}"; do
+  local inner_network
+  for inner_network in "${inner_networks[@]}"; do
     local inner_network_bridge
-    inner_network_bridge="$(rdo_network_bridge "${network}")"
+    inner_network_bridge="$(rdo_network_bridge "${inner_network}")"
+
+    local default_iptables_args=(
+      -m comment
+      --comment "'rdo network forward ${inner_network}->${outer_network}'"
+    )
 
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -j ACCEPT
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT

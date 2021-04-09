@@ -6,102 +6,31 @@ rdo_stage() {
   local project_path
   project_path="$(get_project_path)"
 
-  # eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
+  eval "$(args::init_subcommand "rdo stage" "Manage staging of environments.")"
 
-  # args::new_command "init" empty "Initialize new environment for staging" \
-  #                   'rdo_stage_init'
-  # args::new_command "deploy" empty "Deploy environment" \
-  #                   'rdo_stage_deploy'
-  # args::new_command "clean" empty "Remove environment" \
-  #                   'rdo_stage_clean'
+  args::new_command "init" empty "Initialize new environment for staging" \
+                    'rdo_stage_init'
+  args::new_command "deploy" empty "Deploy environment" \
+                    'rdo_stage_deploy'
+  args::new_command "clean" empty "Remove environment" \
+                    'rdo_stage_clean'
 
-  # args::new_command "append-rc" default "Append to node's rc file" \
-  #                   'rdo_stage_append_rc "${@}"'
+  args::new_command "append-rc" default "Append to node's rc file" \
+                    'rdo_stage_append_rc "${@}"'
 
-  # args::new_command "network" default "Add network" \
-  #                   'rdo_stage_network "${@}"'
+  args::new_command "network" default "Add network" \
+                    'rdo_stage_network "${@}"'
+  args::new_command "router" default "Add router" \
+                    'rdo_stage_router "${@}"'
 
-  # args::new_command "dns" default "Add dns" \
-  #                   'rdo_stage_dns "${@}"'
-  # args::new_command "rtorrent" default "Add node" \
-  #                   'rdo_stage_rtorrent "${@}"'
-  # args::new_command "tracker" default "Add tracker" \
-  #                   'rdo_stage_tracker "${@}"'
+  args::new_command "dns" default "Add dns" \
+                    'rdo_stage_dns "${@}"'
+  args::new_command "rtorrent" default "Add node" \
+                    'rdo_stage_rtorrent "${@}"'
+  args::new_command "tracker" default "Add tracker" \
+                    'rdo_stage_tracker "${@}"'
 
-  # eval "$(args::process)"
-
-  # start of generated bash args 'rdo stage'
-
-  while true; do
-    case "${1}" in
-      --help|-h|'')
-        echo "Usage: rdo stage"
-        echo
-        echo "Manage staging of environments."
-        echo
-        echo "Commands:"
-        echo "  init        Initialize new environment for staging"
-        echo "  deploy      Deploy environment"
-        echo "  clean       Remove environment"
-        echo "  append-rc   Append to node's rc file"
-        echo "  network     Add network"
-        echo "  dns         Add dns"
-        echo "  rtorrent    Add node"
-        echo "  tracker     Add tracker"
-        echo
-        echo "Run 'rdo stage COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  local args__root="rdo stage"
-  local args__cmd="${1}"
-  shift || :
-
-  case "${args__cmd}" in
-    init)
-      args::verify_command_empty "${@}"
-      rdo_stage_init
-      ;;
-    deploy)
-      args::verify_command_empty "${@}"
-      rdo_stage_deploy
-      ;;
-    clean)
-      args::verify_command_empty "${@}"
-      rdo_stage_clean
-      ;;
-    append-rc)
-      rdo_stage_append_rc "${@}"
-      ;;
-    network)
-      rdo_stage_network "${@}"
-      ;;
-    dns)
-      rdo_stage_dns "${@}"
-      ;;
-    rtorrent)
-      rdo_stage_rtorrent "${@}"
-      ;;
-    tracker)
-      rdo_stage_tracker "${@}"
-      ;;
-    *)
-      print_error "rdo stage: unknown command: ${args__cmd}"
-      exit 1
-      ;;
-  esac
-
-  # end of generated bash args 'rdo stage'
+  eval "$(args::process)"
 }
 
 rdo_stage_init() {
@@ -271,6 +200,29 @@ rdo_stage_network() {
   echo "${#current_networks[@]}" > "${self_path}/index"
 
   echo "networks/${name}"
+}
+
+rdo_stage_router() {
+  local create_args=()
+
+  eval "$(args::init_options_string "rdo stage router NODE-NAME" "node_name" "Add router to staging of environments.")"
+
+  rdo_stage__container__default_args
+
+  eval "$(args::process)"
+
+  local self_type="router"
+  local image_name="rdo/run/router:global"
+
+  create_args+=(
+    --mount "type=bind,src=/var/run/docker.sock,dst=/docker.sock"
+  )
+
+  rdo_stage__container__create
+  rdo_stage__container__start
+  rdo_stage__container__update_run
+
+  echo "${self_type}/${node_name}"
 }
 
 rdo_stage_dns() {
