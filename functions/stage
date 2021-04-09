@@ -320,7 +320,7 @@ rdo_stage_dns() {
 }
 
 rdo_stage_rtorrent() {
-  local create_args=()
+  local default_create_args=()
 
   # eval "$(args::init_options_default "rdo stage rtorrent [NODE-NAME]..." "Stage rtorrent clients.")"
 
@@ -400,12 +400,17 @@ rdo_stage_rtorrent() {
   local image_name="rdo/run/rtorrent:default"
 
   if [[ -n "${torrents_disksize}" ]]; then
-    create_args+=(--mount "type=tmpfs,dst=/torrents,tmpfs-size=${torrents_disksize}")
+    default_create_args+=(--mount "type=tmpfs,dst=/torrents,tmpfs-size=${torrents_disksize}")
   else
-    create_args+=(--mount "type=tmpfs,dst=/torrents")
+    default_create_args+=(--mount "type=tmpfs,dst=/torrents")
   fi
 
-  local default_create_args=("${create_args[@]}")
+  default_create_args+=(
+    --privileged
+    --cap-add "SYS_PTRACE"
+    --security-opt "seccomp=unconfined"
+    --security-opt "apparmor=unconfined"
+  )
 
   local node_name
   for node_name in "${@}"; do

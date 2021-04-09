@@ -49,6 +49,7 @@ pkg-add bash \
         iproute2 \
         iptables \
         ip6tables \
+        lldb \
         tar
 
 ARG ANCESTOR_PROJECT
