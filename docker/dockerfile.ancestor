@@ -50,7 +50,8 @@ pkg-add bash \
         iptables \
         ip6tables \
         lldb \
-        tar
+        tar \
+        tmux
 
 ARG ANCESTOR_PROJECT
 
