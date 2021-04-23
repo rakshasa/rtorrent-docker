@@ -1,0 +1,159 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+# Copy the minimal build context required to create the automake build
+# scripts so that unrelated changes to 'Makefile.am' files does not
+# invalidate the build cache.
+
+FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS stage.configure
+
+COPY /libtorrent.tar.gz /rtorrent.tar.gz /stage/
+     
+WORKDIR "/deploy/libtorrent/configure"
+
+RUN set -xe; \
+  \
+  tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
+    --directory '/deploy/libtorrent/configure' \
+    --wildcards '*.am' \
+    --wildcards '*.m4' \
+    --wildcards '*.pc.in' \
+    --no-wildcards './autogen.sh' \
+    --no-wildcards './configure.ac'; \
+    \
+    ./autogen.sh
+
+WORKDIR "/deploy/rtorrent/configure"
+
+RUN set -xe; \
+  \
+  tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
+    --directory '/deploy/rtorrent/configure' \
+    --wildcards '*.am' \
+    --wildcards '*.m4' \
+    --no-wildcards './autogen.sh' \
+    --no-wildcards './configure.ac'; \
+    \
+    ./autogen.sh
+
+
+FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS configure.libtorrent
+
+COPY --from=stage.configure /deploy/libtorrent/configure/ /build/libtorrent/source/
+
+WORKDIR "/build/libtorrent/output"
+
+RUN set -xe; source /env.configure; \
+  \
+  /build/libtorrent/source/configure --prefix=/prefix --enable-debug --enable-extra-debug; \
+  \
+  rdo-find-move --replace "/build/libtorrent/output" "/deploy/libtorrent/output" \
+    "( \
+       -not -type d -and \
+       -not -name *.Po -and \
+       -not -name *.Plo -and \
+       -not -name *.log \
+    )"
+
+
+FROM "${REPOSITORY}/stage:global" AS stage.libtorrent
+
+COPY --from=configure.libtorrent /build/libtorrent/source/ /stage/libtorrent/source/
+
+COPY /libtorrent.tar.gz /stage/
+
+WORKDIR "/stage/libtorrent/source"
+
+RUN set -xe; \
+  \
+  tar ${RDO_TAR_X_ARGS} /stage/libtorrent.tar.gz \
+    --directory '/stage/libtorrent/source' \
+    --wildcards '*.am' \
+    --wildcards '*.m4' \
+    --wildcards '*.pc.in' \
+    --wildcards '*.cc' \
+    --wildcards '*.h' \
+    --no-wildcards './configure.ac'; \
+  \
+  rdo-find-move --replace "/stage/libtorrent/source" "/deploy/libtorrent/source" \
+    "( \
+       -not -type d \
+    )"
+
+
+FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS compile.libtorrent
+
+COPY --from=stage.libtorrent /deploy/libtorrent/source/ /build/libtorrent/source/
+
+WORKDIR "/build/libtorrent/output"
+
+# Add 'id' with config options.
+RUN --mount=type=cache,sharing=locked,from=configure.libtorrent,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
+  set -xe; \
+  \
+  cat config.h; \
+  \
+  make -j12; \
+  make -j12 install
+
+
+FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS configure.rtorrent
+
+COPY --from=stage.configure /deploy/rtorrent/configure/ /build/rtorrent/source/
+COPY --from=compile.libtorrent /prefix/lib/pkgconfig/libtorrent.pc /prefix/lib/pkgconfig/libtorrent.pc
+
+WORKDIR "/build/rtorrent/output"
+
+RUN set -xe; source /env.configure; \
+  \
+  /build/rtorrent/source/configure --prefix=/prefix --enable-debug --enable-extra-debug; \
+  \
+  rdo-find-move --replace "/build/rtorrent/output" "/deploy/rtorrent/output" \
+    "( \
+       -not -type d -and \
+       -not -name *.Po -and \
+       -not -name *.Plo -and \
+       -not -name *.log \
+    )"
+
+
+FROM "${REPOSITORY}/stage:global" AS stage.rtorrent
+
+COPY --from=configure.rtorrent /build/rtorrent/source/ /stage/rtorrent/source/
+COPY /rtorrent.tar.gz /stage/
+
+WORKDIR "/stage/rtorrent/source"
+
+RUN set -xe; \
+  \
+  tar ${RDO_TAR_X_ARGS} /stage/rtorrent.tar.gz \
+    --directory '/stage/rtorrent/source' \
+    --wildcards '*.am' \
+    --wildcards '*.m4' \
+    --wildcards '*.cc' \
+    --wildcards '*.h' \
+    --no-wildcards './configure.ac'; \
+  \
+  rdo-find-move --replace "/stage/rtorrent/source" "/deploy/rtorrent/source" \
+    "( \
+       -not -type d \
+    )"
+
+
+FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS compile.rtorrent
+
+COPY --from=stage.rtorrent /deploy/rtorrent/source/ /build/rtorrent/source/
+COPY --from=compile.libtorrent /prefix/ /prefix/
+
+WORKDIR "/build/rtorrent/output"
+
+RUN --mount=type=cache,sharing=locked,from=configure.rtorrent,source=/deploy/rtorrent/output,target=/build/rtorrent/output \
+  set -xe; \
+  \
+  cat config.h; \
+  \
+  make -j12; \
+  make -j12 install
