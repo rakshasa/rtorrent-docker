@@ -22,9 +22,7 @@ RUN set -xe; \
     --wildcards '*.m4' \
     --wildcards '*.pc.in' \
     --no-wildcards './autogen.sh' \
-    --no-wildcards './configure.ac'; \
-    \
-    ./autogen.sh
+    --no-wildcards './configure.ac'
 
 WORKDIR "/deploy/rtorrent/configure"
 
@@ -35,14 +33,16 @@ RUN set -xe; \
     --wildcards '*.am' \
     --wildcards '*.m4' \
     --no-wildcards './autogen.sh' \
-    --no-wildcards './configure.ac'; \
-    \
-    ./autogen.sh
+    --no-wildcards './configure.ac'
 
 
 FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS configure.libtorrent
 
 COPY --from=stage.configure /deploy/libtorrent/configure/ /build/libtorrent/source/
+
+WORKDIR "/build/libtorrent/source"
+
+RUN ./autogen.sh
 
 WORKDIR "/build/libtorrent/output"
 
@@ -91,7 +91,9 @@ COPY --from=stage.libtorrent /deploy/libtorrent/source/ /build/libtorrent/source
 WORKDIR "/build/libtorrent/output"
 
 # Add 'id' with config options.
-RUN --mount=type=cache,sharing=locked,from=configure.libtorrent,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
+RUN \
+  --mount=type=cache,sharing=locked,from=configure.libtorrent,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
+  \
   set -xe; \
   \
   cat config.h; \
@@ -104,6 +106,10 @@ FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS configure.rtorrent
 
 COPY --from=stage.configure /deploy/rtorrent/configure/ /build/rtorrent/source/
 COPY --from=compile.libtorrent /prefix/lib/pkgconfig/libtorrent.pc /prefix/lib/pkgconfig/libtorrent.pc
+
+WORKDIR "/build/rtorrent/source"
+
+RUN ./autogen.sh
 
 WORKDIR "/build/rtorrent/output"
 
@@ -143,17 +149,24 @@ RUN set -xe; \
     )"
 
 
-FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS compile.rtorrent
+FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}"
 
 COPY --from=stage.rtorrent /deploy/rtorrent/source/ /build/rtorrent/source/
-COPY --from=compile.libtorrent /prefix/ /prefix/
+COPY --from=compile.libtorrent /prefix/ /stage/prefix/
 
 WORKDIR "/build/rtorrent/output"
 
-RUN --mount=type=cache,sharing=locked,from=configure.rtorrent,source=/deploy/rtorrent/output,target=/build/rtorrent/output \
+RUN \
+  --mount=type=cache,sharing=locked,from=configure.rtorrent,source=/deploy/rtorrent/output,target=/build/rtorrent/output \
+  --mount=type=cache,sharing=locked,target=/prefix \
+  \
   set -xe; \
+  \
+  rdo-find-move --copy "/stage/prefix" "/prefix" "( -not -type d )"; \
   \
   cat config.h; \
   \
   make -j12; \
-  make -j12 install
+  make -j12 install; \
+  \
+  cp -r /prefix /deploy/prefix

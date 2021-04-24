@@ -2,9 +2,17 @@
 
 set -e -o pipefail
 
+ARG_COPY=
 ARG_REPLACE=
+ARG_KEEP_DIRECTORY=
 
 while true; do
+  if [[ "${1}" == "--copy" ]]; then
+    ARG_COPY="yes"
+    shift
+    continue
+  fi
+
   if [[ "${1}" == "--replace" ]]; then
     ARG_REPLACE="yes"
     shift
@@ -21,7 +29,7 @@ while true; do
 done
 
 if [[ -n "${4}" ]]; then
-  echo "too many arguments: ${4}" >&2
+  echo "too many arguments: ${@}" >&2
   exit 1
 fi
 
@@ -50,11 +58,18 @@ find ./ \
   -exec echo '{}' \; | tr '\n' '\0' | xargs -r0 -I {} sh --noprofile --norc -c "
 set +x
 
-if [[ ! -e '${DST_DIR}/{}' ]] || ! diff -q '${SRC_DIR}/{}' '${DST_DIR}/{}'; then
-  mv -v '${SRC_DIR}/{}' '${DST_DIR}/{}';
+if [[ '${ARG_COPY}' == 'yes' ]]; then
+  if [[ ! -e '${DST_DIR}/{}' ]] || ! diff -q '${SRC_DIR}/{}' '${DST_DIR}/{}'; then
+    cp -v '${SRC_DIR}/{}' '${DST_DIR}/{}';
+  fi
 else
-  rm -f '${SRC_DIR}/{}'
-fi" \;
+  if [[ ! -e '${DST_DIR}/{}' ]] || ! diff -q '${SRC_DIR}/{}' '${DST_DIR}/{}'; then
+    mv -v '${SRC_DIR}/{}' '${DST_DIR}/{}';
+  else
+    rm -f '${SRC_DIR}/{}'
+  fi
+fi
+" \;
 
 if [[ "${ARG_KEEP_DIRECTORY}" != "yes" ]]; then
   rm -rf "$(cd "${SRC_DIR}" &> /dev/null && pwd)"
