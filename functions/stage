@@ -187,10 +187,7 @@ rdo_stage_network() {
 
   docker network create "${args[@]}" "${name}" > /dev/null
 
-  local network_bridge
-  network_bridge+=("$(rdo_network_bridge "${name}")")
-
-  rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${network_bridge}" ! -o "${network_bridge}" -j DROP
+  rdo_network_isolate_network "${name}"
 
   echo "$(rdo_network subnet "${name}")" > "${self_path}/subnet"
   echo "$(rdo_network address "${name}")" > "${self_path}/address"
