@@ -61,9 +61,11 @@ rdo_stage_deploy() {
 }
 
 rdo_stage_clean() {
+  docker container rm --force $(docker container ls -qa --filter "label=project=rdo") > /dev/null
+
   rdo_network_iptables_flush > /dev/null
-  rdo_node_clean > /dev/null
   rdo_network_clean > /dev/null
+
   rm -rf ./run/current &> /dev/null
   rm -rf ./run/torrents/* &> /dev/null
   print_progress "stage cleaned"
@@ -575,22 +577,60 @@ rdo_stage__container__start() {
 rdo_stage__container__update_run() {
   local self_path="./run/current/nodes/${node_name}"
 
-  rm -rf "${self_path}/interfaces"
+  rm -rf "${self_path}/"{interfaces,net}
+  mkdir "${self_path}/"{interfaces,net}
+
+  local sandbox_key
+  sandbox_key="$(docker inspect --format='{{.NetworkSettings.SandboxKey}}' "${node_name}")"
+
+  local line
+  while IFS= read -r line; do
+    if ! [[ "${line}" =~ ^ifname:([^ ]*)\ ifindex:([^ ]*)$ ]]; then
+      print_error "invalid input from ip link using nsenter"
+      continue
+    fi
+
+    local ifname="${BASH_REMATCH[1]:?Missing interface name.}"
+    local iflink="$(( BASH_REMATCH[2] - 1 ))"
+    local ifveth
+    ifveth="$(rdo__call_host ip -oneline link | sed -ne "s/^[0-9]*: veth\([0-9a-f]*\)@if${iflink}:[^\$]*/veth\1/p")"
+
+    mkdir "${self_path}/net/${ifname}"
+
+    echo "${BASH_REMATCH[2]}" > "${self_path}/net/${ifname}/ifindex"
+    echo "${iflink}" > "${self_path}/net/${ifname}/iflink"
+    echo "${ifveth}" > "${self_path}/net/${ifname}/ifveth"
+
+  done <<< "$(rdo__call_host sudo nsenter --net="${sandbox_key}" -- ip -oneline link |
+                sed -ne "s/^[0-9]*: eth\([0-9]*\)@if\([^:]*\):[^\$]*/ifname:eth\1 ifindex:\2/p")"
+
+  local eth_index=$(( 0 ))
 
   local line
   while IFS= read -r line; do
     if ! [[ "${line}" =~ ^network:([^ ]*)\ mac:([^ ]*)\ inet:([^ ]*)\ inet6:([^ ]*)$ ]]; then
-      print_error "invalid output from 'rdo node network '${node_name}'"
+      print_error "invalid input from 'rdo node network '${node_name}'"
       continue
     fi
 
     local network="${BASH_REMATCH[1]:?Missing network name.}"
-    local interface_path="${self_path}/interfaces/${network}"
-    mkdir -p "${interface_path}"
+    mkdir "${self_path}/interfaces/${network}"
 
-    [[ -z "${BASH_REMATCH[2]}" ]] || echo "${BASH_REMATCH[2]}" > "${interface_path}/mac"
-    [[ -z "${BASH_REMATCH[3]}" ]] || echo "${BASH_REMATCH[3]}" > "${interface_path}/inet"
-    [[ -z "${BASH_REMATCH[4]}" ]] || echo "${BASH_REMATCH[4]}" > "${interface_path}/inet6"
+    [[ -z "${BASH_REMATCH[2]}" ]] || echo "${BASH_REMATCH[2]}" > "${self_path}/interfaces/${network}/mac"
+    [[ -z "${BASH_REMATCH[3]}" ]] || echo "${BASH_REMATCH[3]}" > "${self_path}/interfaces/${network}/inet"
+    [[ -z "${BASH_REMATCH[4]}" ]] || echo "${BASH_REMATCH[4]}" > "${self_path}/interfaces/${network}/inet6"
 
-  done <<< "$(rdo_node_network "${node_name}")"
+    if ! [[ -d "${self_path}/net/eth${eth_index}" ]]; then
+      print_error "node '${node_name}' is missing runtime information for interface 'eth${eth_index}'"
+      continue
+    fi
+
+    echo "eth${eth_index}" > "${self_path}/interfaces/${network}/ifname"
+    cp "${self_path}/net/eth${eth_index}/"{ifindex,iflink,ifveth} "${self_path}/interfaces/${network}/"
+
+  done <<< "$(docker inspect --format '
+                {{- range $key, $value := .NetworkSettings.Networks }}
+                {{- printf "network:%s mac:%s inet:%s inet6:%s\n" $key $value.MacAddress $value.IPAddress $value.GlobalIPv6Address }}
+                {{- end -}}
+                ' "${node_name}")"
 }

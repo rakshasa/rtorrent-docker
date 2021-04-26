@@ -31,7 +31,6 @@ include_source=(
   docker.context
   init
   network
-  node
   run
   stage
   torrent
@@ -66,8 +65,6 @@ rdo() {
   #                   'is_header_included machine || source "./functions/machine"; rdo_machine "${@}"'
   # args::new_command "network" default "Manage networks" \
   #                   'rdo_network "${@}"'
-  # args::new_command "node" default "Manage nodes" \
-  #                   'rdo_node "${@}"'
   # args::new_command "stage" default "Stage environments" \
   #                   'rdo_stage "${@}"'
   # args::new_command "torrent" default "Manage torrents" \
