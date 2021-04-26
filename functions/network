@@ -3,150 +3,49 @@
 include_header network
 
 rdo_network() {
-  # eval "$(args::init_subcommand "rdo network" "Manage networks.")"
+  eval "$(args::init_subcommand "rdo network" "Manage networks.")"
 
-  # args::new_command "clean" empty "Remove all networks" \
-  #                   'rdo_network_clean "${@}"'
-  # args::new_command "ls" default "List networks" \
-  #                   'rdo_network_ls "${@}"'
+  args::new_command "clean" empty "Remove all networks" \
+                    'rdo_network_clean "${@}"'
+  args::new_command "ls" default "List networks" \
+                    'rdo_network_ls "${@}"'
 
-  # args::new_command "address" default "Get network address" \
-  #                   'rdo_network_address "${@}"'
-  # args::new_command "bridge" default "Get bridge name" \
-  #                   'rdo_network_bridge "${@}"'
-  # args::new_command "interface-name" default "Get interface name" \
-  #                   'rdo_network_interface_name "${@}"'
-  # args::new_command "prefix" default "Get network prefix" \
-  #                   'rdo_network_prefix "${@}"'
-  # args::new_command "subnet" default "Get network subnet" \
-  #                   'rdo_network_subnet "${@}"'
+  args::new_command "address" default "Get network address" \
+                    'rdo_network_address "${@}"'
+  args::new_command "bridge" default "Get bridge name" \
+                    'rdo_network_bridge "${@}"'
+  args::new_command "interface-name" default "Get interface name" \
+                    'rdo_network_interface_name "${@}"'
+  args::new_command "prefix" default "Get network prefix" \
+                    'rdo_network_prefix "${@}"'
+  args::new_command "subnet" default "Get network subnet" \
+                    'rdo_network_subnet "${@}"'
 
-  # args::new_command "iptables" default "Call iptables on docker host" \
-  #                   'rdo_network_iptables "${@}"'
-  # args::new_command "iptables-flush" empty "Flush rdo-specific iptables rules on docker host" \
-  #                   'rdo_network_iptables_flush'
-  # args::new_command "iptables-list" empty "List rdo-specific iptables rules on docker host" \
-  #                   'rdo_network_iptables_list'
-  # args::new_command "iptables-save" default "Call iptables-save on docker host" \
-  #                   'rdo_network_iptables_save "${@}"'
-  # args::new_command "nat" default "Add nat rules between networks" \
-  #                   'rdo_network_nat "${@}"'
-  # args::new_command "forward" default "Add forward rules between networks" \
-  #                   'rdo_network_forward "${@}"'
+  # TODO: Move all iptables stuff into sub-command:
+  args::new_command "iptables" default "Call iptables on docker host" \
+                    'rdo_network_iptables "${@}"'
+  args::new_command "iptables-flush" empty "Flush rdo-specific iptables rules on docker host" \
+                    'rdo_network_iptables_flush'
+  args::new_command "iptables-list" empty "List rdo-specific iptables rules on docker host" \
+                    'rdo_network_iptables_list'
+  args::new_command "iptables-save" default "Call iptables-save on docker host" \
+                    'rdo_network_iptables_save "${@}"'
 
-  # args::new_command "tc" default "Call tc on docker host" \
-  #                   'rdo_network_tc "${@}"'
-  # args::new_command "tc-replace-root-tbf" default "Replace tc root tbf rule of node" \
-  #                   'rdo_network_tc_replace_root_tbf "${@}"'
-  # args::new_command "tc-del-root" default "Delete root rule of node" \
-  #                   'rdo_network_tc_del_root "${@}"'
+  args::new_command "forward" default "Add forward rules between networks" \
+                    'rdo_network_forward "${@}"'
+  args::new_command "isolate-network" default "Isolate network" \
+                    'rdo_network_isolate_network "${@}"'
+  args::new_command "nat" default "Add nat rules between networks" \
+                    'rdo_network_nat "${@}"'
 
-  # eval "$(args::process)"
+  args::new_command "tc" default "Call tc on docker host" \
+                    'rdo_network_tc "${@}"'
+  args::new_command "tc-replace-root-tbf" default "Replace tc root tbf rule of node" \
+                    'rdo_network_tc_replace_root_tbf "${@}"'
+  args::new_command "tc-del-root" default "Delete root rule of node" \
+                    'rdo_network_tc_del_root "${@}"'
 
-  # start of generated bash args 'rdo network'
-
-  while true; do
-    case "${1}" in
-      --help|-h|'')
-        echo "Usage: rdo network"
-        echo
-        echo "Manage networks."
-        echo
-        echo "Commands:"
-        echo "  clean                 Remove all networks"
-        echo "  ls                    List networks"
-        echo "  address               Get network address"
-        echo "  bridge                Get bridge name"
-        echo "  interface-name        Get interface name"
-        echo "  prefix                Get network prefix"
-        echo "  subnet                Get network subnet"
-        echo "  iptables              Call iptables on docker host"
-        echo "  iptables-flush        Flush rdo-specific iptables rules on docker host"
-        echo "  iptables-list         List rdo-specific iptables rules on docker host"
-        echo "  iptables-save         Call iptables-save on docker host"
-        echo "  nat                   Add nat rules between networks"
-        echo "  forward               Add forward rules between networks"
-        echo "  tc                    Call tc on docker host"
-        echo "  tc-replace-root-tbf   Replace tc root tbf rule of node"
-        echo "  tc-del-root           Delete root rule of node"
-        echo
-        echo "Run 'rdo network COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  local args__root="rdo network"
-  local args__cmd="${1}"
-  shift || :
-
-  case "${args__cmd}" in
-    clean)
-      args::verify_command_empty "${@}"
-      rdo_network_clean "${@}"
-      ;;
-    ls)
-      rdo_network_ls "${@}"
-      ;;
-    address)
-      rdo_network_address "${@}"
-      ;;
-    bridge)
-      rdo_network_bridge "${@}"
-      ;;
-    interface-name)
-      rdo_network_interface_name "${@}"
-      ;;
-    prefix)
-      rdo_network_prefix "${@}"
-      ;;
-    subnet)
-      rdo_network_subnet "${@}"
-      ;;
-    iptables)
-      rdo_network_iptables "${@}"
-      ;;
-    iptables-flush)
-      args::verify_command_empty "${@}"
-      rdo_network_iptables_flush
-      ;;
-    iptables-list)
-      args::verify_command_empty "${@}"
-      rdo_network_iptables_list
-      ;;
-    iptables-save)
-      rdo_network_iptables_save "${@}"
-      ;;
-    nat)
-      rdo_network_nat "${@}"
-      ;;
-    forward)
-      rdo_network_forward "${@}"
-      ;;
-    tc)
-      rdo_network_tc "${@}"
-      ;;
-    tc-replace-root-tbf)
-      rdo_network_tc_replace_root_tbf "${@}"
-      ;;
-    tc-del-root)
-      rdo_network_tc_del_root "${@}"
-      ;;
-    *)
-      print_error "rdo network: unknown command: ${args__cmd}"
-      exit 1
-      ;;
-  esac
-
-  # end of generated bash args 'rdo network'
+  eval "$(args::process)"
 }
 
 rdo_network_clean() {
@@ -283,6 +182,52 @@ rdo_network_iptables_save() {
   rdo__call_host sudo iptables-save "${@}"
 }
 
+rdo_network_forward() {
+  eval "$(args::init_options_string "rdo network forward OUTER-NETWORK" "outer_network" "Add FORWARD route between networks.")"
+
+  args::new_option "network" req_string "n" "Add inner network" 'local inner_networks=()' 'inner_networks+=("${args__1}")'
+
+  eval "$(args::process)"
+
+  if (( ${#inner_networks[@]} == 0 )); then
+    print_error "rdo network nat: Missing inner networks."
+    return 1
+  fi
+
+  local outer_network_bridge
+  outer_network_bridge="$(rdo_network_bridge "${outer_network}")"
+
+  local inner_network
+  for inner_network in "${inner_networks[@]}"; do
+    local inner_network_bridge
+    inner_network_bridge="$(rdo_network_bridge "${inner_network}")"
+
+    local default_iptables_args=(
+      -m comment
+      --comment "'rdo network forward ${inner_network}->${outer_network}'"
+    )
+
+    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -j ACCEPT
+    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
+  done
+}
+
+rdo_network_isolate_network() {
+  eval "$(args::init_options_string "rdo network isolate-network NETWORK" "network" "Isolate network.")"
+
+  eval "$(args::process)"
+
+  local network_bridge
+  network_bridge="$(rdo_network_bridge "${network}")"
+
+  local default_iptables_args=(
+    -m comment
+    --comment "'rdo network isolate-network ${network}'"
+  )
+
+  rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${network_bridge}" ! -o "${network_bridge}" -j DROP
+}
+
 rdo_network_nat() {
   # eval "$(args::init_options_string "rdo network nat OUTER-NETWORK" "outer_network" "Add NAT route between networks.")"
 
@@ -371,36 +316,6 @@ rdo_network_nat() {
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -m state --state RELATED,ESTABLISHED -j ACCEPT
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j MARK --set-mark "${mark}"
-  done
-}
-
-rdo_network_forward() {
-  eval "$(args::init_options_string "rdo network forward OUTER-NETWORK" "outer_network" "Add FORWARD route between networks.")"
-
-  args::new_option "network" req_string "n" "Add inner network" 'local inner_networks=()' 'inner_networks+=("${args__1}")'
-
-  eval "$(args::process)"
-
-  if (( ${#inner_networks[@]} == 0 )); then
-    print_error "rdo network nat: Missing inner networks."
-    return 1
-  fi
-
-  local outer_network_bridge
-  outer_network_bridge="$(rdo_network_bridge "${outer_network}")"
-
-  local inner_network
-  for inner_network in "${inner_networks[@]}"; do
-    local inner_network_bridge
-    inner_network_bridge="$(rdo_network_bridge "${inner_network}")"
-
-    local default_iptables_args=(
-      -m comment
-      --comment "'rdo network forward ${inner_network}->${outer_network}'"
-    )
-
-    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -j ACCEPT
-    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
   done
 }
 

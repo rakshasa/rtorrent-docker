@@ -48,7 +48,7 @@ WORKDIR "/build/libtorrent/output"
 
 RUN set -xe; source /env.configure; \
   \
-  /build/libtorrent/source/configure --prefix=/prefix --enable-debug --enable-extra-debug; \
+  /build/libtorrent/source/configure --prefix=/prefix --enable-debug --enable-extra-debug --disable-pthread-setname-np; \
   \
   rdo-find-move --replace "/build/libtorrent/output" "/deploy/libtorrent/output" \
     "( \
