@@ -5,6 +5,7 @@ set -e
 local TESTS=(
   ci-default
   ci-low-diskspace
+  ci-nat
   ci-throttle
 )
 
