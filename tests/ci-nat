@@ -11,29 +11,19 @@ rdo_test_begin
 # Topology, trackers and torrents:
 #
 
-# TODO: Need to add support for different ip addresses for NATs.
-
 rdo_stage_network "rt-global"
 
 rdo_stage_network "rt-nat-1"
-rdo_stage_router  --network "rt-global" --network "rt-nat-1" "rt-nat-egress-1"
-rdo_network_nat   --network "rt-nat-1" --veth "rt-nat-egress-1:eth0"
+rdo_network_nat   --network "rt-nat-1" --bridge "rt-global"
 
 rdo_stage_network "rt-nat-2"
-rdo_stage_router  --network "rt-global" --network "rt-nat-2" "rt-nat-egress-2"
-rdo_network_nat   --network "rt-nat-2" --veth "rt-nat-egress-2:eth0"
+rdo_network_nat   --network "rt-nat-2" --bridge "rt-global"
 
 rdo_stage_network "rt-nat-3"
-rdo_stage_router  --network "rt-global" --network "rt-nat-3" "rt-nat-egress-3"
-rdo_network_nat   --network "rt-nat-3" --veth "rt-nat-egress-3:eth0"
+rdo_network_nat   --network "rt-nat-3" --bridge "rt-global"
 
 rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
 rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
-
-
-# Use NAT instead
-#rdo_stage_router  --run-template "empty"  --network "rt-global" --network "rt-nat-outer-1" "rt-router-test"
-
 
 rdo_stage_deploy
 
@@ -66,21 +56,14 @@ rdo_torrent_wait --print --wait-all \
 # Leechers:
 #
 
-# Use NAT to isolate all clients from eachother, except for the global
-# seed.
-
-# TODO: Test multiple NAT leechers, seems peer_list might have an
-# issue with multiple connectes from the same IP at the same
-# time. (Use TC for proper testing, add a separate ci-nat test)
-
 test_clients=(
   "rt-leech-nat-1-1"
-  "rt-leech-nat-2-"{1..2}
+  "rt-leech-nat-2-1"
   "rt-leech-nat-3-"{1..4}
 )
 
 rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat-1" "rt-leech-nat-1-1"
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat-2" "rt-leech-nat-2-"{1..2}
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat-2" "rt-leech-nat-2-1"
 rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat-3" "rt-leech-nat-3-"{1..4}
 
 rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-global"

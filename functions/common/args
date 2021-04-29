@@ -461,7 +461,9 @@ EOF
 }
 
 args::process() {
-  # print_normal "args::process->${args__root}" >&2
+  if [[ "${args__is_processing}" != "no" ]]; then
+    print_normal "args::process->${args__root}" >&2
+  fi
 
   local args__need_seperator="no"
   local args__print_error="${args__print_error:-print_error}"
