@@ -6,23 +6,97 @@ rdo_build() {
   local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
   local arg_tag_append=
 
-  eval "$(args::init_subcommand "rdo build" "Build project.")"
+  # eval "$(args::init_subcommand "rdo build" "Build project.")"
 
-  args::new_option "compiler" string "c" "Select the compiler to use" \
-                   'local build_args=()' 'build_args+=("--build-arg" "COMPILER=${args__1}")'
-  args::new_option "dry-run" empty "" "Do not actually build the container" \
-                   '' 'build_args+=("--dry-run")'
-  args::new_option "rebuild" empty "" "Rebuild all base images" \
-                   'local arg_rebuild=' 'build_args+=("--rebuild"); arg_rebuild="yes"'
+  # args::new_option "compiler" string "c" "Select the compiler to use" \
+  #                  'local build_args=()' 'build_args+=("--build-arg" "COMPILER=${args__1}")'
+  # args::new_option "dry-run" empty "" "Do not actually build the container" \
+  #                  '' 'build_args+=("--dry-run")'
+  # args::new_option "rebuild" empty "" "Rebuild all base images" \
+  #                  'local arg_rebuild=' 'build_args+=("--rebuild"); arg_rebuild="yes"'
 
-  args::new_command "all" empty "Build all" \
-                    'rdo_build_all'
-  args::new_command "clean" empty "Clean all build images" \
-                    'rdo_build_clean'
-  args::new_command "init" empty "Build all init images" \
-                    'rdo_build_init'
+  # args::new_command "all" empty "Build all" \
+  #                   'rdo_build_all'
+  # args::new_command "clean" empty "Clean all build images" \
+  #                   'rdo_build_clean'
+  # args::new_command "init" empty "Build all init images" \
+  #                   'rdo_build_init'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo build'
+
+  local build_args=()
+  local arg_rebuild=
+
+  while true; do
+    case "${1}" in
+      --compiler|-c)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        shift 2
+        build_args+=("--build-arg" "COMPILER=${args__1}")
+        ;;
+      --dry-run)
+        shift
+        build_args+=("--dry-run")
+        ;;
+      --rebuild)
+        shift
+        build_args+=("--rebuild"); arg_rebuild="yes"
+        ;;
+      --help|-h|'')
+        echo "Usage: rdo build"
+        echo
+        echo "Build project."
+        echo
+        echo "Options:"
+        echo "  -c, --compiler   Select the compiler to use"
+        echo "      --dry-run    Do not actually build the container"
+        echo "      --rebuild    Rebuild all base images"
+        echo
+        echo "Commands:"
+        echo "  all              Build all"
+        echo "  clean            Clean all build images"
+        echo "  init             Build all init images"
+        echo
+        echo "Run 'rdo build COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo build"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    all)
+      args::verify_command_empty "${@}"
+      rdo_build_all
+      ;;
+    clean)
+      args::verify_command_empty "${@}"
+      rdo_build_clean
+      ;;
+    init)
+      args::verify_command_empty "${@}"
+      rdo_build_init
+      ;;
+    *)
+      print_error "rdo build: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
+
+  # end of generated bash args 'rdo build'
 }
 
 rdo_build_all() {
@@ -58,41 +132,6 @@ rdo_build_init() {
   rdo_build__build --context-type "run" --context-name "opentracker" --no-rebuild "run/opentracker:global"
   rdo_build__build --context-type "run" --context-name "dns"         --no-rebuild "run/dns:global"
   rdo_build__build --context-type "run" --context-name "router"      --no-rebuild "run/router:global"
-}
-
-rdo_build_libtorrent_dev() {
-  rdo_init verify
-
-  local image_tag="${arg_repository}/build/libtorrent-stage:default"
-  local container_name="rdo-build-libtorrent"
-
-  if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__running_container_id__name "${container_name}")" ]]; then
-    rdo_build_init
-    rdo_build__libtorrent
-    print_space
-    rdo run init --rebuild "${image_tag}" "${container_name}"
-    print_space
-  fi
-
-  docker exec "${container_name}" build-all libtorrent
-}
-
-rdo_build_rtorrent_dev() {
-  rdo_init verify
-
-  local image_tag="${arg_repository}/build/rtorrent-stage:default"
-  local container_name="rdo-build-rtorrent"
-
-  if [[ "${arg_rebuild}" == "yes" ]] || [[ -z "$(rdo__container_id__name "${container_name}")" ]]; then
-    rdo_build_init
-    rdo_build__libtorrent
-    rdo_build__rtorrent
-    print_space
-    rdo run init --rebuild "${image_tag}" "${container_name}"
-    print_space
-  fi
-
-  docker exec "${container_name}" build-all rtorrent
 }
 
 # Helper functions

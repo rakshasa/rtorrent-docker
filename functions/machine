@@ -3,22 +3,84 @@
 include_header machine
 
 rdo_machine() {
-  eval "$(args::init_subcommand "rdo machine" "Create and manage rtorrent-docker machines.")"
+  # eval "$(args::init_subcommand "rdo machine" "Create and manage rtorrent-docker machines.")"
 
-  args::new_command "create" default "Create the docker machine" \
-                    'rdo_machine_create "${@}"'
-  args::new_command "current" default "Print the current docker machine name" \
-                    'rdo_machine_current "${@}"'
-  args::new_command "destroy" default "Destroy the docker machine" \
-                    'rdo_machine_destroy "${@}"'
-  args::new_command "start" default "Start the docker machine" \
-                    'rdo_machine_start "${@}"'
-  args::new_command "status" default "Print the status of the docker machine" \
-                    'rdo_machine_status "${@}"'
-  args::new_command "stop" default "Stop the docker machine" \
-                    'rdo_machine_stop "${@}"'
+  # args::new_command "create" default "Create the docker machine" \
+  #                   'rdo_machine_create "${@}"'
+  # args::new_command "current" default "Print the current docker machine name" \
+  #                   'rdo_machine_current "${@}"'
+  # args::new_command "destroy" default "Destroy the docker machine" \
+  #                   'rdo_machine_destroy "${@}"'
+  # args::new_command "start" default "Start the docker machine" \
+  #                   'rdo_machine_start "${@}"'
+  # args::new_command "status" default "Print the status of the docker machine" \
+  #                   'rdo_machine_status "${@}"'
+  # args::new_command "stop" default "Stop the docker machine" \
+  #                   'rdo_machine_stop "${@}"'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo machine'
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo machine"
+        echo
+        echo "Create and manage rtorrent-docker machines."
+        echo
+        echo "Commands:"
+        echo "  create    Create the docker machine"
+        echo "  current   Print the current docker machine name"
+        echo "  destroy   Destroy the docker machine"
+        echo "  start     Start the docker machine"
+        echo "  status    Print the status of the docker machine"
+        echo "  stop      Stop the docker machine"
+        echo
+        echo "Run 'rdo machine COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo machine"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    create)
+      rdo_machine_create "${@}"
+      ;;
+    current)
+      rdo_machine_current "${@}"
+      ;;
+    destroy)
+      rdo_machine_destroy "${@}"
+      ;;
+    start)
+      rdo_machine_start "${@}"
+      ;;
+    status)
+      rdo_machine_status "${@}"
+      ;;
+    stop)
+      rdo_machine_stop "${@}"
+      ;;
+    *)
+      print_error "rdo machine: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
+
+  # end of generated bash args 'rdo machine'
 }
 
 rdo_machine_create() {
