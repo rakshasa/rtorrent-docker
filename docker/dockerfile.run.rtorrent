@@ -13,7 +13,7 @@ ENV PATH="/prefix/bin:${PATH}"
 
 RUN mkdir -p "/torrents"
 
-COPY --from=stage /deploy/prefix/ /prefix/
+COPY --from=stage /prefix/ /prefix/
 COPY bash_profile /root/.bash_profile
 COPY entrypoint.sh /
 

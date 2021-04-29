@@ -48,7 +48,7 @@ WORKDIR "/build/libtorrent/output"
 
 RUN set -xe; source /env.configure; \
   \
-  /build/libtorrent/source/configure --prefix=/prefix --enable-debug --enable-extra-debug --disable-pthread-setname-np; \
+  /build/libtorrent/source/configure --prefix=/prefix INSTALL="/usr/bin/install -C" --enable-debug --enable-extra-debug --disable-pthread-setname-np; \
   \
   rdo-find-move --replace "/build/libtorrent/output" "/deploy/libtorrent/output" \
     "( \
@@ -93,19 +93,23 @@ WORKDIR "/build/libtorrent/output"
 # Add 'id' with config options.
 RUN \
   --mount=type=cache,sharing=locked,from=configure.libtorrent,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
+  --mount=type=cache,sharing=locked,target=/prefix \
   \
   set -xe; \
   \
   cat config.h; \
   \
   make -j12; \
-  make -j12 install
+  make -j12 install; \
+  make -j12 check || echo "*** UNIT TESTS FAILED ***"; \
+  \
+  cp -rp /prefix /deploy/prefix
 
 
 FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS configure.rtorrent
 
 COPY --from=stage.configure /deploy/rtorrent/configure/ /build/rtorrent/source/
-COPY --from=compile.libtorrent /prefix/lib/pkgconfig/libtorrent.pc /prefix/lib/pkgconfig/libtorrent.pc
+COPY --from=compile.libtorrent /deploy/prefix/lib/pkgconfig/libtorrent.pc /prefix/lib/pkgconfig/libtorrent.pc
 
 WORKDIR "/build/rtorrent/source"
 
@@ -115,7 +119,7 @@ WORKDIR "/build/rtorrent/output"
 
 RUN set -xe; source /env.configure; \
   \
-  /build/rtorrent/source/configure --prefix=/prefix --enable-debug --enable-extra-debug; \
+  /build/rtorrent/source/configure --prefix=/prefix INSTALL="/usr/bin/install -C" --enable-debug --enable-extra-debug; \
   \
   rdo-find-move --replace "/build/rtorrent/output" "/deploy/rtorrent/output" \
     "( \
@@ -152,21 +156,16 @@ RUN set -xe; \
 FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}"
 
 COPY --from=stage.rtorrent /deploy/rtorrent/source/ /build/rtorrent/source/
-COPY --from=compile.libtorrent /prefix/ /stage/prefix/
+COPY --from=compile.libtorrent /deploy/prefix/ /prefix/
 
 WORKDIR "/build/rtorrent/output"
 
 RUN \
   --mount=type=cache,sharing=locked,from=configure.rtorrent,source=/deploy/rtorrent/output,target=/build/rtorrent/output \
-  --mount=type=cache,sharing=locked,target=/prefix \
-  \
   set -xe; \
-  \
-  rdo-find-move --copy "/stage/prefix" "/prefix" "( -not -type d )"; \
   \
   cat config.h; \
   \
   make -j12; \
   make -j12 install; \
-  \
-  cp -r /prefix /deploy/prefix
+  make -j12 check || echo "*** UNIT TESTS FAILED ***"

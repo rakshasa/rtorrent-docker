@@ -3,16 +3,69 @@
 include_header init
 
 rdo_init() {
-  eval "$(args::init_subcommand "rdo init" "Initialize rtorrent docker test environment.")"
+  # eval "$(args::init_subcommand "rdo init" "Initialize rtorrent docker test environment.")"
 
-  args::new_command "default" empty "Initialize default docker environment" \
-                    'rdo_init_default "${@}"'
-  args::new_command "machine" empty "Initialize docker-machine environment" \
-                    'rdo_init_machine "${@}"'
-  args::new_command "verify" empty "Verify environment" \
-                    'rdo_init_verify "${@}"'
+  # args::new_command "default" empty "Initialize default docker environment" \
+  #                   'rdo_init_default "${@}"'
+  # args::new_command "machine" empty "Initialize docker-machine environment" \
+  #                   'rdo_init_machine "${@}"'
+  # args::new_command "verify" empty "Verify environment" \
+  #                   'rdo_init_verify "${@}"'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo init'
+
+  while true; do
+    case "${1}" in
+      --help|-h|'')
+        echo "Usage: rdo init"
+        echo
+        echo "Initialize rtorrent docker test environment."
+        echo
+        echo "Commands:"
+        echo "  default   Initialize default docker environment"
+        echo "  machine   Initialize docker-machine environment"
+        echo "  verify    Verify environment"
+        echo
+        echo "Run 'rdo init COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo init"
+  local args__cmd="${1}"
+  shift || :
+
+  case "${args__cmd}" in
+    default)
+      args::verify_command_empty "${@}"
+      rdo_init_default "${@}"
+      ;;
+    machine)
+      args::verify_command_empty "${@}"
+      rdo_init_machine "${@}"
+      ;;
+    verify)
+      args::verify_command_empty "${@}"
+      rdo_init_verify "${@}"
+      ;;
+    *)
+      print_error "rdo init: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
+
+  # end of generated bash args 'rdo init'
 }
 
 rdo_init_default() {
