@@ -2,7 +2,10 @@ FROM "lednerb/opentracker-docker"
 
 WORKDIR /run/self
 
-RUN apk add --no-cache bash
+RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
+  \
+  apk add \
+      bash
 
 COPY bash_profile /root/.bash_profile
 COPY entrypoint.sh /

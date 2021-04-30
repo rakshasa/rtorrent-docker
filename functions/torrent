@@ -257,7 +257,7 @@ rdo_torrent__init() {
     docker rm "rdo-utils-mktorrent"
   fi
 
-  rdo_docker context build --empty --cache --no-rebuild --ancestor-project "utils" "run/mktorrent:global"
+  rdo_docker context build --empty --no-rebuild --ancestor-project "utils" "run/mktorrent:global"
 
   mkdir -p "./run/torrents"
 
