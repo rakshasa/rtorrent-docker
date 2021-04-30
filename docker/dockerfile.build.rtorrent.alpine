@@ -1,0 +1,82 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/ancestor/build:global" AS compiler
+
+ARG RDO_COMPILER="clang"
+ENV RDO_COMPILER="${RDO_COMPILER}"
+ARG RDO_COMPILER_STANDARD="c++11"
+ENV RDO_COMPILER_STANDARD="${RDO_COMPILER_STANDARD}"
+
+RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
+  \
+  apk add \
+      autoconf \
+      automake \
+      binutils \
+      file \
+      libtool \
+      linux-headers \
+      make \
+      \
+      cppunit-dev \
+      curl-dev \
+      libc-dev \
+      musl-dev \
+      ncurses-dev \
+      openssl-dev \
+      zlib-dev \
+      \
+      libexecinfo-dev; \
+  \
+  echo -e "\033[0;32musing compiler family ${RDO_COMPILER}\033[0m"; set -xe; \
+  \
+  if [ "${RDO_COMPILER}" = "clang" ]; then \
+    # clang requires crtbeginS.o from gcc and std headers from g++ \
+    echo "export CC=clang CXX=clang++" >> /env.configure; \
+    apk add \
+        gcc \
+        g++ \
+        gdb \
+        clang; \
+    \
+  elif [ "${RDO_COMPILER}" = "gcc" ]; then \
+    echo "export CC=gcc CXX=g++" >> /env.configure; \
+      apk add \
+          gcc \
+          g++ \
+          gdb; \
+    \
+  else \
+    echo -e "\033[0;31munknown compiler family: ${RDO_COMPILER}\033[0m"; \
+    exit 1; \
+  fi
+
+RUN echo -e "\033[0;32msetting configure flags\033[0m"; set -xe; \
+  \
+  echo "export PKG_CONFIG_PATH=\"/prefix/lib/pkgconfig:/usr/lib/pkgconfig\"" >> /env.configure; \
+  echo "export CXXFLAGS=\"-std=${RDO_COMPILER_STANDARD} -Wno-exceptions -Wno-pessimizing-move\"" >> /env.configure
+
+
+FROM "${REPOSITORY}/ancestor/run:global" AS run
+
+RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
+  \
+  apk add \
+      curl \
+      cppunit \
+      libexecinfo \
+      libgcc \
+      libstdc++ \
+      musl \
+      ncurses \
+      openssl \
+      tcpdump \
+      zlib
+
+
+# Fake endpoint:
+FROM "scratch"

@@ -97,7 +97,7 @@ args::new_option() {
   args__option_flags[${name}]="${3}"
   args__option_descriptions[${name}]="${4:?Missing description argument.}"
   args__option_inits[${name}]="${5}"
-  args__option_blocks[${name}]="${6:?Missing block argument.}"
+  args__option_blocks[${name}]="${6}"
 }
 
 args::new_command() {
@@ -135,17 +135,17 @@ EOF
 
   for name in "${args__options[@]}"; do
     case "${args__option_types[${name}]}" in
-      req_string)
+      string|req_string)
         skip_line=yes
         cat - <<EOF
-local args__opt_value__${name}=
+local args__opt_value__${name//-/_}=
 EOF
         ;;
-      req_string2*)
+      string2*|req_string2*)
         skip_line=yes
         cat - <<EOF
-local args__opt_value__${name}_1=
-local args__opt_value__${name}_2=
+local args__opt_value__${name//-/_}_1=
+local args__opt_value__${name//-/_}_2=
 EOF
         ;;
     esac
@@ -178,23 +178,38 @@ EOF
         empty)
           cat - <<EOF
       shift
+EOF
+          if [[ -n "${args__option_blocks[${name}]}" ]]; then
+            cat - <<EOF
       ${args__option_blocks[${name}]}
 EOF
+          fi
           ;;
         string)
           cat - <<EOF
       local args__1="\${2:?Missing argument for '\${1}'.}"
+      args__opt_value__${name//-/_}="\${args__1}"
       shift 2
+EOF
+          if [[ -n "${args__option_blocks[${name}]}" ]]; then
+            cat - <<EOF
       ${args__option_blocks[${name}]}
 EOF
+          fi
           ;;
         string2)
           cat - <<EOF
       local args__1="\${2:?Missing argument for '\${1}'.}"
       local args__2="\${3:?Missing argument for '\${1}'.}"
+      args__opt_value__${name//-/_}_1="\${args__1}"
+      args__opt_value__${name//-/_}_2="\${args__2}"
       shift 3
+EOF
+          if [[ -n "${args__option_blocks[${name}]}" ]]; then
+            cat - <<EOF
       ${args__option_blocks[${name}]}
 EOF
+          fi
           ;;
         string2*)
           cat - <<EOF
@@ -202,6 +217,8 @@ EOF
       local args__2="\${2##*${opt_type#string2}}"
       local args__1="\${args__1:?Missing argument for '\${1}'.}"
       local args__2="\${args__2:?Missing argument for '\${1}'.}"
+      args__opt_value__${name//-/_}_1="\${args__1}"
+      args__opt_value__${name//-/_}_2="\${args__2}"
 
       if [[ "\${args__1}${opt_type#string2}\${args__2}" != "\${2}" ]]; then
         ${args__print_error} "\${args__root}: invalid option format: \${1} \${2}"
@@ -209,26 +226,38 @@ EOF
       fi
 
       shift 2
+EOF
+          if [[ -n "${args__option_blocks[${name}]}" ]]; then
+            cat - <<EOF
       ${args__option_blocks[${name}]}
 EOF
+          fi
           ;;
         req_string)
           cat - <<EOF
       local args__1="\${2:?Missing argument for '\${1}'.}"
-      local args__opt_value__${name}="\${args__1}"
+      args__opt_value__${name//-/_}="\${args__1}"
       shift 2
+EOF
+          if [[ -n "${args__option_blocks[${name}]}" ]]; then
+            cat - <<EOF
       ${args__option_blocks[${name}]}
 EOF
+          fi
           ;;
         req_string2)
           cat - <<EOF
       local args__1="\${2:?Missing argument for '\${1}'.}"
       local args__2="\${3:?Missing argument for '\${1}'.}"
-      local args__opt_value__${name}_1="\${args__1}"
-      local args__opt_value__${name}_2="\${args__2}"
+      args__opt_value__${name//-/_}_1="\${args__1}"
+      args__opt_value__${name//-/_}_2="\${args__2}"
       shift 3
+EOF
+          if [[ -n "${args__option_blocks[${name}]}" ]]; then
+            cat - <<EOF
       ${args__option_blocks[${name}]}
 EOF
+          fi
           ;;
         req_string2*)
           cat - <<EOF
@@ -236,8 +265,8 @@ EOF
       local args__2="\${2##*${opt_type#string2}}"
       local args__1="\${args__1:?Missing argument for '\${1}'.}"
       local args__2="\${args__2:?Missing argument for '\${1}'.}"
-      local args__opt_value__${name}_1="\${args__1}"
-      local args__opt_value__${name}_2="\${args__2}"
+      args__opt_value__${name//-/_}_1="\${args__1}"
+      args__opt_value__${name//-/_}_2="\${args__2}"
 
       if [[ "\${args_1}${opt_type#string2}\${args_2}" != "\${2}" ]]; then
         ${args__print_error} "\${args__root}: invalid option format: \${1} \${2}"
@@ -245,8 +274,12 @@ EOF
       fi
 
       shift 2
+EOF
+          if [[ -n "${args__option_blocks[${name}]}" ]]; then
+            cat - <<EOF
       ${args__option_blocks[${name}]}
 EOF
+          fi
           ;;
         *)
           print_error "${args__root}: invalid type for '--${name}'"
@@ -318,7 +351,7 @@ EOF
       req_string)
         cat - <<EOF
 
-if [[ -z "\${args__opt_value__${name}}" ]]; then
+if [[ -z "\${args__opt_value__${name//-/_}}" ]]; then
   ${args__print_error} "\${args__root}: missing required flag: --${name}"
   return 1
 fi
@@ -327,7 +360,7 @@ EOF
       req_string2*)
         cat - <<EOF
 
-if [[ -z "\${args__opt_value__${name}}_1" ]] || [[ -z "\${args__opt_value__${name}}_2" ]]; then
+if [[ -z "\${args__opt_value__${name//-/_}}_1" ]] || [[ -z "\${args__opt_value__${name//-/_}}_2" ]]; then
   ${args__print_error} "\${args__root}: missing required flag: --${name}"
   return 1
 fi

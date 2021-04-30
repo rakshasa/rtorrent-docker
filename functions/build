@@ -103,8 +103,10 @@ rdo_build_all() {
   rdo_init verify
   rdo_build_init
 
-  rdo_build__build --context-type "rtorrent" --context-name "rtorrent" --filename "build.new" --build-arg "IGNORE_BUILD_ERROR=no" "build/rtorrent"
-  rdo_build__build --context-type "run" --context-name "rtorrent" "run/rtorrent"
+  rdo_build__build --empty --filename "build.rtorrent.alpine" --target "compiler" "build/rtorrent/compiler"
+  rdo_build__build --empty --filename "build.rtorrent.alpine" --target "run"      "build/rtorrent/run"
+
+  rdo_build__build --context-type "rtorrent" --context-name "rtorrent" --filename "build.new" "run/rtorrent"
 }
 
 rdo_build_clean() {
@@ -115,19 +117,11 @@ rdo_build_clean() {
 rdo_build_init() {
   rdo docker pull "docker/dockerfile:experimental" "alpine:latest"
 
-  rdo_build__build --context-type "ancestor" --no-rebuild --filename "ancestor" --ancestor-project "pkg-cache" --build-arg "CACHE_IMAGE=alpine" "ancestor/cache:global"
-  rdo_build__build --empty --no-rebuild "cache/apk:global"
-
-  rdo_build__build --context-type "ancestor" --cache --no-rebuild --filename "ancestor" --ancestor-project "build" "ancestor/build:global"
-  rdo_build__build --context-type "ancestor" --cache --no-rebuild --filename "ancestor" --ancestor-project "run" "ancestor/run:global"
-  rdo_build__build --context-type "ancestor" --cache --no-rebuild --filename "ancestor" --ancestor-project "utils" "ancestor/utils:global"
+  rdo_build__build --ancestor --no-rebuild --filename "ancestor" --ancestor-project "build" "ancestor/build:global"
+  rdo_build__build --ancestor --no-rebuild --filename "ancestor" --ancestor-project "run"   "ancestor/run:global"
+  rdo_build__build --ancestor --no-rebuild --filename "ancestor" --ancestor-project "utils" "ancestor/utils:global"
 
   rdo_build__build --empty --no-rebuild "stage:global"
-  rdo_build__build --empty --cache "base/build/compiler"
-  rdo_build__build --empty --cache "base/build/rtorrent"
-  rdo_build__build --empty "base/run/rtorrent"
-
-  rdo_build__build --context-type "autogen" --filename "build.autogen" "build/rtorrent"
 
   rdo_build__build --context-type "run" --context-name "opentracker" --no-rebuild "run/opentracker:global"
   rdo_build__build --context-type "run" --context-name "dns"         --no-rebuild "run/dns:global"
