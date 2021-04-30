@@ -6,10 +6,9 @@ ARG TAG_APPEND
 
 FROM "${REPOSITORY}/ancestor/utils:global"
 
-RUN \
---mount=type=tmpfs,target=/var/cache/apk \
---mount=type=bind,from=rdo/cache/apk:global,source=/deploy,target=/var/cache/apk-stage \
-\
-pkg-add mktorrent
+RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
+  \
+  apk add \
+      mktorrent
 
 CMD tail -f /dev/null
