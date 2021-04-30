@@ -9,14 +9,6 @@
 # /prefix - install resulting builds here
 # /stage  - initially copy docker context here
 
-ARG CACHE_IMAGE="rdo/cache/apk:global"
-
-
-FROM "${CACHE_IMAGE}" as cache
-
-RUN mkdir -p /deploy
-
-
 FROM "alpine"
 
 ENV RDO_RSYNC_ADD_ARGS="-rlpgoD -muc -t"
@@ -31,27 +23,23 @@ ENV RDO_TAR_X_ARGS="--warning=no-unknown-keyword --format pax --sort=name -xf"
 
 WORKDIR /run/self
 
-RUN set -xe; \
-\
-mkdir -p /build /deploy /prefix /stage; \
-ln -s /var/cache/apk /etc/apk/cache
-
 COPY bin/* /usr/bin/
 
-RUN \
---mount=type=tmpfs,target=/var/cache/apk \
---mount=type=bind,from=cache,source=/deploy,target=/var/cache/apk-stage \
-\
-pkg-add bash \
-        coreutils \
-        diffutils \
-        findutils \
-        iproute2 \
-        iptables \
-        ip6tables \
-        lldb \
-        tar \
-        tmux
+RUN mkdir -p /build /deploy /prefix /stage
+
+RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
+  \
+  apk add \
+      bash \
+      coreutils \
+      diffutils \
+      findutils \
+      iproute2 \
+      iptables \
+      ip6tables \
+      lldb \
+      tar \
+      tmux
 
 ARG ANCESTOR_PROJECT
 

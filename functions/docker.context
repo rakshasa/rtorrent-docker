@@ -4,8 +4,6 @@ include_header docker.context
 
 DOCKER_CONTEXT_TYPES=(
   ancestor
-  autogen
-  compile
   empty
   rtorrent
   run
@@ -23,10 +21,12 @@ rdo_docker_context() {
 
   # eval "$(args::process)"
 
+  # start of generated bash args 'rdo docker context'
+
   while true; do
     case "${1}" in
       --help|-h|'')
-        echo "Usage: rdo docker context COMMAND"
+        echo "Usage: rdo docker context"
         echo
         echo "Build docker images with a build context."
         echo
@@ -70,65 +70,67 @@ rdo_docker_context() {
       exit 1
       ;;
   esac
+
+  # end of generated bash args 'rdo docker context'
 }
 
 rdo_docker_context_build() {
   local context_build_args=()
 
-  local arg_context_args=
-  local arg_context_name=
-  local arg_context_type=
-
   # eval "$(args::init_options_default_skip_unknown "rdo docker context build" "Build image with a context.")"
 
-  # args::new_option "cache" empty "" "Build uses package cache" \
-  #                  'context_build_args+=(--post-exec "rdo_docker_context__post_cache")'
-  # args::new_option "context-args" string "" "Set context arguments" \
-  #                  'arg_context_args="${args__1}"'
-  # args::new_option "context-name" string "" "Set context name" \
-  #                  'arg_context_name="${args__1}"'
-  # args::new_option "context-type" string "" "Set context type" \
-  #                  'arg_context_type="${args__1}"'
+  # args::new_option "context-args" string     "" "Set context arguments" '' ''
+  # args::new_option "context-name" req_string "" "Set context name" '' ''
+  # args::new_option "context-type" req_string "" "Set context type" '' ''
+
+  # args::new_option "ancestor" empty "" "Build ancestor context" \
+  #                  '' 'args__opt_value__context_type="ancestor"; args__opt_value__context_name="ancestor"'
   # args::new_option "empty" empty "" "Build empty context" \
-  #                  'arg_context_type="empty"'
+  #                  '' 'args__opt_value__context_type="empty"; args__opt_value__context_name="empty"'
 
   # eval "$(args::process)"
 
+  # start of generated bash args 'rdo docker context build'
+
+  local args__opt_value__context_args=
+  local args__opt_value__context_name=
+  local args__opt_value__context_type=
+
   while true; do
     case "${1}" in
-      --cache)
-        shift
-        context_build_args+=(--post-exec "rdo_docker_context__post_cache")
-        ;;
       --context-args)
         local args__1="${2:?Missing argument for '${1}'.}"
+        args__opt_value__context_args="${args__1}"
         shift 2
-        arg_context_args="${args__1}"
         ;;
       --context-name)
         local args__1="${2:?Missing argument for '${1}'.}"
+        args__opt_value__context_name="${args__1}"
         shift 2
-        arg_context_name="${args__1}"
         ;;
       --context-type)
         local args__1="${2:?Missing argument for '${1}'.}"
+        args__opt_value__context_type="${args__1}"
         shift 2
-        arg_context_type="${args__1}"
+        ;;
+      --ancestor)
+        shift
+        args__opt_value__context_type="ancestor"; args__opt_value__context_name="ancestor"
         ;;
       --empty)
         shift
-        arg_context_type="empty"
+        args__opt_value__context_type="empty"; args__opt_value__context_name="empty"
         ;;
       --help|-h)
-        echo "Usage: rdo docker context build COMMAND"
+        echo "Usage: rdo docker context build"
         echo
         echo "Build image with a context."
         echo
         echo "Options:"
-        echo "      --cache          Build uses package cache"
         echo "      --context-args   Set context arguments"
         echo "      --context-name   Set context name"
         echo "      --context-type   Set context type"
+        echo "      --ancestor       Build ancestor context"
         echo "      --empty          Build empty context"
         echo
         echo "Run 'rdo docker context build COMMAND --help' for more information on a command."
@@ -139,47 +141,45 @@ rdo_docker_context_build() {
         ;;
     esac
   done
-  
-  if [[ -z "${arg_context_type}" ]]; then
-    print_error "rdo docker context build: missing context type argument"
+
+  if [[ -z "${args__opt_value__context_name}" ]]; then
+    print_error "${args__root}: missing required flag: --context-name"
+    return 1
+  fi
+
+  if [[ -z "${args__opt_value__context_type}" ]]; then
+    print_error "${args__root}: missing required flag: --context-type"
+    return 1
+  fi
+
+  # end of generated bash args 'rdo docker context build'
+
+  if ! [[ " ${DOCKER_CONTEXT_TYPES[*]} " =~ " ${args__opt_value__context_type} " ]]; then
+    print_error "rdo docker context build: unknown context type: '${args__opt_value__context_type}'"
     exit 1
   fi
 
-  if [[ " ancestor autogen empty " =~ " ${arg_context_type} " ]]; then
-    arg_context_name="${arg_context_type}"
-  fi
-
-  if [[ -z "${arg_context_name}" ]]; then
-    print_error "rdo docker context build: missing context name argument"
-    exit 1
-  fi
-
-  if ! [[ " ${DOCKER_CONTEXT_TYPES[*]} " =~ " ${arg_context_type} " ]]; then
-    print_error "rdo docker context build: unknown context type: '${arg_context_type}'"
-    exit 1
-  fi
-
-  if declare -f rdo_docker_context__path_${arg_context_type} &> /dev/null; then
-    context_build_args+=(--context "./context/$(rdo_docker_context__path_${arg_context_type} "${arg_context_name}")")
+  if declare -f rdo_docker_context__path_${args__opt_value__context_type} &> /dev/null; then
+    context_build_args+=(--context "./context/$(rdo_docker_context__path_${args__opt_value__context_type} "${args__opt_value__context_name}")")
   else
-    context_build_args+=(--context "./context/${arg_context_name}")
+    context_build_args+=(--context "./context/${args__opt_value__context_name}")
   fi
 
-  if declare -f rdo_docker_context__test_${arg_context_type} &> /dev/null; then
-    context_build_args+=("--test-exec" "rdo_docker_context__test_${arg_context_type} ${arg_context_name} ${arg_context_args}")
+  if declare -f rdo_docker_context__test_${args__opt_value__context_type} &> /dev/null; then
+    context_build_args+=("--test-exec" "rdo_docker_context__test_${args__opt_value__context_type} ${args__opt_value__context_name} ${args__opt_value__context_args}")
   fi
 
-  if declare -f rdo_docker_context__pre_${arg_context_type} &> /dev/null; then
-    context_build_args+=("--pre-exec" "rdo_docker_context__pre_${arg_context_type} ${arg_context_name} ${arg_context_args}")
+  if declare -f rdo_docker_context__pre_${args__opt_value__context_type} &> /dev/null; then
+    context_build_args+=("--pre-exec" "rdo_docker_context__pre_${args__opt_value__context_type} ${args__opt_value__context_name} ${args__opt_value__context_args}")
   fi
 
-  if declare -f rdo_docker_context__post_${arg_context_type} &> /dev/null; then
-    context_build_args+=("--post-exec" "rdo_docker_context__post_${arg_context_type} ${arg_context_name} ${arg_context_args}")
+  if declare -f rdo_docker_context__post_${args__opt_value__context_type} &> /dev/null; then
+    context_build_args+=("--post-exec" "rdo_docker_context__post_${args__opt_value__context_type} ${args__opt_value__context_name} ${args__opt_value__context_args}")
   fi
 
-  if [[ " autogen configure compile rtorrent " =~ " ${arg_context_type} " ]]; then
-    context_build_args+=(--build-arg "CONTEXT_TYPE=${arg_context_type}")
-    context_build_args+=(--build-arg "CONTEXT_NAME=${arg_context_name}")
+  if [[ " autogen configure compile rtorrent " =~ " ${args__opt_value__context_type} " ]]; then
+    context_build_args+=(--build-arg "CONTEXT_TYPE=${args__opt_value__context_type}")
+    context_build_args+=(--build-arg "CONTEXT_NAME=${args__opt_value__context_name}")
   fi
 
   rdo_docker_build "${context_build_args[@]}" "${@}"
@@ -203,48 +203,7 @@ rdo_docker_context__pre_ancestor() {
   rm -r "${context_path}/bin" 2> /dev/null || :
   mkdir -p "${context_path}/bin"
 
-  cp ./misc/{build,pkg,rdo}-*[!~] "${context_path}/bin/"
-}
-
-rdo_docker_context__path_autogen() {
-  rdo_docker_context__path_compile "${@}"
-}
-
-rdo_docker_context__test_autogen() {
-  local context_name="${1:?Missing context name argument.}"
-  local tag_full="${2:?Missing tag argument.}"
-
-  [[ -z "$(rdo__image_id__name "${tag_full}")" ]]
-}
-
-rdo_docker_context__pre_autogen() {
-  local context_path="./context/compile"
-
-  "./misc/rsync-stage-compile" "./data/libtorrent/" "${context_path}/libtorrent/"
-  "./misc/rsync-stage-compile" "./data/rtorrent/" "${context_path}/rtorrent/"
-
-  rdo__call_tar_cf "${context_path}/libtorrent.tar.gz" --directory "${context_path}/libtorrent" .
-  rdo__call_tar_cf "${context_path}/rtorrent.tar.gz" --directory "${context_path}/rtorrent" .
-
-  echo "pre-autogen: libtorrent md5 $(rdo__call_md5 "${context_path}/libtorrent.tar.gz")"
-  echo "pre-autogen:   rtorrent md5 $(rdo__call_md5 "${context_path}/rtorrent.tar.gz")"
-}
-
-rdo_docker_context__post_cache() {
-  rdo_docker_context_build --empty --cache-base-tag "${tag_full}" --filename "cache" "cache/apk:global"
-}
-
-rdo_docker_context__path_compile() {
-  echo "compile"
-}
-
-rdo_docker_context__pre_compile() {
-  local context_name="${1:?Missing context name argument.}"
-  local context_path="./context/compile"
-
-  "./misc/rsync-stage-compile" "./data/${context_name}/" "${context_path}/${context_name}/"
-
-  rdo__call_tar_cf "${context_path}/${context_name}.autogen.tar.gz" --directory "${context_path}/${context_name}" .
+  cp ./misc/{pkg,rdo}-*[!~] "${context_path}/bin/"
 }
 
 rdo_docker_context__pre_empty() {
@@ -258,12 +217,22 @@ rdo_docker_context__path_rtorrent() {
 rdo_docker_context__pre_rtorrent() {
   local context_name="${1:?Missing context name argument.}"
   local context_path="./context/rtorrent"
+  local tag_full="${2:?Missing tag full argument.}"
 
   "./misc/rsync-stage-compile" "./data/libtorrent/" "${context_path}/libtorrent/"
   "./misc/rsync-stage-compile" "./data/rtorrent/"   "${context_path}/rtorrent/"
 
   rdo__call_tar_cf "${context_path}/libtorrent.tar.gz" --directory "${context_path}/libtorrent" .
   rdo__call_tar_cf "${context_path}/rtorrent.tar.gz"   --directory "${context_path}/rtorrent" .
+
+  local bash_profile_path
+  bash_profile_path="$(mktemp)"
+
+  "./misc/gen-bash-profile" "${context_name}" "${tag_full}" > "${bash_profile_path}"
+  "./misc/rdo-file-move" "${bash_profile_path}" "${context_path}/bash_profile"
+  rm -f "${bash_profile_path}"
+
+  cp "./misc/entrypoint.sh" "${context_path}/entrypoint.sh"
 }
 
 rdo_docker_context__path_run() {
@@ -280,5 +249,7 @@ rdo_docker_context__pre_run() {
 
   "./misc/gen-bash-profile" "${context_name}" "${tag_full}" > "${bash_profile_path}"
   "./misc/rdo-file-move" "${bash_profile_path}" "${context_path}/bash_profile"
+  rm -f "${bash_profile_path}"
+
   cp "./misc/entrypoint.sh" "${context_path}/entrypoint.sh"
 }

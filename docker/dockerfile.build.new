@@ -8,7 +8,7 @@ ARG TAG_APPEND
 # scripts so that unrelated changes to 'Makefile.am' files does not
 # invalidate the build cache.
 
-FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS stage.configure
+FROM "${REPOSITORY}/build/rtorrent/compiler:${TAG_APPEND}" AS stage.configure
 
 COPY /libtorrent.tar.gz /rtorrent.tar.gz /stage/
      
@@ -36,7 +36,7 @@ RUN set -xe; \
     --no-wildcards './configure.ac'
 
 
-FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS configure.libtorrent
+FROM "${REPOSITORY}/build/rtorrent/compiler:${TAG_APPEND}" AS configure.libtorrent
 
 COPY --from=stage.configure /deploy/libtorrent/configure/ /build/libtorrent/source/
 
@@ -46,7 +46,9 @@ RUN ./autogen.sh
 
 WORKDIR "/build/libtorrent/output"
 
-RUN set -xe; source /env.configure; \
+RUN set -xe; \
+  cat /env.configure; \
+  source /env.configure; \
   \
   /build/libtorrent/source/configure --prefix=/prefix INSTALL="/usr/bin/install -C" --enable-debug --enable-extra-debug --disable-pthread-setname-np; \
   \
@@ -84,7 +86,7 @@ RUN set -xe; \
     )"
 
 
-FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS compile.libtorrent
+FROM "${REPOSITORY}/build/rtorrent/compiler:${TAG_APPEND}" AS compile.libtorrent
 
 COPY --from=stage.libtorrent /deploy/libtorrent/source/ /build/libtorrent/source/
 
@@ -106,7 +108,7 @@ RUN \
   cp -rp /prefix /deploy/prefix
 
 
-FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}" AS configure.rtorrent
+FROM "${REPOSITORY}/build/rtorrent/compiler:${TAG_APPEND}" AS configure.rtorrent
 
 COPY --from=stage.configure /deploy/rtorrent/configure/ /build/rtorrent/source/
 COPY --from=compile.libtorrent /deploy/prefix/lib/pkgconfig/libtorrent.pc /prefix/lib/pkgconfig/libtorrent.pc
@@ -117,7 +119,9 @@ RUN ./autogen.sh
 
 WORKDIR "/build/rtorrent/output"
 
-RUN set -xe; source /env.configure; \
+RUN set -xe; \
+  cat /env.configure; \
+  source /env.configure; \
   \
   /build/rtorrent/source/configure --prefix=/prefix INSTALL="/usr/bin/install -C" --enable-debug --enable-extra-debug; \
   \
@@ -153,7 +157,7 @@ RUN set -xe; \
     )"
 
 
-FROM "${REPOSITORY}/base/build/rtorrent:${TAG_APPEND}"
+FROM "${REPOSITORY}/build/rtorrent/compiler:${TAG_APPEND}" AS compile.rtorrent
 
 COPY --from=stage.rtorrent /deploy/rtorrent/source/ /build/rtorrent/source/
 COPY --from=compile.libtorrent /deploy/prefix/ /prefix/
@@ -169,3 +173,18 @@ RUN \
   make -j12; \
   make -j12 install; \
   make -j12 check || echo "*** UNIT TESTS FAILED ***"
+
+
+FROM "${REPOSITORY}/build/rtorrent/run:${TAG_APPEND}"
+
+WORKDIR /run/rtorrent
+
+ENV PATH="/prefix/bin:${PATH}"
+
+RUN mkdir -p "/torrents"
+
+COPY --from=compile.rtorrent /prefix/ /prefix/
+COPY bash_profile /root/.bash_profile
+COPY entrypoint.sh /
+
+ENTRYPOINT /entrypoint.sh
