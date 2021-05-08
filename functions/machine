@@ -106,12 +106,19 @@ rdo_machine_create() {
     exit 1
   fi
 
+  local ipv6_routing_prefix="fc77:c001"
+  local ipv6_cidr_prefix="96"
+
   create_args+=(
     --driver "virtualbox"
+    --engine-opt="ipv6=true"
+    --engine-opt=fixed-cidr-v6="${ipv6_routing_prefix}::/${ipv6_cidr_prefix}"
     --virtualbox-cpu-count "${arg_cpu_count}"
     --virtualbox-disk-size "${arg_disk_size}"
     --virtualbox-memory "${arg_memory}"
-    --virtualbox-boot2docker-url "https://releases.rancher.com/os/latest/rancheros.iso"
+    # --virtualbox-boot2docker-url "https://releases.rancher.com/os/latest/rancheros.iso"
+    # --virtualbox-boot2docker-url "file://C:/cygwin64/home/sunde/burmillaos.iso"
+    --virtualbox-boot2docker-url "https://github.com/burmilla/os/releases/download/v2.0.0-beta4/burmillaos-v2.0.0-beta4.iso"
   )
 
   if [[ "${OSTYPE}" == "cygwin" ]]; then
@@ -120,35 +127,46 @@ rdo_machine_create() {
     create_args+=("--virtualbox-share-folder" "$(cd ./run && pwd):rdo-run")
   fi
 
-  print_progress "creating docker machine '${arg_docker_machine}': ${create_args[*]}"
+  ( print_progress "calling docker-machine create '${arg_docker_machine}' -- ${create_args[*]}"
 
-  docker-machine create "${create_args[@]}" "${arg_docker_machine}"
+    docker-machine create "${create_args[@]}" "${arg_docker_machine}"
+  )
 
-  print_progress "enabling virtualbox-tools"
+  ( print_progress "enabling virtualbox-tools"
 
-  docker-machine ssh rdo sudo mkdir -p /rdo/run
-  docker-machine ssh rdo sudo ros service enable virtualbox-tools
-  docker-machine ssh rdo sudo ros service up virtualbox-tools
+    # Use custom service image:
+    docker-machine ssh rdo sudo system-docker pull rtdo/os-vboxtools:v6.1.22-5.10.28-burmilla
+    docker-machine ssh rdo sudo system-docker tag rtdo/os-vboxtools:v6.1.22-5.10.28-burmilla burmilla/os-vboxtools:v6.1.16-4.14.206-burmilla
 
-  print_normal "waiting for virtualbox mount command to become available"
+    docker-machine ssh rdo sudo mkdir -p /rdo/run
+    docker-machine ssh rdo sudo ros service enable virtualbox-tools
+    docker-machine ssh rdo sudo ros service up virtualbox-tools
+  )
 
-  while ! docker-machine ssh rdo command -v mount.vboxsf &> /dev/null; do
-    printf '.'
-    sleep 1
-  done
+  ( print_normal "waiting for virtualbox mount command to become available"
 
-  print_normal "mounting /rdo/run"
-  docker-machine ssh rdo sudo mount.vboxsf rdo-run /rdo/run
+    while ! docker-machine ssh rdo sudo --login command -v mount.vboxsf &> /dev/null; do
+      printf '.'
+      sleep 1
+    done
 
-  if rdo_machine__is_error "${arg_docker_machine}"; then
-    print_error "unable to create docker machine"
-    exit 1
-  fi
+    print_normal "mounting /rdo/run"
+    docker-machine ssh rdo sudo mount.vboxsf rdo-run /rdo/run
 
-  print_progress "updating env.machine with '${arg_docker_machine}'"
+    if rdo_machine__is_error "${arg_docker_machine}"; then
+      print_error "unable to create docker machine"
+      exit 1
+    fi
+  )
 
-  echo "export RDO_RUN_PATH=/rdo/run" > "./data/env.machine"
-  docker-machine env "${arg_docker_machine}" >> "./data/env.machine"
+  ( print_progress "updating env.engine with '${arg_docker_machine}'"
+
+    docker-machine env "${arg_docker_machine}" >> "./data/env.engine"
+    
+    echo "export RDO_RUN_PATH=/rdo/run" >> "./data/env.engine"
+    echo "export RDO_IPV6_ROUTING_PREFIX=${ipv6_routing_prefix}" >> "./data/env.engine"
+    echo "export RDO_IPV6_CIDR_PREFIX=${ipv6_cidr_prefix}" >> "./data/env.engine"
+  )
 }
 
 rdo_machine_destroy() {
@@ -167,8 +185,6 @@ rdo_machine_destroy() {
   else
     print_normal "docker machine not found, skipping"
   fi
-
-  rm "${DATA_PATH}/env.machine"
 }
 
 rdo_machine_start() {
@@ -202,10 +218,6 @@ rdo_machine_stop() {
 
 # Helper functions
 
-rdo_machine__has_env() {
-  [[ -f "${DATA_PATH}/env.machine" ]] && grep 'DOCKER_MACHINE_NAME=' "${DATA_PATH}/env.machine" &> /dev/null
-}
-
 rdo_machine__current() {
   local machine_name="$(rdo_machine__current)"
   [[ -z "${machine_name}" ]] && (print_progress "docker machine not initialized"; return 1)
@@ -213,8 +225,8 @@ rdo_machine__current() {
 }
 
 rdo_machine__current() {
-  [[ -f "${DATA_PATH}/env.machine" ]] || return
-  sed -e '/DOCKER_MACHINE_NAME/!d; s/"//g; s/export DOCKER_MACHINE_NAME=//' "${DATA_PATH}/env.machine"
+  [[ -f "${DATA_PATH}/env.engine" ]] || return
+  sed -e '/DOCKER_MACHINE_NAME/!d; s/"//g; s/export DOCKER_MACHINE_NAME=//' "${DATA_PATH}/env.engine"
 }
 
 rdo_machine__status() {

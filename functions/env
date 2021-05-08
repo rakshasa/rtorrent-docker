@@ -114,16 +114,6 @@ update() {
   if [[ -f "${project_path}/data/env.engine" ]]; then
     source "${project_path}/data/env.engine"
   fi
-
-  case "\${RDO_DOCKER_TYPE}" in
-    machine)
-      if [[ -f "${project_path}/data/env.machine" ]]; then
-        source "${project_path}/data/env.machine"
-      else
-        echo "Missing '${project_path}/data/env.machine' file." >&2
-      fi
-      ;;
-  esac
 }
 
 export PATH="${project_path}:\${PATH}"

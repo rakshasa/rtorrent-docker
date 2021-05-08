@@ -219,43 +219,12 @@ rdo_stage_append_rc() {
 }
 
 rdo_stage_network() {
-  # eval "$(args::init_options_string "rdo stage network NAME" "name" "Stage a network")"
+  eval "$(args::init_options_string "rdo stage network NAME" "name" "Stage a network")"
 
-  # eval "$(args::process)"
+  args::new_option "enable-ipv6" empty "" "Enable IPv6" \
+                   'local enable_ipv6' 'enable_ipv6="yes"'
 
-  while true; do
-    case "${1}" in
-      --help|-h)
-        echo "Usage: rdo stage network NAME COMMAND"
-        echo
-        echo "Stage a network"
-        echo
-        echo "Run 'rdo stage network NAME COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  if (( ${#} > 1 )); then
-    print_error "rdo stage network NAME: too many arguments"
-    exit 1
-  fi
-
-  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
-    print_error "rdo stage network NAME: missing or empty argument"
-    exit 1
-  fi
-
-  local name="${1}"
-  shift
+  eval "$(args::process)"
 
   local self_path="./run/current/networks/${name}"
   mkdir -p "${self_path}"
@@ -265,6 +234,10 @@ rdo_stage_network() {
     --internal
     --opt "com.docker.network.bridge.enable_ip_masquerade=false"
   )
+
+  if [[ "${enable_ipv6}" == "yes" ]]; then
+    args+=()
+  fi
 
   docker network create "${args[@]}" "${name}" > /dev/null
 
@@ -288,8 +261,6 @@ rdo_stage_dns() {
   # rdo_stage__container__default_args
 
   # eval "$(args::process)"
-
-  # start of generated bash args 'rdo stage dns NODE-NAME'
 
   local resolve_conf
   local networks=()

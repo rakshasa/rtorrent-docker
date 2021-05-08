@@ -73,14 +73,14 @@ rdo_init_default() {
 
   env_args+=("--docker-engine")
 
-  rm -f "${DATA_PATH}/env" &> /dev/null || :
-
-  rdo_init__init
-  rdo env create "${env_args[@]}"
+  rm -f "${DATA_PATH}/env.*" &> /dev/null || :
 
   cat > "${DATA_PATH}/env.engine" <<EOF
 export DOCKER_CONTEXT="default"
 EOF
+
+  rdo_init__init
+  rdo env create "${env_args[@]}"
 
   print_progress "ready to start bash session"
 }
@@ -92,15 +92,15 @@ rdo_init_machine() {
   env_args+=("--docker-machine" "rdo")
   machine_args+=("--name" "rdo")
 
-  rm -f "${DATA_PATH}/env" &> /dev/null || :
-
-  rdo_init__init
-  rdo env create "${env_args[@]}"
-  rdo machine create "${machine_args[@]}"
+  rm -f "${DATA_PATH}/env.*" &> /dev/null || :
 
   cat > "${DATA_PATH}/env.engine" <<EOF
 export DOCKER_CONTEXT="default"
 EOF
+
+  rdo_init__init
+  rdo env create "${env_args[@]}"
+  rdo machine create "${machine_args[@]}"
 
   print_progress "ready to start bash session"
 }
