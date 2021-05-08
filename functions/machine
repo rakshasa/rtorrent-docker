@@ -106,13 +106,12 @@ rdo_machine_create() {
     exit 1
   fi
 
-  local ipv6_routing_prefix="fc77:c001"
-  local ipv6_cidr_prefix="96"
+  local ipv6_routing_prefix="fc77:0:c001"
 
   create_args+=(
     --driver "virtualbox"
     --engine-opt="ipv6=true"
-    --engine-opt=fixed-cidr-v6="${ipv6_routing_prefix}::/${ipv6_cidr_prefix}"
+    --engine-opt=fixed-cidr-v6="${ipv6_routing_prefix}:0::/64"
     --virtualbox-cpu-count "${arg_cpu_count}"
     --virtualbox-disk-size "${arg_disk_size}"
     --virtualbox-memory "${arg_memory}"
@@ -165,7 +164,6 @@ rdo_machine_create() {
     
     echo "export RDO_RUN_PATH=/rdo/run" >> "./data/env.engine"
     echo "export RDO_IPV6_ROUTING_PREFIX=${ipv6_routing_prefix}" >> "./data/env.engine"
-    echo "export RDO_IPV6_CIDR_PREFIX=${ipv6_cidr_prefix}" >> "./data/env.engine"
   )
 }
 

@@ -219,15 +219,66 @@ rdo_stage_append_rc() {
 }
 
 rdo_stage_network() {
-  eval "$(args::init_options_string "rdo stage network NAME" "name" "Stage a network")"
+  # eval "$(args::init_options_string "rdo stage network NAME" "name" "Stage a network")"
 
-  args::new_option "enable-ipv6" empty "" "Enable IPv6" \
-                   'local enable_ipv6' 'enable_ipv6="yes"'
+  # args::new_option 'enable-ipv6' empty '' 'Enable IPv6' \
+  #                  'local enable_ipv6' 'enable_ipv6="yes"'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo stage network NAME'
+
+  local enable_ipv6
+
+  while true; do
+    case "${1}" in
+      --enable-ipv6)
+        shift
+        enable_ipv6="yes"
+        ;;
+      --help|-h)
+        echo "Usage: rdo stage network NAME"
+        echo
+        echo "Stage a network"
+        echo
+        echo "Options:"
+        echo "      --enable-ipv6   Enable IPv6"
+        echo
+        echo "Run 'rdo stage network NAME COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo stage network NAME: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
+    print_error "rdo stage network NAME: missing or empty argument"
+    exit 1
+  fi
+
+  local name="${1}"
+  shift
+
+  # end of generated bash args 'rdo stage network NAME'
 
   local self_path="./run/current/networks/${name}"
   mkdir -p "${self_path}"
+
+  local network_list=()
+  mapfile -t network_list < <(ls "./run/current/networks/")
+  local network_id=$(( ${#network_list[@]} ))
 
   local args=(
     --label "project=rdo"
@@ -236,19 +287,31 @@ rdo_stage_network() {
   )
 
   if [[ "${enable_ipv6}" == "yes" ]]; then
-    args+=()
+    local ipv6_subnet_prefix="${RDO_IPV6_ROUTING_PREFIX}:${network_id}"
+    local ipv6_subnet_cidr="${ipv6_subnet_prefix}::0/64"
+    local ipv6_gateway="${ipv6_subnet_prefix}::1"
+
+    echo "${ipv6_subnet_prefix}"  > "${self_path}/ipv6_subnet_prefix"
+    echo "${ipv6_subnet_cidr}"  > "${self_path}/ipv6_subnet_cidr"
+    echo "${ipv6_gateway}" > "${self_path}/ipv6_gateway"
+
+    args+=(
+      --ipv6
+      --subnet "${ipv6_subnet_cidr}"
+      --gateway "${ipv6_gateway}"
+    )
   fi
+
+  echo "create: ${args[*]}"
 
   docker network create "${args[@]}" "${name}" > /dev/null
 
   rdo_network_isolate_network "${name}"
 
-  echo "$(rdo_network subnet "${name}")" > "${self_path}/subnet"
+  echo "${network_id}"                    > "${self_path}/index"
+  echo "$(rdo_network subnet  "${name}")" > "${self_path}/subnet"
   echo "$(rdo_network address "${name}")" > "${self_path}/address"
-  echo "$(rdo_network prefix "${name}")" > "${self_path}/prefix"
-
-  local current_networks=($(shopt -s nullglob && cd ./run/current/networks/ && echo *))
-  echo "${#current_networks[@]}" > "${self_path}/index"
+  echo "$(rdo_network prefix  "${name}")" > "${self_path}/prefix"
 
   echo "networks/${name}"
 }

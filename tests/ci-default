@@ -4,6 +4,8 @@
 # Test default behavior of rtorrent in various network setttings.
 #
 
+# TODO: This test should be removed, and replace with specific test for what is done here.
+
 rdo_test_begin
 
 
@@ -11,7 +13,9 @@ rdo_test_begin
 # Topology, trackers and torrents:
 #
 
-rdo_stage_network "rt-global"
+# TODO: Add test for both v4only and v6only seeders.
+
+rdo_stage_network --enable-ipv6 "rt-global"
 rdo_stage_network "rt-nat"
 
 rdo_network_nat   --network "rt-nat" --bridge "rt-global"
