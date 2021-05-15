@@ -142,8 +142,7 @@ rdo_stage_clean() {
     docker container rm --force ${container_ids} > /dev/null
   fi
 
-  rdo_network_iptables_flush > /dev/null
-  rdo_network_clean > /dev/null
+  rdo_network_clean
 
   rm -rf ./run/current &> /dev/null
   rm -rf ./run/torrents/* &> /dev/null
@@ -291,10 +290,6 @@ rdo_stage_network() {
     local ipv6_subnet_cidr="${ipv6_subnet_prefix}::0/64"
     local ipv6_gateway="${ipv6_subnet_prefix}::1"
 
-    echo "${ipv6_subnet_prefix}"  > "${self_path}/ipv6_subnet_prefix"
-    echo "${ipv6_subnet_cidr}"  > "${self_path}/ipv6_subnet_cidr"
-    echo "${ipv6_gateway}" > "${self_path}/ipv6_gateway"
-
     args+=(
       --ipv6
       --subnet "${ipv6_subnet_cidr}"
@@ -303,15 +298,20 @@ rdo_stage_network() {
   fi
 
   echo "create: ${args[*]}"
-
   docker network create "${args[@]}" "${name}" > /dev/null
 
-  rdo_network_isolate_network "${name}"
+  local ipv4_cidr
+  ipv4_cidr="$(docker network inspect --format '{{ (index .IPAM.Config 0).Subnet }}' "${name}")"
 
-  echo "${network_id}"                    > "${self_path}/index"
-  echo "$(rdo_network subnet  "${name}")" > "${self_path}/subnet"
-  echo "$(rdo_network address "${name}")" > "${self_path}/address"
-  echo "$(rdo_network prefix  "${name}")" > "${self_path}/prefix"
+  echo "${network_id}"         > "${self_path}/index"
+  echo "${ipv4_cidr}"          > "${self_path}/ipv4_cidr"
+  echo "${ipv4_cidr%%/*}"      > "${self_path}/ipv4_address"
+  echo "${ipv4_cidr##*/}"      > "${self_path}/ipv4_prefix"
+  echo "${ipv6_subnet_prefix}" > "${self_path}/ipv6_subnet_prefix"
+  echo "${ipv6_subnet_cidr}"   > "${self_path}/ipv6_subnet_cidr"
+  echo "${ipv6_gateway}"       > "${self_path}/ipv6_gateway"
+
+  rdo_network_isolate_network "${name}"
 
   echo "networks/${name}"
 }
@@ -402,7 +402,6 @@ rdo_stage_dns() {
   )
 
   rdo_stage__container__create
-  rdo_stage__container__start
   rdo_stage__container__wait_started
   rdo_stage__container__update_run
 
@@ -509,7 +508,6 @@ rdo_stage_rtorrent() {
     mkdir -p "./run/current/nodes/${node_name}/"{logs,session,torrents,watch}
 
     rdo_stage__container__create
-    rdo_stage__container__start
     rdo_stage__container__wait_started
     rdo_stage__container__update_run
 
@@ -606,7 +604,6 @@ rdo_stage_tracker() {
   )
 
   rdo_stage__container__create
-  rdo_stage__container__start
   rdo_stage__container__wait_started
   rdo_stage__container__update_run
 
@@ -632,8 +629,13 @@ rdo_stage__container__create() {
   mkdir -p "./run/current/${self_type}" "${self_path}/interfaces"
   ln -s "./../nodes/${node_name}" "./run/current/${self_type}/${node_name}"
 
-  echo "stage" > "${self_path}/signal"
-  echo "starting" > "${self_path}/state"
+  local node_list
+  mapfile -t node_list < <(ls "./run/current/nodes")
+  local node_index="${#node_list[@]}"
+
+  echo "stage"         > "${self_path}/signal"
+  echo "starting"      > "${self_path}/state"
+  echo "${node_index}" > "${self_path}/index"
 
   "./templates/run/${run_template}" > "${self_path}/run"
   chmod a+x "${self_path}/run"
@@ -646,8 +648,6 @@ rdo_stage__container__create() {
     echo "${resolve_conf}" > "${self_path}/resolv.conf"
   fi
 
-  : "${RDO_RUN_PATH:?Missing environment variable.}"
-
   create_args+=(
     --name "${node_name}"
     --tty
@@ -656,12 +656,16 @@ rdo_stage__container__create() {
   )
 
   docker container create --label "project=rdo" "${create_args[@]}" "${image_name}" > /dev/null
-}
-
-rdo_stage__container__start() {
   docker network disconnect "none" "${node_name}"
 
   for network in "${networks[@]}"; do
+    local create_args=()
+    local ipv6_subnet_prefix="$(cat ./run/current/networks/rt-global/ipv6_subnet_prefix 2> /dev/null)"
+
+    if [[ -n "${ipv6_subnet_prefix}" ]]; then
+      create_args+=(--ip6 "${ipv6_subnet_prefix}::1:${node_index}")
+    fi
+
     docker network connect "${network}" "${node_name}"
   done
 
@@ -712,9 +716,9 @@ rdo_stage__container__update_run() {
     local network="${BASH_REMATCH[1]:?Missing network name.}"
     mkdir "${self_path}/interfaces/${network}"
 
-    [[ -z "${BASH_REMATCH[2]}" ]] || echo "${BASH_REMATCH[2]}" > "${self_path}/interfaces/${network}/mac"
-    [[ -z "${BASH_REMATCH[3]}" ]] || echo "${BASH_REMATCH[3]}" > "${self_path}/interfaces/${network}/inet"
-    [[ -z "${BASH_REMATCH[4]}" ]] || echo "${BASH_REMATCH[4]}" > "${self_path}/interfaces/${network}/inet6"
+    [[ -n "${BASH_REMATCH[2]}" ]] && echo "${BASH_REMATCH[2]}" > "${self_path}/interfaces/${network}/mac"
+    [[ -n "${BASH_REMATCH[3]}" ]] && echo "${BASH_REMATCH[3]}" > "${self_path}/interfaces/${network}/inet"
+    [[ -n "${BASH_REMATCH[4]}" ]] && echo "${BASH_REMATCH[4]}" > "${self_path}/interfaces/${network}/inet6"
 
     while true; do
       if [[ "$(docker container inspect --format '{{ .State.Status }}' "${node_name}")" != "running" ]]; then

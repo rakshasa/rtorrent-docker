@@ -229,6 +229,11 @@ rdo_torrent_node() {
 
   local node_name
   for node_name in "${seeder[@]}"; do
+    if ! [[ -d "./run/current/clients/${node_name}" ]]; then
+      print_error "could not find seeder client: ${node_name}"
+      return 1
+    fi
+
     tar -cf - -C "$(dirname "${self_path}")" "$(basename "${self_path}")" | docker exec -i "${node_name}" tar -xf - -C "/torrents"
   done
 

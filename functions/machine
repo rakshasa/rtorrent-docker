@@ -110,7 +110,9 @@ rdo_machine_create() {
 
   create_args+=(
     --driver "virtualbox"
-    --engine-opt="ipv6=true"
+    --engine-opt=experimental="true"
+    --engine-opt=ipv6="true"
+    --engine-opt=ip6tables="true"
     --engine-opt=fixed-cidr-v6="${ipv6_routing_prefix}:0::/64"
     --virtualbox-cpu-count "${arg_cpu_count}"
     --virtualbox-disk-size "${arg_disk_size}"
@@ -131,31 +133,42 @@ rdo_machine_create() {
     docker-machine create "${create_args[@]}" "${arg_docker_machine}"
   )
 
+  local RDO_DOCKER_TYPE="machine"
+  local RDO_DOCKER_MACHINE="${arg_docker_machine}"
+
   ( print_progress "enabling virtualbox-tools"
 
     # Use custom service image:
-    docker-machine ssh rdo sudo system-docker pull rtdo/os-vboxtools:v6.1.22-5.10.28-burmilla
-    docker-machine ssh rdo sudo system-docker tag rtdo/os-vboxtools:v6.1.22-5.10.28-burmilla burmilla/os-vboxtools:v6.1.16-4.14.206-burmilla
+    rdo__sudo_host system-docker pull rtdo/os-vboxtools:v6.1.22-5.10.28-burmilla
+    rdo__sudo_host system-docker tag rtdo/os-vboxtools:v6.1.22-5.10.28-burmilla burmilla/os-vboxtools:v6.1.16-4.14.206-burmilla
 
-    docker-machine ssh rdo sudo mkdir -p /rdo/run
-    docker-machine ssh rdo sudo ros service enable virtualbox-tools
-    docker-machine ssh rdo sudo ros service up virtualbox-tools
+    rdo__sudo_host mkdir -p /rdo/run
+    rdo__sudo_host ros service enable virtualbox-tools
+    rdo__sudo_host ros service up virtualbox-tools
   )
 
   ( print_normal "waiting for virtualbox mount command to become available"
 
-    while ! docker-machine ssh rdo sudo --login command -v mount.vboxsf &> /dev/null; do
+    while ! rdo__sudo_host --login command -v mount.vboxsf &> /dev/null; do
       printf '.'
       sleep 1
     done
+  )
 
-    print_normal "mounting /rdo/run"
-    docker-machine ssh rdo sudo mount.vboxsf rdo-run /rdo/run
+  ( print_normal "mounting /rdo/run"
+
+    rdo__sudo_host mount.vboxsf rdo-run  /rdo/run
 
     if rdo_machine__is_error "${arg_docker_machine}"; then
       print_error "unable to create docker machine"
       exit 1
     fi
+  )
+
+  ( print_progress "copying rdo utils"
+
+    cp "./misc/rdo-iptables-flush" "./run/"
+    rdo__sudo_host mv "/rdo/run/rdo-iptables-flush" "/usr/local/bin/"
   )
 
   ( print_progress "updating env.engine with '${arg_docker_machine}'"
@@ -164,6 +177,20 @@ rdo_machine_create() {
     
     echo "export RDO_RUN_PATH=/rdo/run" >> "./data/env.engine"
     echo "export RDO_IPV6_ROUTING_PREFIX=${ipv6_routing_prefix}" >> "./data/env.engine"
+  )
+
+  ( print_progress "adding default ip6tables rules"
+
+    rdo__sudo_host update-alternatives --set iptables /usr/sbin/iptables-nft
+
+    local rule_args=(
+      -m comment
+      --comment "'rdo docker default rules'"
+    )
+
+    rdo__sudo_host ip6tables "${rule_args[@]}" -t filter -N DOCKER-USER
+    rdo__sudo_host ip6tables "${rule_args[@]}" -t filter -I DOCKER-USER -j RETURN
+    rdo__sudo_host ip6tables "${rule_args[@]}" -t filter -I FORWARD -j DOCKER-USER
   )
 }
 

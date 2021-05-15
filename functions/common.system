@@ -70,3 +70,19 @@ rdo__call_host() {
       ;;
   esac
 }
+
+rdo__sudo_host() {
+  case "${RDO_DOCKER_TYPE}" in
+    "default")
+      sudo "${@}"
+    ;;
+    "machine")
+      : "${RDO_DOCKER_MACHINE:?Missing docker machine.}"
+      docker-machine ssh "${RDO_DOCKER_MACHINE}" sudo "${@}"
+    ;;
+    *)
+      print_error "rdo___sudo_host: invalid docker type"
+      return 1
+      ;;
+  esac
+}
