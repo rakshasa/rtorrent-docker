@@ -16,17 +16,20 @@ rdo_test_begin
 
 # TODO: Add test for both v4only and v6only seeders.
 
-rdo_stage_network               "rt-global-v4"
-rdo_stage_network --enable-ipv6 "rt-global-v4v6"
+rdo_stage_network                "rt-global"
+rdo_stage_network --disable-ipv6 "rt-global-v4"
+rdo_stage_network --disable-ipv4 "rt-global-v6"
 
-rdo_stage_dns     --run-template "dns-default"     --network "rt-global-v4v6" "rt-dns-global"
-rdo_stage_tracker --run-template "tracker-default" --network "rt-global-v4v6" "rt-tracker-global"
+# rdo_network_forward   --network "rt-nat-3" --bridge "rt-global"
+
+rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
+rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
 
 rdo_stage_deploy
 
 default_rtorrent_args=(
   --run-template "rt-default"
-  --dns-inet "rt-dns-global:rt-global-v4v6"
+  --dns-inet "rt-dns-global:rt-global"
 )
 
 
@@ -36,7 +39,7 @@ default_rtorrent_args=(
 
 rdo_stage_rtorrent \
   "${default_rtorrent_args[@]}" \
-  --network "rt-global-v4v6" \
+  --network "rt-global" \
   "rt-seed-global"
 
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global"
@@ -54,18 +57,18 @@ rdo_torrent_wait --print --wait-all \
 #
 
 test_clients=(
-  "rt-leech-global"
+  "rt-leech-v4-"{1..2}
 )
 
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global-v4v6" "rt-leech-global"
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global" "rt-leech-v4-"{1..2}
 
 rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-global"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
                  \
-                 --hash-done     "rt-leech-global:torrent-global" \
-                 --not-seeding   "rt-leech-global:torrent-global" \
-                 --completed     "rt-leech-global:torrent-global"
+                 $(printf -- " --hash-done %s:torrent-global" "${test_clients[@]}") \
+                 $(printf -- " --not-seeding %s:torrent-global" "${test_clients[@]}") \
+                 $(printf -- " --completed %s:torrent-global" "${test_clients[@]}")
 
 rdo_test_end

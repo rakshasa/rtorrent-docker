@@ -20,8 +20,6 @@ rdo_network() {
 
   args::new_command 'forward' default 'Add forward rules between networks' \
                     'rdo_network_forward "${@}"'
-  args::new_command 'isolate-network' default 'Isolate network' \
-                    'rdo_network_isolate_network "${@}"'
   args::new_command 'nat' default 'Add nat rules between networks' \
                     'rdo_network_nat "${@}"'
 
@@ -42,7 +40,7 @@ rdo_network_clean() {
   mapfile -t networks < <(rdo_network_ls --quiet --no-trunc)
 
   if (( ${#networks[@]} > 0 )); then
-    docker network rm "${networks[@]}"
+    docker network rm "${networks[@]}" &> /dev/null
   fi
 }
 
@@ -106,69 +104,6 @@ rdo_network_forward() {
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -j ACCEPT
     rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
   done
-}
-
-rdo_network_isolate_network() {
-  # eval "$(args::init_options_string "rdo network isolate-network NETWORK" "network" "Isolate network.")"
-
-  # eval "$(args::process)"
-
-  # start of generated bash args 'rdo network isolate-network NETWORK'
-
-  while true; do
-    case "${1}" in
-      --help|-h)
-        echo "Usage: rdo network isolate-network NETWORK"
-        echo
-        echo "Isolate network."
-        echo
-        echo "Run 'rdo network isolate-network NETWORK COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  if (( ${#} > 1 )); then
-    print_error "rdo network isolate-network NETWORK: too many arguments"
-    exit 1
-  fi
-
-  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
-    print_error "rdo network isolate-network NETWORK: missing or empty argument"
-    exit 1
-  fi
-
-  local network="${1}"
-  shift
-
-  # end of generated bash args 'rdo network isolate-network NETWORK'
-
-  local network_bridge
-  network_bridge="$(cat "./run/current/networks/${network}/ifname")"
-
-  local default_iptables_args=(
-    -m comment
-    --comment "'rdo network isolate-network ${network}'"
-  )
-
-  rdo__call_host sudo iptables  "${default_iptables_args[@]}" -t filter -I DOCKER-USER -o "${network_bridge}" -j DROP
-  rdo__call_host sudo iptables  "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${network_bridge}" -j DROP
-  rdo__call_host sudo iptables  "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${network_bridge}" -o "${network_bridge}" -j ACCEPT
-
-  rdo__call_host sudo ip6tables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -o "${network_bridge}" -j DROP
-  rdo__call_host sudo ip6tables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${network_bridge}" -j DROP
-
-  if [[ -f "./run/current/networks/${network}/ipv6_subnet_cidr" ]]; then
-    rdo__call_host sudo ip6tables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${network_bridge}" -o "${network_bridge}" -j ACCEPT
-  fi
 }
 
 rdo_network_nat() {
