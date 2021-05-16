@@ -277,7 +277,7 @@ rdo_stage_network() {
 
   local network_list=()
   mapfile -t network_list < <(ls "./run/current/networks/")
-  local network_id=$(( ${#network_list[@]} ))
+  local network_index=$(( ${#network_list[@]} ))
 
   local args=(
     --label "project=rdo"
@@ -286,7 +286,9 @@ rdo_stage_network() {
   )
 
   if [[ "${enable_ipv6}" == "yes" ]]; then
-    local ipv6_subnet_prefix="${RDO_IPV6_ROUTING_PREFIX}:${network_id}"
+    : "${RDO_IPV6_ROUTING_PREFIX:?Missing environment variable.}"
+
+    local ipv6_subnet_prefix="${RDO_IPV6_ROUTING_PREFIX}:${network_index}"
     local ipv6_subnet_cidr="${ipv6_subnet_prefix}::0/64"
     local ipv6_gateway="${ipv6_subnet_prefix}::1"
 
@@ -298,18 +300,24 @@ rdo_stage_network() {
   fi
 
   echo "create: ${args[*]}"
-  docker network create "${args[@]}" "${name}" > /dev/null
+
+  local network_id
+  network_id="$(docker network create "${args[@]}" "${name}")"
 
   local ipv4_cidr
   ipv4_cidr="$(docker network inspect --format '{{ (index .IPAM.Config 0).Subnet }}' "${name}")"
 
-  echo "${network_id}"         > "${self_path}/index"
+  echo "${network_index}"      > "${self_path}/index"
+  echo "br-${network_id:0:12}" > "${self_path}/ifname"
   echo "${ipv4_cidr}"          > "${self_path}/ipv4_cidr"
   echo "${ipv4_cidr%%/*}"      > "${self_path}/ipv4_address"
   echo "${ipv4_cidr##*/}"      > "${self_path}/ipv4_prefix"
-  echo "${ipv6_subnet_prefix}" > "${self_path}/ipv6_subnet_prefix"
-  echo "${ipv6_subnet_cidr}"   > "${self_path}/ipv6_subnet_cidr"
-  echo "${ipv6_gateway}"       > "${self_path}/ipv6_gateway"
+
+  if [[ "${enable_ipv6}" == "yes" ]]; then
+    echo "${ipv6_subnet_prefix}" > "${self_path}/ipv6_subnet_prefix"
+    echo "${ipv6_subnet_cidr}"   > "${self_path}/ipv6_subnet_cidr"
+    echo "${ipv6_gateway}"       > "${self_path}/ipv6_gateway"
+  fi
 
   rdo_network_isolate_network "${name}"
 
@@ -736,21 +744,21 @@ rdo_stage__container__update_run() {
       fi
 
       local ifname="${BASH_REMATCH[1]:?Missing interface name.}"
-      local iflink="$(( BASH_REMATCH[2] - 1 ))"
-      local ifveth
-      ifveth="$(rdo__call_host ip -oneline link | sed -ne "s/^[0-9]*: veth\([0-9a-f]*\)@if${iflink}:[^\$]*/veth\1/p")"
+      local iflink_index="$(( BASH_REMATCH[2] - 1 ))"
+      local iflink
+      iflink="$(rdo__call_host ip -oneline link | sed -ne "s/^[0-9]*: veth\([0-9a-f]*\)@if${iflink_index}:[^\$]*/veth\1/p")"
 
       mkdir "${self_path}/net/${ifname}"
 
       echo "${BASH_REMATCH[2]}" > "${self_path}/net/${ifname}/ifindex"
-      echo "${iflink}" > "${self_path}/net/${ifname}/iflink"
-      echo "${ifveth}" > "${self_path}/net/${ifname}/ifveth"
+      echo "${iflink}"          > "${self_path}/net/${ifname}/iflink"
+      echo "${iflink_index}"    > "${self_path}/net/${ifname}/iflink-index"
 
       break
     done
 
     echo "eth${eth_index}" > "${self_path}/interfaces/${network}/ifname"
-    cp "${self_path}/net/eth${eth_index}/"{ifindex,iflink,ifveth} "${self_path}/interfaces/${network}/"
+    cp "${self_path}/net/eth${eth_index}/"{ifindex,iflink,iflink-index} "${self_path}/interfaces/${network}/"
 
     : $(( eth_index++ ))
   done

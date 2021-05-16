@@ -10,11 +10,6 @@ rdo_network() {
   args::new_command 'ls' default 'List networks' \
                     'rdo_network_ls "${@}"'
 
-  args::new_command 'bridge' default 'Get bridge name' \
-                    'rdo_network_bridge "${@}"'
-  args::new_command 'interface-name' default 'Get interface name' \
-                    'rdo_network_interface_name "${@}"'
-
   # TODO: Move all iptables stuff into sub-command:
   args::new_command 'iptables' default 'Call iptables on docker host' \
                     'rdo_network_iptables "${@}"'
@@ -55,89 +50,6 @@ rdo_network_ls() {
   docker network ls --filter "label=project=rdo" "${@}"
 }
 
-rdo_network_bridge() {
-  local name="${1:?Missing name argument.}"
-  local network_id
-  network_id="$(docker network inspect --format {{.Id}} "${name}")"
-
-  if [[ -z "${network_id:0:12}" ]]; then
-    print_error "rdo_network_bridge: could not find network bridge: ${name}"
-    exit 1
-  fi
-
-  echo "br-${network_id:0:12}"
-}
-
-rdo_network_interface_name() {
-  # eval "$(args::init_options_string "rdo network interface-name NODE-NAME" "node_name" "Get node's interface name.")"
-
-  # args::new_option "ifname" string "" "Node interface name" 'local ifname="eth0"' 'ifname="${args__1}"'
-
-  # eval "$(args::process)"
-
-  # start of generated bash args 'rdo network interface-name NODE-NAME'
-
-  local ifname="eth0"
-
-  while true; do
-    case "${1}" in
-      --ifname)
-        local args__1="${2:?Missing argument for '${1}'.}"
-        shift 2
-        ifname="${args__1}"
-        ;;
-      --help|-h)
-        echo "Usage: rdo network interface-name NODE-NAME"
-        echo
-        echo "Get node's interface name."
-        echo
-        echo "Options:"
-        echo "      --ifname   Node interface name"
-        echo
-        echo "Run 'rdo network interface-name NODE-NAME COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  if (( ${#} > 1 )); then
-    print_error "rdo network interface-name NODE-NAME: too many arguments"
-    exit 1
-  fi
-
-  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
-    print_error "rdo network interface-name NODE-NAME: missing or empty argument"
-    exit 1
-  fi
-
-  local node_name="${1}"
-  shift
-
-  # end of generated bash args 'rdo network interface-name NODE-NAME'
-
-  local sandbox_key ip_entry
-  sandbox_key="$(docker inspect --format '{{ .NetworkSettings.SandboxKey }}' "${node_name}")"
-  ip_entry="$(rdo__call_host sudo nsenter --net="${sandbox_key}" -- ip -oneline link show dev "${ifname}")"
-
-  if ! [[ "${ip_entry}" =~ ^[0-9]*:\ [^@\ ]*@if([0-9]*):\ [^$]*$ ]]; then
-    exit 1
-  fi
-
-  if ! [[ "$(rdo__call_host ip -oneline link show)" =~ [0-9]*:\ ([^@\ ]*)@if$(( BASH_REMATCH[1] - 1 )):\  ]]; then
-    exit 1
-  fi
-
-  echo "${BASH_REMATCH[1]}"
-}
-
 rdo_network_iptables() {
   print_normal iptables "${@}"
   rdo__call_host sudo iptables "${@}"
@@ -156,8 +68,8 @@ rdo_network_iptables_flush() {
   rules="$(printf "%s\n%s\n" "${ipv4_nat_rules}" "${ipv6_nat_rules}" "${ipv4_filter_rules}" "${ipv6_filter_rules}" | sed -n -e '/ -m comment --comment "rdo network/p')"
 
   if [[ -n "${rules}" ]]; then
-    printf "deleting iptables rules:\n"
-    printf "%s\n" "${rules[@]}"
+    # printf "deleting iptables rules:\n"
+    # printf "%s\n" "${rules[@]}"
     rdo__call_host bash -c "echo '${rules}'; ${rules}"
   fi
 }
@@ -179,12 +91,12 @@ rdo_network_forward() {
   fi
 
   local outer_network_bridge
-  outer_network_bridge="$(rdo_network_bridge "${outer_network}")"
+  outer_network_bridge="$(cat "./run/current/networks/${outer_network}/ifname")"
 
   local inner_network
   for inner_network in "${inner_networks[@]}"; do
     local inner_network_bridge
-    inner_network_bridge="$(rdo_network_bridge "${inner_network}")"
+    inner_network_bridge="$(cat "./run/current/networks/${inner_network}/ifname")"
 
     local default_iptables_args=(
       -m comment
@@ -240,7 +152,7 @@ rdo_network_isolate_network() {
   # end of generated bash args 'rdo network isolate-network NETWORK'
 
   local network_bridge
-  network_bridge="$(rdo_network_bridge "${network}")"
+  network_bridge="$(cat "./run/current/networks/${network}/ifname")"
 
   local default_iptables_args=(
     -m comment
@@ -326,7 +238,7 @@ rdo_network_nat() {
   local comment
 
   if [[ -n "${bridge_name}" ]]; then
-    egress_ifname="$(rdo_network_bridge "${bridge_name}")"
+    egress_ifname="$(cat "./run/current/networks/${bridge_name}/ifname")"
     egress_iflink="${bridge_name}"
   else
     print_error "rdo network nat: missing egress type"
@@ -361,8 +273,8 @@ rdo_network_nat() {
   for inner_network in "${inner_networks[@]}"; do
     local inner_network_bridge
     local inner_network_index
-    inner_network_bridge="$(rdo_network_bridge "${inner_network}")"
-    inner_network_index="$(cat "./run/current/networks/${inner_network}"/index)"
+    inner_network_bridge="$(cat "./run/current/networks/${inner_network}/ifname")"
+    inner_network_index="$(cat "./run/current/networks/${inner_network}/index")"
 
     comment="rdo network nat ${inner_network}->${egress_iflink}(${egress_ifname}:${egress_ipaddr})"
 
@@ -451,7 +363,7 @@ rdo_network_tc_replace_root_tbf() {
   local node_name
   for node_name in "${@}"; do
     local node_ifname
-    node_ifname="$(rdo_network_interface_name "${node_name}")"
+    node_ifname="$(cat "./run/current/nodes/${node_name}/net/eth0/iflink")"
 
     tc_command=(
       tc qdisc replace dev "'${node_ifname}'"
@@ -504,7 +416,7 @@ rdo_network_tc_del_root() {
   local node_name
   for node_name in "${@}"; do
     local node_ifname
-    node_ifname="$(rdo_network_interface_name "${node_name}")"
+    node_ifname="$(cat "./run/current/nodes/${node_name}/net/eth0/iflink")"
 
     tc_command=(
       tc qdisc del dev "'${node_ifname}'"
