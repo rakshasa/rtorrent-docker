@@ -1,3 +1,0 @@
-ARG REPOSITORY
-
-FROM "${REPOSITORY}/ancestor/cache:global"

@@ -20,7 +20,8 @@ rdo_stage_network                "rt-global"
 rdo_stage_network --disable-ipv6 "rt-global-v4"
 rdo_stage_network --disable-ipv4 "rt-global-v6"
 
-# rdo_network_forward   --network "rt-nat-3" --bridge "rt-global"
+rdo_network_forward --ingress-ipv4 "rt-global-v4" --bridge "rt-global"
+rdo_network_forward --ingress-ipv6 "rt-global-v6" --bridge "rt-global"
 
 rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
 rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
@@ -57,10 +58,14 @@ rdo_torrent_wait --print --wait-all \
 #
 
 test_clients=(
+  "rt-leech-v4v6-1"
   "rt-leech-v4-"{1..2}
+  "rt-leech-v6-"{1..2}
 )
 
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global" "rt-leech-v4-"{1..2}
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global" "rt-leech-v4v6-1"
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global-v4" "rt-leech-v4-"{1..2}
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global-v6" "rt-leech-v6-"{1..2}
 
 rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-global"
 

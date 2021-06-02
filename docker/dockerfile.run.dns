@@ -1,13 +1,31 @@
-FROM "phensley/docker-dns"
+# syntax=docker/dockerfile:experimental
 
-WORKDIR /run/self
+ARG REPOSITORY
 
-RUN apk add --no-cache bash
+
+FROM "${REPOSITORY}/ancestor/utils:alpine-3.11"
+
+RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
+  set -xe; \
+  \
+  apk add \
+    python; \
+  apk add --virtual build-deps \
+    git \
+    python-dev \
+    g++ \
+    py2-pip \
+    libev; \
+  \
+  git clone --branch test/ipv6 https://github.com/rakshasa/docker-dns.git; \
+  \
+  pip install -r ./docker-dns/requirements.txt; \
+  mv ./docker-dns/dockerdns /; \
+  \
+  apk del build-deps; \
+  rm -rf /tmp/* ./docker-dns
 
 COPY bash_profile /root/.bash_profile
 COPY entrypoint.sh /
-
-LABEL ancestor_project_root="rdo"
-LABEL ancestor_project="run"
 
 ENTRYPOINT /entrypoint.sh

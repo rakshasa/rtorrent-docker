@@ -319,6 +319,11 @@ rdo_stage_network() {
   )
 
   local commands=(
+    # Add this to work around a bug that causes
+    # DOCKER-ISOLATION-STAGE-1 to be inserted before DOCKER-USER jump.
+    "(ip6tables -t filter -D FORWARD -j DOCKER-USER || : &> /dev/null)"
+    "ip6tables -t filter -I FORWARD -j DOCKER-USER"
+
     "iptables ${default_iptables_args[*]} -t filter -I DOCKER-USER -o '${ifname}' -j DROP"
     "iptables ${default_iptables_args[*]} -t filter -I DOCKER-USER -i '${ifname}' -j DROP"
   )
@@ -706,13 +711,26 @@ rdo_stage__container__create() {
 }
 
 rdo_stage__container__wait_started() {
+  local timeout=$(( SECONDS + 10 ))
+
   while [[ "$(docker container inspect --format '{{ .State.Status }}' "${node_name}")" == "created" ]]; do
+    if (( SECONDS > timeout )); then
+      print_error "could not start node, state stuck at 'created': ${node_name}"
+      return 1
+    fi
+
     sleep 0.01
   done
 
   while
     [[ "$(docker container inspect --format '{{ .State.Status }}' "${node_name}")" == "running" ]] &&
     [[ "$(cat ./run/current/nodes/${node_name}/state)" == "starting" ]]; do
+
+    if (( SECONDS > timeout )); then
+      print_error "could not start node, state stuck at 'starting': ${node_name}"
+      return 1
+    fi
+
     sleep 0.01
   done
 }

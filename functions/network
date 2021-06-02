@@ -11,8 +11,6 @@ rdo_network() {
                     'rdo_network_ls "${@}"'
 
   # TODO: Move all iptables stuff into sub-command:
-  args::new_command 'iptables' default 'Call iptables on docker host' \
-                    'rdo_network_iptables "${@}"'
   args::new_command 'iptables-flush' empty 'Flush rdo-specific iptables rules on docker host' \
                     'rdo_network_iptables_flush'
   args::new_command 'iptables-save' default 'Call iptables-save on docker host' \
@@ -48,11 +46,6 @@ rdo_network_ls() {
   docker network ls --filter "label=project=rdo" "${@}"
 }
 
-rdo_network_iptables() {
-  print_normal iptables "${@}"
-  rdo__call_host sudo iptables "${@}"
-}
-
 rdo_network_iptables_flush() {
   local rules
   local ipv4_nat_rules ipv4_filter_rules
@@ -77,39 +70,132 @@ rdo_network_iptables_save() {
 }
 
 rdo_network_forward() {
-  eval "$(args::init_options_string "rdo network forward OUTER-NETWORK" "outer_network" "Add FORWARD route between networks.")"
+  # eval "$(args::init_options_empty "rdo network forward" "Add FORWARD route between networks.")"
 
-  args::new_option "network" req_string "n" "Add inner network" 'local inner_networks=()' 'inner_networks+=("${args__1}")'
+  # args::new_option "bridge"       req_string "" "Use bridge egress" 'local bridge_name' 'bridge_name="${args__1}"'
+  # args::new_option "ingress"      string "" "Add ipv4/6 ingress" '' 'ingress_4+=("${args__1}"); ingress_6+=("${args__1}")'
+  # args::new_option "ingress-ipv4" string "" "Add ipv4 ingress" 'local ingress_4=()' 'ingress_4+=("${args__1}")'
+  # args::new_option "ingress-ipv6" string "" "Add ipv6 ingress" 'local ingress_6=()' 'ingress_6+=("${args__1}")'
 
-  eval "$(args::process)"
+  # eval "$(args::process)"
 
-  if (( ${#inner_networks[@]} == 0 )); then
-    print_error "rdo network nat: Missing inner networks."
+  # start of generated bash args 'rdo network forward'
+
+  local bridge_name
+  local ingress_4=()
+  local ingress_6=()
+  local args__opt_value__bridge=
+  local args__opt_value__ingress=
+  local args__opt_value__ingress_ipv4=
+  local args__opt_value__ingress_ipv6=
+
+  while true; do
+    case "${1}" in
+      --bridge)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        args__opt_value__bridge="${args__1}"
+        shift 2
+        bridge_name="${args__1}"
+        ;;
+      --ingress)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        args__opt_value__ingress="${args__1}"
+        shift 2
+        ingress_4+=("${args__1}"); ingress_6+=("${args__1}")
+        ;;
+      --ingress-ipv4)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        args__opt_value__ingress_ipv4="${args__1}"
+        shift 2
+        ingress_4+=("${args__1}")
+        ;;
+      --ingress-ipv6)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        args__opt_value__ingress_ipv6="${args__1}"
+        shift 2
+        ingress_6+=("${args__1}")
+        ;;
+      --help|-h)
+        echo "Usage: rdo network forward"
+        echo
+        echo "Add FORWARD route between networks."
+        echo
+        echo "Options:"
+        echo "      --bridge         Use bridge egress"
+        echo "      --ingress        Add ipv4/6 ingress"
+        echo "      --ingress-ipv4   Add ipv4 ingress"
+        echo "      --ingress-ipv6   Add ipv6 ingress"
+        echo
+        echo "Run 'rdo network forward COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if [[ -z "${args__opt_value__bridge}" ]]; then
+    print_error "${args__root}: missing required flag: --bridge"
     return 1
   fi
 
+  if (( ${#} > 0 )); then
+    print_error "rdo network forward: too many arguments"
+    exit 1
+  fi
+
+  # end of generated bash args 'rdo network forward'
+
+  local commands=()
+
   local outer_network_bridge
-  outer_network_bridge="$(cat "./run/current/networks/${outer_network}/ifname")"
+  outer_network_bridge="$(cat "./run/current/networks/${bridge_name}/ifname")"
 
-  local inner_network
-  for inner_network in "${inner_networks[@]}"; do
-    local inner_network_bridge
-    inner_network_bridge="$(cat "./run/current/networks/${inner_network}/ifname")"
+  local ingress_network
+  for ingress_network in "${ingress_4[@]}"; do
+    local ifname
+    ifname="$(cat "./run/current/networks/${ingress_network}/ifname")"
 
-    local default_iptables_args=(
+    local rule_args=(
       -m comment
-      --comment "'rdo network forward ${inner_network}->${outer_network}'"
+      --comment "'rdo network forward ${ingress_network}->${bridge_name}'"
     )
 
-    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${outer_network_bridge}" -o "${inner_network_bridge}" -j ACCEPT
-    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${outer_network_bridge}" -j ACCEPT
+    commands+=(
+      "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${outer_network_bridge}' -o '${ifname}' -j ACCEPT"
+      "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${ifname}' -o '${outer_network_bridge}' -j ACCEPT"
+    )
   done
+
+  local ingress_network
+  for ingress_network in "${ingress_6[@]}"; do
+    local ifname
+    ifname="$(cat "./run/current/networks/${ingress_network}/ifname")"
+
+    local rule_args=(
+      -m comment
+      --comment "'rdo network forward ${ingress_network}->${bridge_name}'"
+    )
+
+    commands+=(
+      "ip6tables ${rule_args[*]} -t filter -I DOCKER-USER -i '${outer_network_bridge}' -o '${ifname}' -j ACCEPT"
+      "ip6tables ${rule_args[*]} -t filter -I DOCKER-USER -i '${ifname}' -o '${outer_network_bridge}' -j ACCEPT"
+    )
+  done
+
+  rdo__sudo_host bash -c "\"$(printf "%s && " "${commands[@]}" && printf ":\n")\""
 }
 
 rdo_network_nat() {
   # eval "$(args::init_options_empty "rdo network nat" "Add NAT route.")"
 
-  # args::new_option "bridge" string "" "Use bridge egress" 'local bridge_name' 'bridge_name="${args__1}"'
+  # args::new_option "bridge" req_string "" "Use bridge egress" 'local bridge_name' 'bridge_name="${args__1}"'
   # args::new_option "network" req_string "" "Add inner network" 'local inner_networks=()' 'inner_networks+=("${args__1}")'
 
   # eval "$(args::process)"
@@ -175,9 +261,6 @@ rdo_network_nat() {
   if [[ -n "${bridge_name}" ]]; then
     egress_ifname="$(cat "./run/current/networks/${bridge_name}/ifname")"
     egress_iflink="${bridge_name}"
-  else
-    print_error "rdo network nat: missing egress type"
-    exit 1
   fi
 
   if (( ${#inner_networks[@]} == 0 )); then
@@ -202,8 +285,9 @@ rdo_network_nat() {
     egress_ipaddr="${BASH_REMATCH[1]}.$(( BASH_REMATCH[2] + 1 ))"
   fi
 
-  rdo__call_host sudo ip addr add "${egress_ipaddr}/${egress_prefix}" scope global dev "${egress_ifname}"
+  rdo__sudo_host ip addr add "${egress_ipaddr}/${egress_prefix}" scope global dev "${egress_ifname}"
 
+  local commands=()
   local inner_network
   for inner_network in "${inner_networks[@]}"; do
     local inner_network_bridge
@@ -214,18 +298,20 @@ rdo_network_nat() {
     comment="rdo network nat ${inner_network}->${egress_iflink}(${egress_ifname}:${egress_ipaddr})"
 
     local mark=$(( 0x30000 + inner_network_index ))
-    local default_iptables_args=(
+    local rule_args=(
       -m comment
       --comment "'${comment}'"
     )
 
-    # rdo_network_iptables "${default_iptables_args[@]}" -t nat -I POSTROUTING -m mark --mark "${mark}" -o "${egress_ifname}" -j MASQUERADE
-    rdo_network_iptables "${default_iptables_args[@]}" -t nat -I POSTROUTING -m mark --mark "${mark}" -o "${egress_ifname}" -j SNAT --to-source "${egress_ipaddr}"
-
-    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${egress_ifname}" -j ACCEPT
-    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${egress_ifname}" -o "${inner_network_bridge}" -m state --state RELATED,ESTABLISHED -j ACCEPT
-    rdo_network_iptables "${default_iptables_args[@]}" -t filter -I DOCKER-USER -i "${inner_network_bridge}" -o "${egress_ifname}" -j MARK --set-mark "${mark}"
+    command+=(
+      "iptables ${rule_args[*]} -t nat    -I POSTROUTING -o '${egress_ifname}' -m mark --mark '${mark}' -j SNAT --to-source '${egress_ipaddr}'"
+      "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${inner_network_bridge}' -o '${egress_ifname}' -j ACCEPT"
+      "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${egress_ifname}' -o '${inner_network_bridge}' -m state --state RELATED,ESTABLISHED -j ACCEPT"
+      "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${inner_network_bridge}' -o '${egress_ifname}' -j MARK --set-mark '${mark}'"
+    )
   done
+
+  rdo__sudo_host bash -c "\"$(printf "%s && " "${commands[@]}" && printf ":\n")\""
 }
 
 rdo_network_tc() {
@@ -313,7 +399,7 @@ rdo_network_tc_replace_root_tbf() {
     commands+="$(echo "echo 'tc_replace_root_tbf/${node_name}/${node_ifname}/rate:${rate}' && ${tc_command[@]} && ")"
   done
 
-  rdo__call_host sudo bash -c "\"${commands} : \""
+  rdo__sudo_host bash -c "\"${commands} : \""
 }
 
 rdo_network_tc_del_root() {
@@ -361,5 +447,5 @@ rdo_network_tc_del_root() {
     commands+="$(echo "echo 'tc_del_root/${node_name}/${node_ifname}' && ${tc_command[@]} && ")"
   done
 
-  rdo__call_host sudo bash -c "\"${commands} : \""
+  rdo__sudo_host bash -c "\"${commands} : \""
 }

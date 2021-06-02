@@ -138,13 +138,16 @@ rdo_machine_create() {
 
   ( print_progress "enabling virtualbox-tools"
 
-    # Use custom service image:
-    rdo__sudo_host system-docker pull rtdo/os-vboxtools:v6.1.22-5.10.28-burmilla
-    rdo__sudo_host system-docker tag rtdo/os-vboxtools:v6.1.22-5.10.28-burmilla burmilla/os-vboxtools:v6.1.16-4.14.206-burmilla
+    local commands=(
+      "system-docker pull rtdo/os-vboxtools:v6.1.22-5.10.28-burmilla"
+      "system-docker tag rtdo/os-vboxtools:v6.1.22-5.10.28-burmilla burmilla/os-vboxtools:v6.1.16-4.14.206-burmilla"
 
-    rdo__sudo_host mkdir -p /rdo/run
-    rdo__sudo_host ros service enable virtualbox-tools
-    rdo__sudo_host ros service up virtualbox-tools
+      "mkdir -p /rdo/run"
+      "ros service enable virtualbox-tools"
+      "ros service up virtualbox-tools"
+    )
+
+    rdo__sudo_host bash -c "\"$(printf "%s && " "${commands[@]}" && printf ":\n")\""
   )
 
   ( print_normal "waiting for virtualbox mount command to become available"
@@ -181,16 +184,15 @@ rdo_machine_create() {
 
   ( print_progress "adding default ip6tables rules"
 
-    rdo__sudo_host update-alternatives --set iptables /usr/sbin/iptables-nft
+    local commands=(
+      "update-alternatives --set iptables /usr/sbin/iptables-nft"
 
-    local rule_args=(
-      -m comment
-      --comment "'rdo docker default rules'"
+      "ip6tables -t filter -N DOCKER-USER"
+      "ip6tables -t filter -I DOCKER-USER -j RETURN"
+      "ip6tables -t filter -I FORWARD -j DOCKER-USER"
     )
 
-    rdo__sudo_host ip6tables "${rule_args[@]}" -t filter -N DOCKER-USER
-    rdo__sudo_host ip6tables "${rule_args[@]}" -t filter -I DOCKER-USER -j RETURN
-    rdo__sudo_host ip6tables "${rule_args[@]}" -t filter -I FORWARD -j DOCKER-USER
+    rdo__sudo_host bash -c "\"$(printf "%s && " "${commands[@]}" && printf ":\n")\""
   )
 }
 
