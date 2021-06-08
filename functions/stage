@@ -436,7 +436,8 @@ rdo_stage_dns() {
   local image_name="rdo/run/dns:global"
 
   create_args+=(
-    --mount "type=bind,src=/var/run/docker.sock,dst=/docker.sock"
+    # --mount "type=bind,src=/var/run/docker.sock,dst=/docker.sock"
+    --mount "type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock"
   )
 
   rdo_stage__container__create

@@ -1,31 +1,49 @@
-# syntax=docker/dockerfile:experimental
+# # syntax=docker/dockerfile:experimental
+
+# ARG REPOSITORY
+
+
+# FROM "${REPOSITORY}/ancestor/utils:alpine-3.11"
+
+# RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
+#   set -xe; \
+#   \
+#   apk add \
+#     python; \
+#   apk add --virtual build-deps \
+#     git \
+#     python-dev \
+#     g++ \
+#     py2-pip \
+#     libev; \
+#   \
+#   git clone --branch test/ipv6 https://github.com/rakshasa/docker-dns.git; \
+#   \
+#   pip install -r ./docker-dns/requirements.txt; \
+#   mv ./docker-dns/dockerdns /; \
+#   \
+#   apk del build-deps; \
+#   rm -rf /tmp/* ./docker-dns
+
+# COPY bash_profile /root/.bash_profile
+# COPY entrypoint.sh /
+
+# ENTRYPOINT /entrypoint.sh
+
+
 
 ARG REPOSITORY
 
 
-FROM "${REPOSITORY}/ancestor/utils:alpine-3.11"
+FROM "${REPOSITORY}/docker-container-dns:latest" AS docker-dns
 
-RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
-  set -xe; \
-  \
-  apk add \
-    python; \
-  apk add --virtual build-deps \
-    git \
-    python-dev \
-    g++ \
-    py2-pip \
-    libev; \
-  \
-  git clone --branch test/ipv6 https://github.com/rakshasa/docker-dns.git; \
-  \
-  pip install -r ./docker-dns/requirements.txt; \
-  mv ./docker-dns/dockerdns /; \
-  \
-  apk del build-deps; \
-  rm -rf /tmp/* ./docker-dns
 
-COPY bash_profile /root/.bash_profile
-COPY entrypoint.sh /
+FROM "${REPOSITORY}/build/entrypoint:global" AS entrypoint
 
-ENTRYPOINT /entrypoint.sh
+
+FROM "scratch"
+
+COPY --from=docker-dns /docker-container-dns /
+COPY --from=entrypoint /entrypoint /
+
+ENTRYPOINT ["/entrypoint"]
