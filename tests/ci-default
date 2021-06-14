@@ -28,18 +28,14 @@ rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tra
 
 rdo_stage_deploy
 
-default_rtorrent_args=(
-  --run-template "rt-default"
-  --dns-inet "rt-dns-global:rt-global"
-)
-
 
 #
 # Seeders:
 #
 
 rdo_stage_rtorrent \
-  "${default_rtorrent_args[@]}" \
+  --run-template "rt-default" \
+  --dns-inet "rt-dns-global:rt-global" \
   --network "rt-global" \
   "rt-seed-global"
 
@@ -63,9 +59,19 @@ test_clients=(
   "rt-leech-v6-"{1..2}
 )
 
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global" "rt-leech-v4v6-1"
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global-v4" "rt-leech-v4-"{1..2}
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-global-v6" "rt-leech-v6-"{1..2}
+default_rtorrent_v4_args=(
+  --run-template "rt-default"
+  --dns-inet "rt-dns-global:rt-global"
+)
+
+default_rtorrent_v6_args=(
+  --run-template "rt-default"
+  --dns-inet6 "rt-dns-global:rt-global"
+)
+
+rdo_stage_rtorrent "${default_rtorrent_v4_args[@]}" --network "rt-global" "rt-leech-v4v6-1"
+rdo_stage_rtorrent "${default_rtorrent_v4_args[@]}" --network "rt-global-v4" "rt-leech-v4-"{1..2}
+rdo_stage_rtorrent "${default_rtorrent_v6_args[@]}" --network "rt-global-v6" "rt-leech-v6-"{1..2}
 
 rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-global"
 

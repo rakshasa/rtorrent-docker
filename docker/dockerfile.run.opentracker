@@ -1,16 +1,46 @@
 # syntax=docker/dockerfile:experimental
 
-FROM "lednerb/opentracker-docker"
+
+FROM "rdo/ancestor/build:global" AS build
+
+WORKDIR /build
+
+RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
+  set -xe; \
+  \
+  apk add \
+    gcc \
+    git \
+    make \
+    musl-dev \
+    zlib-dev \
+    libowfat-dev
+
+RUN set -xe; \
+  \
+  git clone git://erdgeist.org/opentracker; \
+  ( cd opentracker; \
+
+    sed -i -e 's|^PREFIX?=..$||' Makefile; \
+    sed -i -e 's|^LIBOWFAT_HEADERS=\$(PREFIX)/libowfat$|LIBOWFAT_HEADERS=/usr/include/libowfat|' Makefile; \
+    sed -i -e 's|^LIBOWFAT_LIBRARY=\$(PREFIX)/libowfat$|LIBOWFAT_LIBRARY=/usr/lib|' Makefile; \
+    \
+    FEATURES="-DWANT_V6 -DWANT_LOG_NUMWANT -DWANT_SYSLOGS" \
+      make; \
+  )
+
+
+FROM "rdo/ancestor/run:global"
 
 WORKDIR /run/self
 
-RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
-  \
-  apk add \
-      bash
-
 COPY bash_profile /root/.bash_profile
 COPY entrypoint.sh /
+
+COPY --from=build /build/opentracker/opentracker.conf.sample /etc/opentracker/opentracker.conf
+COPY --from=build /build/opentracker/opentracker /usr/bin/opentracker
+
+RUN touch /etc/opentracker/whitelist.txt /etc/opentracker/blacklist.conf
 
 LABEL ancestor_project_root="rdo"
 LABEL ancestor_project="run"

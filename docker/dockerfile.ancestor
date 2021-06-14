@@ -30,6 +30,7 @@ RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
   \
   apk add \
       bash \
+      bind-tools \
       coreutils \
       diffutils \
       findutils \
