@@ -40,7 +40,7 @@ rdo_stage_rtorrent \
   "rt-seed-global"
 
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global"
-rdo_torrent_node   --seeder "rt-seed-global" "torrent-global"
+rdo_torrent_node   --seeder "rt-seed-global"    "torrent-global"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \

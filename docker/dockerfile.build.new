@@ -50,7 +50,13 @@ RUN set -xe; \
   cat /env.configure; \
   source /env.configure; \
   \
-  /build/libtorrent/source/configure --prefix=/prefix INSTALL="/usr/bin/install -C" --enable-debug --enable-extra-debug --disable-pthread-setname-np; \
+  /build/libtorrent/source/configure \
+    --prefix=/prefix \
+    INSTALL="/usr/bin/install -C" \
+    --enable-debug \
+    --enable-extra-debug \
+    --disable-execinfo \
+    --disable-pthread-setname-np; \
   \
   rdo-find-move --replace "/build/libtorrent/output" "/deploy/libtorrent/output" \
     "( \
@@ -123,7 +129,12 @@ RUN set -xe; \
   cat /env.configure; \
   source /env.configure; \
   \
-  /build/rtorrent/source/configure --prefix=/prefix INSTALL="/usr/bin/install -C" --enable-debug --enable-extra-debug; \
+  /build/rtorrent/source/configure \
+    --prefix=/prefix \
+    INSTALL="/usr/bin/install -C" \
+    --enable-debug \
+    --enable-extra-debug \
+    --disable-execinfo; \
   \
   rdo-find-move --replace "/build/rtorrent/output" "/deploy/rtorrent/output" \
     "( \

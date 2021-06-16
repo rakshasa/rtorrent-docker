@@ -25,7 +25,7 @@ RUN set -xe; \
     sed -i -e 's|^LIBOWFAT_HEADERS=\$(PREFIX)/libowfat$|LIBOWFAT_HEADERS=/usr/include/libowfat|' Makefile; \
     sed -i -e 's|^LIBOWFAT_LIBRARY=\$(PREFIX)/libowfat$|LIBOWFAT_LIBRARY=/usr/lib|' Makefile; \
     \
-    FEATURES="-DWANT_V6 -DWANT_LOG_NUMWANT -DWANT_SYSLOGS" \
+    FEATURES="-DWANT_V6 -DWANT_IP_FROM_QUERY_STRING -DWANT_LOG_NUMWANT -DWANT_SYSLOGS" \
       make; \
   )
 
