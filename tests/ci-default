@@ -16,15 +16,15 @@ rdo_test_begin
 
 # TODO: Add test for both v4only and v6only seeders.
 
-rdo_stage_network                "rt-global"
+rdo_stage_network                "rt-global-seed"
 rdo_stage_network --disable-ipv6 "rt-global-v4"
 rdo_stage_network --disable-ipv4 "rt-global-v6"
 
-rdo_network_forward --ingress-ipv4 "rt-global-v4" --bridge "rt-global"
-rdo_network_forward --ingress-ipv6 "rt-global-v6" --bridge "rt-global"
+rdo_network_forward --ingress-ipv4 "rt-global-v4" --bridge "rt-global-seed"
+rdo_network_forward --ingress-ipv6 "rt-global-v6" --bridge "rt-global-seed"
 
-rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
-rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
+rdo_stage_dns     --run-template "dns-default"     --network "rt-global-seed" "rt-dns-global"
+rdo_stage_tracker --run-template "tracker-default" --network "rt-global-seed" "rt-tracker-global"
 
 rdo_stage_deploy
 
@@ -35,18 +35,34 @@ rdo_stage_deploy
 
 rdo_stage_rtorrent \
   --run-template "rt-default" \
-  --dns-inet "rt-dns-global:rt-global" \
-  --network "rt-global" \
+  --dns-inet "rt-dns-global:rt-global-seed" \
+  --network "rt-global-seed" \
   "rt-seed-global"
 
+# Due to trackers not properly supporting both ipv4 and ipv6 properly,
+# we need two seeders.
+rdo_stage_rtorrent \
+  --run-template "rt-default" \
+  --dns-inet6 "rt-dns-global:rt-global-seed" \
+  --network "rt-global-seed" \
+  "rt-seed-global-v6"
+
+rdo_stage_append_rc \
+  --node "rt-seed-global-v6" \
+  'network.prefer.ipv6.set = true'
+
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global"
-rdo_torrent_node   --seeder "rt-seed-global"    "torrent-global"
+rdo_torrent_node   --seeder "rt-seed-global"       "torrent-global"
+rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
                  \
                  --hash-done     "rt-seed-global:torrent-global" \
-                 --seeding       "rt-seed-global:torrent-global"
+                 --seeding       "rt-seed-global:torrent-global" \
+                 \
+                 --hash-done     "rt-seed-global-v6:torrent-global" \
+                 --seeding       "rt-seed-global-v6:torrent-global"
 
 
 #
@@ -61,15 +77,15 @@ test_clients=(
 
 default_rtorrent_v4_args=(
   --run-template "rt-default"
-  --dns-inet "rt-dns-global:rt-global"
+  --dns-inet "rt-dns-global:rt-global-seed"
 )
 
 default_rtorrent_v6_args=(
   --run-template "rt-default"
-  --dns-inet6 "rt-dns-global:rt-global"
+  --dns-inet6 "rt-dns-global:rt-global-seed"
 )
 
-rdo_stage_rtorrent "${default_rtorrent_v4_args[@]}" --network "rt-global" "rt-leech-v4v6-1"
+rdo_stage_rtorrent "${default_rtorrent_v4_args[@]}" --network "rt-global-seed" "rt-leech-v4v6-1"
 rdo_stage_rtorrent "${default_rtorrent_v4_args[@]}" --network "rt-global-v4" "rt-leech-v4-"{1..2}
 rdo_stage_rtorrent "${default_rtorrent_v6_args[@]}" --network "rt-global-v6" "rt-leech-v6-"{1..2}
 
