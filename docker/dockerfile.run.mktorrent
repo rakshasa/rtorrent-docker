@@ -4,7 +4,7 @@ ARG REPOSITORY
 ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/ancestor/utils:global"
+FROM "${REPOSITORY}/ancestor/utils:alpine-3"
 
 RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
   \

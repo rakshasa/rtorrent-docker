@@ -1,0 +1,80 @@
+# syntax=docker/dockerfile:experimental
+
+ARG REPOSITORY
+ARG TAG_APPEND
+
+
+FROM "${REPOSITORY}/ancestor/build:ubuntu-20.04" AS compiler
+
+ARG RDO_COMPILER="clang"
+ENV RDO_COMPILER="${RDO_COMPILER}"
+
+RUN --mount=type=cache,id=rdo-ubuntu-apt-cache,sharing=locked,target=/var/lib/apt/lists/ \
+  \
+  apt-get install -y \
+    autoconf \
+    automake \
+    binutils \
+    file \
+    libtool \
+    linux-headers \
+    make \
+    \
+    cppunit-dev \
+    curl-dev \
+    libc-dev \
+    ncurses-dev \
+    openssl-dev \
+    zlib-dev \
+    \
+    libexecinfo-dev; \
+  \
+  echo -e "\033[0;32musing compiler family ${RDO_COMPILER}\033[0m"; set -xe; \
+  \
+  if [ "${RDO_COMPILER}" = "clang" ]; then \
+    # clang requires crtbeginS.o from gcc and std headers from g++ \
+    echo "export CC=clang CXX=clang++" >> /env.configure; \
+    apt-get install -y \
+      gcc \
+      g++ \
+      gdb \
+      clang; \
+    \
+  elif [ "${RDO_COMPILER}" = "gcc" ]; then \
+    echo "export CC=gcc CXX=g++" >> /env.configure; \
+    apt-get install -y \
+        gcc \
+        g++ \
+        gdb; \
+    \
+  else \
+    echo -e "\033[0;31munknown compiler family: ${RDO_COMPILER}\033[0m"; \
+    exit 1; \
+  fi
+
+RUN echo -e "\033[0;32msetting configure flags\033[0m"; set -xe; \
+  \
+  echo "export PKG_CONFIG_PATH=\"/prefix/lib/pkgconfig:/usr/lib/pkgconfig\"" >> /env.configure; \
+  echo "export CXXFLAGS=\"-Wno-exceptions -Wno-pessimizing-move\"" >> /env.configure
+
+
+FROM "${REPOSITORY}/ancestor/run::ubuntu-20.04" AS run
+
+RUN --mount=type=cache,id=rdo-ubuntu-apt-cache,sharing=locked,target=/var/lib/apt/lists/ \
+  \
+  apt-get install -y \
+    curl \
+    cppunit \
+    libexecinfo \
+    libgcc \
+    libstdc++ \
+    lldb \
+    musl \
+    ncurses \
+    openssl \
+    tcpdump \
+    zlib
+
+
+# Fake endpoint:
+FROM "scratch"

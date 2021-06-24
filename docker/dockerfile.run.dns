@@ -1,7 +1,7 @@
 ARG REPOSITORY
 
 
-FROM "${REPOSITORY}/docker-container-dns:latest" AS docker-dns
+FROM "rtdo/docker-container-dns:latest" AS docker-dns
 
 
 FROM "${REPOSITORY}/build/entrypoint:global" AS entrypoint

@@ -9,7 +9,8 @@
 # /prefix - install resulting builds here
 # /stage  - initially copy docker context here
 
-ARG BASE_IMAGE="alpine:3"
+ARG BASE_IMAGE
+
 
 FROM "${BASE_IMAGE}"
 
@@ -26,19 +27,30 @@ COPY bin/* /usr/bin/
 
 RUN mkdir -p /build /deploy /prefix /stage
 
-RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
+RUN \
+  --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
+  --mount=type=cache,id=rdo-ubuntu-apt-cache,sharing=locked,target=/var/lib/apt/lists/ \
   \
-  apk add \
-      bash \
-      bind-tools \
-      coreutils \
-      diffutils \
-      findutils \
-      iproute2 \
-      iptables \
-      ip6tables \
-      tar \
-      tmux
+  if [ -f "/etc/alpine-release" ]; then \
+    apk add \
+        bash \
+        bind-tools \
+        coreutils \
+        diffutils \
+        findutils \
+        iproute2 \
+        iptables \
+        ip6tables \
+        tar \
+        tmux; \
+  elif [ -f "/etc/debian_version" ]; then \
+    apt-get update; \
+    apt-get install -y \
+      tmux; \
+  else \
+    echo "unknown distrobution"; \
+    exit 1; \
+  fi
 
 ARG ANCESTOR_PROJECT
 

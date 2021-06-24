@@ -12,6 +12,6 @@
 
 ARG REPOSITORY
 
-FROM "${REPOSITORY}/ancestor/build:global"
+FROM "${REPOSITORY}/ancestor/build:alpine-3"
 
 WORKDIR /stage

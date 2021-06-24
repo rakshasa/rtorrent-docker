@@ -1,15 +1,12 @@
 # syntax=docker/dockerfile:experimental
 
 ARG REPOSITORY
-ARG TAG_APPEND
 
 
-FROM "${REPOSITORY}/ancestor/build:global" AS compiler
+FROM "${REPOSITORY}/ancestor/build:alpine-3" AS compiler
 
 ARG RDO_COMPILER="clang"
 ENV RDO_COMPILER="${RDO_COMPILER}"
-ARG RDO_COMPILER_STANDARD="c++11"
-ENV RDO_COMPILER_STANDARD="${RDO_COMPILER_STANDARD}"
 
 RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
   \
@@ -58,10 +55,10 @@ RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
 RUN echo -e "\033[0;32msetting configure flags\033[0m"; set -xe; \
   \
   echo "export PKG_CONFIG_PATH=\"/prefix/lib/pkgconfig:/usr/lib/pkgconfig\"" >> /env.configure; \
-  echo "export CXXFLAGS=\"-std=${RDO_COMPILER_STANDARD} -Wno-exceptions -Wno-pessimizing-move\"" >> /env.configure
+  echo "export CXXFLAGS=\"-Wno-exceptions -Wno-pessimizing-move\"" >> /env.configure
 
 
-FROM "${REPOSITORY}/ancestor/run:global" AS run
+FROM "${REPOSITORY}/ancestor/run:alpine-3" AS run
 
 RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
   \

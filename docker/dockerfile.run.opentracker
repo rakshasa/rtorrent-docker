@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:experimental
 
 
-FROM "rdo/ancestor/build:global" AS build
+FROM "rdo/ancestor/build:alpine-3" AS build
 
 WORKDIR /build
 
@@ -30,7 +30,7 @@ RUN set -xe; \
   )
 
 
-FROM "rdo/ancestor/run:global"
+FROM "rdo/ancestor/run:alpine-3"
 
 WORKDIR /run/self
 
