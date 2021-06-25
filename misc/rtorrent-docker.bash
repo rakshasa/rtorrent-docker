@@ -95,13 +95,8 @@ _rtorrent_docker__rdo_build() {
       init
       check
       compile
-      libtorrent
-      libtorrent-dev
-      libtorrent-compile
-      rtorrent-check
-      rtorrent-compile
-      rtorrent-dev
-      mktorrent
+      test-libtorrent
+      test-update-libtorrent
     )
   fi
 }
