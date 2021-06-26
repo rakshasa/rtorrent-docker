@@ -47,21 +47,19 @@ rdo_network_ls() {
 }
 
 rdo_network_iptables_flush() {
-  local rules
   local ipv4_nat_rules ipv4_filter_rules
   local ipv6_nat_rules ipv6_filter_rules
 
-  ipv4_nat_rules="$(rdo__call_host sudo iptables-save     --table nat    | sed -n -e 's/^-A /sudo iptables --table nat -D /p')"
-  ipv6_nat_rules="$(rdo__call_host sudo ip6tables-save    --table nat    | sed -n -e 's/^-A /sudo ip6tables --table nat -D /p')"
-  ipv4_filter_rules="$(rdo__call_host sudo iptables-save  --table filter | sed -n -e 's/^-A /sudo iptables --table filter -D /p')"
-  ipv6_filter_rules="$(rdo__call_host sudo ip6tables-save --table filter | sed -n -e 's/^-A /sudo ip6tables --table filter -D /p')"
+  ipv4_nat_rules="$(rdo__sudo_host iptables-save     --table nat    | sed -n -e 's/^-A /sudo iptables --table nat -D /p')"
+  ipv6_nat_rules="$(rdo__sudo_host ip6tables-save    --table nat    | sed -n -e 's/^-A /sudo ip6tables --table nat -D /p')"
+  ipv4_filter_rules="$(rdo__sudo_host iptables-save  --table filter | sed -n -e 's/^-A /sudo iptables --table filter -D /p')"
+  ipv6_filter_rules="$(rdo__sudo_host ip6tables-save --table filter | sed -n -e 's/^-A /sudo ip6tables --table filter -D /p')"
 
-  rules="$(printf "%s\n%s\n" "${ipv4_nat_rules}" "${ipv6_nat_rules}" "${ipv4_filter_rules}" "${ipv6_filter_rules}" | sed -n -e '/ -m comment --comment "rdo network/p')"
+  local cmd_list
+  cmd_list="$(printf "%s\n%s\n" "${ipv4_nat_rules}" "${ipv6_nat_rules}" "${ipv4_filter_rules}" "${ipv6_filter_rules}" | sed -n -e '/ -m comment --comment "rdo network/p')"
 
   if [[ -n "${rules}" ]]; then
-    # printf "deleting iptables rules:\n"
-    # printf "%s\n" "${rules[@]}"
-    rdo__call_host bash -c "echo '${rules}'; ${rules}"
+    rdo__sudo_host bash -c "\"$(printf "%s && " "${cmd_list[@]}" && printf ":\n")\""
   fi
 }
 
