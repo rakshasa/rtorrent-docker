@@ -152,7 +152,7 @@ rdo_network_forward() {
 
   # end of generated bash args 'rdo network forward'
 
-  local commands=()
+  local cmd_list=()
 
   local outer_network_bridge
   outer_network_bridge="$(cat "./run/current/networks/${bridge_name}/ifname")"
@@ -167,7 +167,7 @@ rdo_network_forward() {
       --comment "'rdo network forward ${ingress_network}->${bridge_name}'"
     )
 
-    commands+=(
+    cmd_list+=(
       "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${outer_network_bridge}' -o '${ifname}' -j ACCEPT"
       "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${ifname}' -o '${outer_network_bridge}' -j ACCEPT"
     )
@@ -183,13 +183,13 @@ rdo_network_forward() {
       --comment "'rdo network forward ${ingress_network}->${bridge_name}'"
     )
 
-    commands+=(
+    cmd_list+=(
       "ip6tables ${rule_args[*]} -t filter -I DOCKER-USER -i '${outer_network_bridge}' -o '${ifname}' -j ACCEPT"
       "ip6tables ${rule_args[*]} -t filter -I DOCKER-USER -i '${ifname}' -o '${outer_network_bridge}' -j ACCEPT"
     )
   done
 
-  rdo__sudo_host bash -c "\"$(printf "%s && " "${commands[@]}" && printf ":\n")\""
+  rdo__sudo_host bash -c "\"$(printf "%s && " "${cmd_list[@]}" && printf ":\n")\""
 }
 
 rdo_network_nat() {
@@ -256,7 +256,6 @@ rdo_network_nat() {
 
   local egress_ifname
   local egress_iflink
-  local comment
 
   if [[ -n "${bridge_name}" ]]; then
     egress_ifname="$(cat "./run/current/networks/${bridge_name}/ifname")"
@@ -287,7 +286,7 @@ rdo_network_nat() {
 
   rdo__sudo_host ip addr add "${egress_ipaddr}/${egress_prefix}" scope global dev "${egress_ifname}"
 
-  local commands=()
+  local cmd_list=()
   local inner_network
   for inner_network in "${inner_networks[@]}"; do
     local inner_network_bridge
@@ -295,15 +294,13 @@ rdo_network_nat() {
     inner_network_bridge="$(cat "./run/current/networks/${inner_network}/ifname")"
     inner_network_index="$(cat "./run/current/networks/${inner_network}/index")"
 
-    comment="rdo network nat ${inner_network}->${egress_iflink}(${egress_ifname}:${egress_ipaddr})"
-
     local mark=$(( 0x30000 + inner_network_index ))
     local rule_args=(
       -m comment
-      --comment "'${comment}'"
+      --comment "'rdo network nat ${inner_network}->${egress_iflink}(${egress_ifname}:${egress_ipaddr})'"
     )
 
-    command+=(
+    cmd_list+=(
       "iptables ${rule_args[*]} -t nat    -I POSTROUTING -o '${egress_ifname}' -m mark --mark '${mark}' -j SNAT --to-source '${egress_ipaddr}'"
       "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${inner_network_bridge}' -o '${egress_ifname}' -j ACCEPT"
       "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${egress_ifname}' -o '${inner_network_bridge}' -m state --state RELATED,ESTABLISHED -j ACCEPT"
@@ -311,7 +308,7 @@ rdo_network_nat() {
     )
   done
 
-  rdo__sudo_host bash -c "\"$(printf "%s && " "${commands[@]}" && printf ":\n")\""
+  rdo__sudo_host bash -c "\"$(printf "%s && " "${cmd_list[@]}" && printf ":\n")\""
 }
 
 rdo_network_tc() {
@@ -379,7 +376,7 @@ rdo_network_tc_replace_root_tbf() {
 
   # end of generated bash args 'rdo network tc-replace-root-tbf [NODE-NAME]...'
 
-  local commands
+  local cmd_list
 
   local node_name
   for node_name in "${@}"; do
@@ -396,10 +393,10 @@ rdo_network_tc_replace_root_tbf() {
       burst 1540
     )
 
-    commands+="$(echo "echo 'tc_replace_root_tbf/${node_name}/${node_ifname}/rate:${rate}' && ${tc_command[@]} && ")"
+    cmd_list+="$(echo "echo 'tc_replace_root_tbf/${node_name}/${node_ifname}/rate:${rate}' && ${tc_command[@]} && ")"
   done
 
-  rdo__sudo_host bash -c "\"${commands} : \""
+  rdo__sudo_host bash -c "\"${cmd_list} : \""
 }
 
 rdo_network_tc_del_root() {
@@ -432,7 +429,7 @@ rdo_network_tc_del_root() {
 
   # end of generated bash args 'rdo network tc-del-root [NODE-NAME]...'
 
-  local commands
+  local cmd_list
 
   local node_name
   for node_name in "${@}"; do
@@ -444,8 +441,8 @@ rdo_network_tc_del_root() {
       root
     )
 
-    commands+="$(echo "echo 'tc_del_root/${node_name}/${node_ifname}' && ${tc_command[@]} && ")"
+    cmd_list+="$(echo "echo 'tc_del_root/${node_name}/${node_ifname}' && ${tc_command[@]} && ")"
   done
 
-  rdo__sudo_host bash -c "\"${commands} : \""
+  rdo__sudo_host bash -c "\"${cmd_list} : \""
 }
