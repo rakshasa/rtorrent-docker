@@ -189,15 +189,15 @@ rdo_build_test_libtorrent() {
 
     make -j12 &&
     make -j12 install &&
-    make -j12 check || : &&
+    make -j12 check
 
-    sed -i -e "s|exec \"\$progdir/\$program\"|exec gdb --args \"\$progdir/\$program\"|" ./test/LibTorrent_Test ./test/LibTorrent_Test_{Data,Net,Torrent,Torrent_Utils,Tracker} || exit 1
+    sed -i -e "s|exec \"\$progdir/\$program\"|exec gdb --args \"\$progdir/\$program\"|" ./test/LibTorrent_Test ./test/LibTorrent_Test_{Data,Net,Torrent,Torrent_Utils,Tracker}
 
     echo
     echo "*** ready to run unit tests ***"
     echo
-    echo "to add logging to a test, inherit from test_fixture and add to setUp():
-    echo "  log_add_group_output(torrent::LOG_FOO, "test_output");"
+    echo "to add logging to a test, inherit from test_fixture and add to setUp():"
+    echo "  log_add_group_output(torrent::LOG_FOO, \"test_output\");"
     echo
     echo "example of running subsets of tests:"
     echo
