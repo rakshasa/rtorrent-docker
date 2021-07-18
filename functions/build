@@ -244,7 +244,11 @@ rdo_build_test_update_libtorrent() {
     make -j12 &&
     make -j12 install &&
     make -j12 check TESTS=
+'
+}
 
+rdo_build_test_debug_libtorrent() {
+  docker exec -it rdo-test-libtorrent bash -c '
     sed -i -e "s|exec \"\$progdir/\$program\"|exec gdb --args \"\$progdir/\$program\"|" ./test/LibTorrent_Test ./test/LibTorrent_Test_{Data,Net,Torrent,Torrent_Utils,Tracker}
 '
 }
