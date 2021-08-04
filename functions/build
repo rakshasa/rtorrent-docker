@@ -173,7 +173,16 @@ rdo_build_test_libtorrent() {
 
   rdo_build__build --context-type "rtorrent" --context-name "rtorrent" --filename "build.rtorrent" --target "compile.libtorrent" --tag-append "alpine-3" "test/libtorrent"
 
-  docker run --rm -it --name rdo-test-libtorrent rdo/test/libtorrent:alpine-3 bash -c '
+  docker rm -f rdo-test-libtorrent || :
+  docker run \
+    --rm \
+    -it \
+    --detach \
+    --name rdo-test-libtorrent \
+    rdo/test/libtorrent:alpine-3 \
+    tail -f /dev/null
+
+  docker exec -it rdo-test-libtorrent bash -c '
     set -x &&
 
     cat /env.configure &&
@@ -193,6 +202,7 @@ rdo_build_test_libtorrent() {
 
     sed -i -e "s|exec \"\$progdir/\$program\"|exec gdb --args \"\$progdir/\$program\"|" ./test/LibTorrent_Test ./test/LibTorrent_Test_{Data,Net,Torrent,Torrent_Utils,Tracker}
 
+    set +x
     echo
     echo "*** ready to run unit tests ***"
     echo
@@ -201,10 +211,8 @@ rdo_build_test_libtorrent() {
     echo
     echo "example of running subsets of tests:"
     echo
-    echo "(export TEST_NAME=\"torrent::tracker_list\"; ./test/LibTorrent_Test_Torrent)"
-    echo
-
-    bash'
+    echo "docker exec -it rdo-test-libtorrent bash -c \"(export TEST_NAME=\\\"torrent::tracker_list\\\"; ./test/LibTorrent_Test_Torrent)\""
+    echo'
 }
 
 rdo_build_test_update_libtorrent() {
@@ -242,7 +250,6 @@ rdo_build_test_update_libtorrent() {
     cd /build/libtorrent/output &&
 
     make -j12 &&
-    make -j12 install &&
     make -j12 check TESTS=
 '
 }
