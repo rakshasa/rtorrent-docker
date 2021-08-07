@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+include_header build.context
+
+rdo_build__context__ancestor() {
+  local context_name="ancestor"
+  local context_path="./context/${context_name}"
+
+  rm -r "${context_path}/bin" 2> /dev/null || :
+  mkdir -p "${context_path}/bin"
+
+  cp ./misc/{pkg,rdo}-*[!~] "${context_path}/bin/"
+
+  rdo docker build --context "${context_path}" "${@}"
+}

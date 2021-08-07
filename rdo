@@ -26,6 +26,7 @@ include_source=(
   # Preload any headers for commands that are likely to be executed
   # multiple times.
   build
+  build.context
   docker
   docker.clean
   docker.context
