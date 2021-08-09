@@ -15,8 +15,6 @@ rdo_docker() {
   #                   'rdo_docker_clean "${@}"'
   # args::new_command "container" default "." \
   #                   'rdo_docker_container "${@}"'
-  # args::new_command "context" default "." \
-  #                   'rdo_docker_context "${@}"'
   # args::new_command "images" empty "." \
   #                   'rdo_docker_images'
   # args::new_command "inspect" default "." \
@@ -156,10 +154,6 @@ rdo_docker_build() {
   local arg_tag=
   local arg_tag_append=
 
-  local arg_post_exec=()
-  local arg_pre_exec=()
-  local arg_test_exec=()
-
   while [[ -n "${1}" ]]; do
     case "${1}" in
       --ancestor-project)
@@ -189,12 +183,6 @@ rdo_docker_build() {
       --no-cache)
         arg_no_cache="yes"
         shift ;;
-      --post-exec)
-        arg_post_exec+=("${2:?Missing exec argument.}")
-        shift 2 ;;
-      --pre-exec)
-        arg_pre_exec+=("${2:?Missing exec argument.}")
-        shift 2 ;;
       --rebuild)
         arg_rebuild="yes"
         shift ;;
@@ -298,12 +286,6 @@ rdo_docker_build() {
   # absolute windows paths that might be ambigious.
   cd "${PROJECT_PATH}"
 
-  local pre_cmd
-  for pre_cmd in "${arg_pre_exec[@]}"; do
-    print_progress "calling pre exec command '${pre_cmd} ${tag_full}'"
-    "${cmd_prefix[@]}" ${pre_cmd} "${tag_full}"
-  done
-
   args+=(--progress plain)
 
   echo docker build "${args[@]}" "${arg_context}"
@@ -312,12 +294,6 @@ rdo_docker_build() {
     print_error "failed to build docker container '${tag_full}'"
     exit 1
   fi
-
-  local post_cmd
-  for post_cmd in "${arg_post_exec[@]}"; do
-    print_progress "calling post exec command '${post_cmd} ${tag_full}'"
-    "${cmd_prefix[@]}" ${post_cmd} "${tag_full}"
-  done
 }
 
 rdo_docker_children() {

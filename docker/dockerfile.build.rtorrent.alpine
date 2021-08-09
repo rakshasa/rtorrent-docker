@@ -12,22 +12,23 @@ RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
   \
   apk add \
       autoconf \
+      autoconf-archive \
       automake \
       binutils \
       file \
       libtool \
       linux-headers \
       make \
+      pkgconf \
       \
       cppunit-dev \
       curl-dev \
       libc-dev \
+      libexecinfo-dev \
       musl-dev \
       ncurses-dev \
       openssl-dev \
-      zlib-dev \
-      \
-      libexecinfo-dev; \
+      zlib-dev; \
   \
   echo -e "\033[0;32musing compiler family ${RDO_COMPILER}\033[0m"; set -xe; \
   \

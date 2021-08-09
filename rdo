@@ -29,7 +29,6 @@ include_source=(
   build.context
   docker
   docker.clean
-  docker.context
   init
   network
   run

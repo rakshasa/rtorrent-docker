@@ -21,7 +21,6 @@ RUN set -xe; \
     --wildcards '*.am' \
     --wildcards '*.m4' \
     --wildcards '*.pc.in' \
-    --no-wildcards './autogen.sh' \
     --no-wildcards './configure.ac'
 
 WORKDIR "/deploy/rtorrent/configure"
@@ -32,7 +31,6 @@ RUN set -xe; \
     --directory '/deploy/rtorrent/configure' \
     --wildcards '*.am' \
     --wildcards '*.m4' \
-    --no-wildcards './autogen.sh' \
     --no-wildcards './configure.ac'
 
 
@@ -42,7 +40,7 @@ COPY --from=stage.configure /deploy/libtorrent/configure/ /build/libtorrent/sour
 
 WORKDIR "/build/libtorrent/source"
 
-RUN ./autogen.sh
+RUN autoreconf -fi
 
 WORKDIR "/build/libtorrent/output"
 
@@ -121,7 +119,7 @@ COPY --from=compile.libtorrent /deploy/prefix/lib/pkgconfig/libtorrent.pc /prefi
 
 WORKDIR "/build/rtorrent/source"
 
-RUN ./autogen.sh
+RUN autoreconf -fi
 
 WORKDIR "/build/rtorrent/output"
 
