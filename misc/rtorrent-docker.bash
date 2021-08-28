@@ -46,6 +46,14 @@ _rtorrent_docker__rdo_docker_targets() {
   fi
 }
 
+_rtorrent_docker__rdo_machine_list_engines() {
+  _rtorrent_docker__word_skip
+
+  if (( ${iword} == ${cword} )); then
+    commands=($("${words[0]}" machine list-engines))
+  fi
+}
+
 # completion rdo layer
 
 _rtorrent_docker__rdo() {
@@ -162,34 +170,6 @@ _rtorrent_docker__rdo_docker_clean() {
   )
 }
 
-_rtorrent_docker__rdo_docker_context() {
-  if [[ "${word}" != -* ]]; then
-    commands=(
-      build
-      clean
-      types
-    )
-    arg_funcs=(
-      init##rdo_docker_context_types
-    )
-  fi
-}
-
-_rtorrent_docker__rdo_docker_context_build() {
-  if [[ "${word}" != -* ]]; then
-    commands=($("${words[0]}" docker targets))
-  else
-    _rtorrent_docker__rdo_docker_build__flags
-
-    flags+=(
-      --context-args
-      --context-name
-      --context-type
-      --empty
-    )
-  fi
-}
-
 _rtorrent_docker__rdo_docker_inspect() {
   flags=(--id --help)
 }
@@ -234,7 +214,20 @@ _rtorrent_docker__rdo_machine() {
   if [[ "${word}" == -* ]]; then
     flags=(--help)
   else
-    commands=(create current destroy start status stop)
+    commands=(
+      create
+      current
+      destroy
+      engine
+      list-engines
+      push-engine
+      start
+      status
+      stop
+    )
+    arg_funcs=(
+      engine##rdo_machine_list_engines
+    )
   fi
 }
 

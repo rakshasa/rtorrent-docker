@@ -5,22 +5,28 @@ include_header machine
 rdo_machine() {
   # eval "$(args::init_subcommand "rdo machine" "Create and manage rtorrent-docker machines.")"
 
-  # args::new_command "create" default "Create the docker machine" \
+  # args::new_command 'create' default 'Create the docker machine' \
   #                   'rdo_machine_create "${@}"'
-  # args::new_command "current" default "Print the current docker machine name" \
-  #                   'rdo_machine_current "${@}"'
-  # args::new_command "destroy" default "Destroy the docker machine" \
+  # args::new_command 'destroy' default 'Destroy the docker machine' \
   #                   'rdo_machine_destroy "${@}"'
-  # args::new_command "start" default "Start the docker machine" \
+  # args::new_command 'current' default 'Print the current docker machine name' \
+  #                   'rdo_machine_current "${@}"'
+
+  # args::new_command 'start' default 'Start the docker machine' \
   #                   'rdo_machine_start "${@}"'
-  # args::new_command "status" default "Print the status of the docker machine" \
-  #                   'rdo_machine_status "${@}"'
-  # args::new_command "stop" default "Stop the docker machine" \
+  # args::new_command 'stop' default 'Stop the docker machine' \
   #                   'rdo_machine_stop "${@}"'
+  # args::new_command 'status' default 'Print the status of the docker machine' \
+  #                   'rdo_machine_status "${@}"'
+
+  # args::new_command 'engine' default 'Use specific docker engine' \
+  #                   'rdo_machine_engine "${@}"'
+  # args::new_command 'list-engines' empty 'List engines' \
+  #                   'rdo_machine_list_engines'
+  # args::new_command 'push-engine' default 'Push a new engine version to rdos dockerhub' \
+  #                   'rdo_machine_push_engine "${@}"'
 
   # eval "$(args::process)"
-
-  # start of generated bash args 'rdo machine'
 
   while true; do
     case "${1}" in
@@ -30,12 +36,15 @@ rdo_machine() {
         echo "Create and manage rtorrent-docker machines."
         echo
         echo "Commands:"
-        echo "  create    Create the docker machine"
-        echo "  current   Print the current docker machine name"
-        echo "  destroy   Destroy the docker machine"
-        echo "  start     Start the docker machine"
-        echo "  status    Print the status of the docker machine"
-        echo "  stop      Stop the docker machine"
+        echo "  create         Create the docker machine"
+        echo "  destroy        Destroy the docker machine"
+        echo "  current        Print the current docker machine name"
+        echo "  start          Start the docker machine"
+        echo "  stop           Stop the docker machine"
+        echo "  status         Print the status of the docker machine"
+        echo "  engine         Use specific docker engine"
+        echo "  list-engines   List engines"
+        echo "  push-engine    Push a new engine version to rdos dockerhub"
         echo
         echo "Run 'rdo machine COMMAND --help' for more information on a command."
         exit 0
@@ -59,20 +68,30 @@ rdo_machine() {
     create)
       rdo_machine_create "${@}"
       ;;
-    current)
-      rdo_machine_current "${@}"
-      ;;
     destroy)
       rdo_machine_destroy "${@}"
+      ;;
+    current)
+      rdo_machine_current "${@}"
       ;;
     start)
       rdo_machine_start "${@}"
       ;;
+    stop)
+      rdo_machine_stop "${@}"
+      ;;
     status)
       rdo_machine_status "${@}"
       ;;
-    stop)
-      rdo_machine_stop "${@}"
+    engine)
+      rdo_machine_engine "${@}"
+      ;;
+    list-engines)
+      args::verify_command_empty "${@}"
+      rdo_machine_list_engines
+      ;;
+    push-engine)
+      rdo_machine_push_engine "${@}"
       ;;
     *)
       print_error "rdo machine: unknown command: ${args__cmd}"
@@ -81,30 +100,72 @@ rdo_machine() {
   esac
 
   # end of generated bash args 'rdo machine'
+
 }
 
 rdo_machine_create() {
-  local arg_disk_size=200000
+  # eval "$(args::init_options_empty "rdo machine create" "Create the docker machine")"
 
-  local arg_cpu_count arg_memory
-  arg_cpu_count=$(( $(rdo__cpu_count) - 2 ))
-  arg_memory="$(rdo__machine_memory)"
+  # args::new_option "name" string "n" "Set the docker machine name" \
+  #                  'local arg_docker_machine' 'arg_docker_machine="${args__1}"'
 
-  local create_args=()
+  # eval "$(args::process)"
 
-  eval "$(args::init_options_empty "rdo machine create" "Create the docker machine")"
+  # start of generated bash args 'rdo machine create'
 
-  args::new_option "name" string "n" "Set the docker machine name" \
-                   'local arg_docker_machine' 'arg_docker_machine="${args__1}"'
+  local arg_docker_machine
+  local args__opt_value__name=
 
-  eval "$(args::process)"
+  while true; do
+    case "${1}" in
+      --name|-n)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        args__opt_value__name="${args__1}"
+        shift 2
+        arg_docker_machine="${args__1}"
+        ;;
+      --help|-h)
+        echo "Usage: rdo machine create"
+        echo
+        echo "Create the docker machine"
+        echo
+        echo "Options:"
+        echo "  -n, --name   Set the docker machine name"
+        echo
+        echo "Run 'rdo machine create COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
 
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 0 )); then
+    print_error "rdo machine create: too many arguments"
+    exit 1
+  fi
+
+  # end of generated bash args 'rdo machine create'
+  
   print_progress "creating docker machine '${arg_docker_machine}' (cpu:${arg_cpu_count} memory:${arg_memory} disk_size:${arg_disk_size})"
 
   if docker-machine inspect "${arg_docker_machine}" &> /dev/null; then
     print_error "docker machine vm already exists"
     exit 1
   fi
+
+  local create_args=()
+  local arg_disk_size=200000
+
+  local arg_cpu_count arg_memory
+  arg_cpu_count=$(( $(rdo__cpu_count) - 2 ))
+  arg_memory="$(rdo__machine_memory)"
 
   local ipv6_routing_prefix="fc77:0:c001"
 
@@ -232,11 +293,6 @@ rdo_machine_start() {
   docker-machine start "${machine_name}"
 }
 
-rdo_machine_status() {
-  local machine_name="${1:-$(rdo_machine__current)}"
-  docker-machine status "${machine_name}"
-}
-
 rdo_machine_stop() {
   local machine_name="$(rdo_machine__current)"
 
@@ -247,6 +303,137 @@ rdo_machine_stop() {
 
   print_progress "stopping docker machine '${machine_name}'"
   docker-machine stop "${machine_name}"
+}
+
+rdo_machine_status() {
+  local machine_name="${1:-$(rdo_machine__current)}"
+  docker-machine status "${machine_name}"
+}
+
+rdo_machine_engine() {
+  eval "$(args::init_options_string "rdo machine engine ENGINE-TAG" "engine_tag" "Use a specific docker engine version")"
+  eval "$(args::process)"
+
+  local conf_path="/var/lib/rancher/conf/rtdo/${engine_tag}"
+
+  if [[ -z "$(rdo__sudo_host "ros engine list | cut -d ' ' -f 2 | grep '${engine_tag}'" 2> /dev/null)" ]]; then
+    rdo__sudo_host "cat - > /tmp/docker-engine-${engine_tag}" <<EOF
+docker:
+  image: rtdo/os-docker:${engine_tag}
+  command: ros user-docker
+  environment:
+  - HTTP_PROXY
+  - HTTPS_PROXY
+  - NO_PROXY
+  labels:
+    io.rancher.os.scope: system
+    io.rancher.os.after: console
+  net: host
+  pid: host
+  ipc: host
+  uts: host
+  privileged: true
+  restart: always
+  volumes_from:
+  - all-volumes
+  volumes:
+  - /sys:/host/sys
+  - /var/lib/system-docker:/var/lib/system-docker:shared
+EOF
+
+    rdo__sudo_host "cat - >> '/tmp/docker-compose-${engine_tag}'" <<EOF
+
+  docker:
+    engine: file://${conf_path}/os-service.yml
+EOF
+
+    rdo__sudo_host "mkdir -p '${conf_path}'"
+
+    rdo__sudo_host "mv '/tmp/docker-engine-${engine_tag}' '${conf_path}/os-service.yml'"
+    rdo__sudo_host "mv '/tmp/docker-compose-${engine_tag}' '${conf_path}/docker-compose.yml'"
+  fi
+
+  rdo__sudo_host "ros service enable '${conf_path}'"
+}
+
+rdo_machine_list_engines() {
+  rdo__sudo_host "ros engine list | cut -d ' ' -f 2 | grep -v -e '^$'"
+}
+
+rdo_machine_push_engine() {
+  # eval "$(args::init_options_string "rdo machine push-engine ENGINE-TAG" "engine_tag" "Push a new engine version to rdos dockerhub")"
+  # eval "$(args::process)"
+
+  # start of generated bash args 'rdo machine push engine ENGINE-TAG'
+
+  while true; do
+    case "${1}" in
+      --help|-h)
+        echo "Usage: rdo machine push engine ENGINE-TAG"
+        echo
+        echo "Push a new engine version to rdos dockerhub"
+        echo
+        echo "Run 'rdo machine push engine ENGINE-TAG COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo machine push engine ENGINE-TAG: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
+    print_error "rdo machine push engine ENGINE-TAG: missing or empty argument"
+    exit 1
+  fi
+
+  local engine_tag="${1}"
+  shift
+
+  # end of generated bash args 'rdo machine push engine ENGINE-TAG'
+
+  if [[ -z "$(rdo__sudo_host "ros engine list | cut -d ' ' -f 2 | grep '${engine_tag}'" 2> /dev/null)" ]]; then
+    print_error "docker engine already exists: ${engine_tag}"
+    return 1
+  fi
+
+  local dest_prefix="./context/engine/${engine_tag}"
+  rm -rf "./context/engine/docker" "${dest_prefix}"
+
+  if ! [[ -f "${dest_prefix}.tar.gz" ]]; then
+    mkdir -p "./context/engine/"
+
+    print_progress "downloading https://download.docker.com/linux/static/stable/x86_64/${engine_tag}.tgz"
+    curl -LSs "https://download.docker.com/linux/static/stable/x86_64/${engine_tag}.tgz" -o "${dest_prefix}.tar.gz"
+  fi
+
+  print_progress "extracting..."
+
+  tar xzf "${dest_prefix}.tar.gz" -C "./context/engine/"
+  mv "./context/engine/docker" "${dest_prefix}"
+
+  print_progress "building image..."
+
+  docker build \
+    --tag "rtdo/os-docker:${engine_tag}" \
+    --file <(printf "FROM scratch\nCOPY \"${engine_tag}/\" /engine/") \
+    "./context/engine/"
+
+  print_progress "pushing image..."
+
+  docker push "rtdo/os-docker:${engine_tag}"
+
+  print_progress "successful"
 }
 
 # Helper functions
