@@ -107,7 +107,11 @@ RUN \
   \
   make -j12; \
   make -j12 install; \
-  make -j12 check || echo "*** UNIT TESTS FAILED ***"; \
+  make -j12 check || ( \
+    echo "*** UNIT TESTS FAILED ***"; \
+    echo; \
+    cat test/test-suite.log \
+  ); \
   \
   cp -rp /prefix /deploy/prefix
 
@@ -181,7 +185,10 @@ RUN \
   \
   make -j12; \
   make -j12 install; \
-  make -j12 check || echo "*** UNIT TESTS FAILED ***"
+  make -j12 check || ( \
+    echo "*** UNIT TESTS FAILED ***"; \
+    echo; \
+    cat test/test-suite.log \
 
 
 FROM "${REPOSITORY}/build/rtorrent/run:${TAG_APPEND}"
