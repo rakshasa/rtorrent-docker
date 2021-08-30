@@ -68,6 +68,7 @@ RUN set -xe; \
 FROM "${REPOSITORY}/stage:global" AS stage.libtorrent
 
 COPY --from=configure.libtorrent /build/libtorrent/source/ /stage/libtorrent/source/
+COPY --from=configure.libtorrent /deploy/libtorrent/output/ /deploy/libtorrent/output/
 
 COPY /libtorrent.tar.gz /stage/
 
@@ -98,7 +99,7 @@ WORKDIR "/build/libtorrent/output"
 
 # Add 'id' with config options.
 RUN \
-  --mount=type=cache,sharing=locked,from=configure.libtorrent,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
+  --mount=type=cache,sharing=locked,from=stage.libtorrent,source=/deploy/libtorrent/output,target=/build/libtorrent/output \
   --mount=type=cache,sharing=locked,target=/prefix \
   \
   set -xe; \
@@ -150,6 +151,7 @@ RUN set -xe; \
 FROM "${REPOSITORY}/stage:global" AS stage.rtorrent
 
 COPY --from=configure.rtorrent /build/rtorrent/source/ /stage/rtorrent/source/
+COPY --from=configure.rtorrent /deploy/rtorrent/output/ /deploy/rtorrent/output/
 COPY /rtorrent.tar.gz /stage/
 
 WORKDIR "/stage/rtorrent/source"
@@ -178,7 +180,7 @@ COPY --from=compile.libtorrent /deploy/prefix/ /prefix/
 WORKDIR "/build/rtorrent/output"
 
 RUN \
-  --mount=type=cache,sharing=locked,from=configure.rtorrent,source=/deploy/rtorrent/output,target=/build/rtorrent/output \
+  --mount=type=cache,sharing=locked,from=stage.rtorrent,source=/deploy/rtorrent/output,target=/build/rtorrent/output \
   set -xe; \
   \
   cat config.h; \
@@ -189,7 +191,7 @@ RUN \
     echo "*** UNIT TESTS FAILED ***"; \
     echo; \
     cat test/test-suite.log \
-
+  )
 
 FROM "${REPOSITORY}/build/rtorrent/run:${TAG_APPEND}"
 
