@@ -159,7 +159,7 @@ rdo_build_compile() {
 
   rdo_build__context__empty --filename "build.rtorrent.alpine" --target "compiler" "build/rtorrent/compiler:alpine-3"
   rdo_build__context__empty --filename "build.rtorrent.alpine" --target "run"      "build/rtorrent/run:alpine-3"
-  rdo_build__context__rtorrent --filename "build.rtorrent" --tag-append "alpine-3" "run/rtorrent:alpine-3"
+  rdo_build__context__rtorrent --filename "build.rtorrent"     --tag-append "alpine-3" "run/rtorrent:alpine-3"
 
   docker image tag "rdo/run/rtorrent:alpine-3" "rdo/run/rtorrent:default"
 
