@@ -160,6 +160,8 @@ rdo_machine_create() {
     exit 1
   fi
 
+  local engine_tag="docker-20.10.8"
+
   local create_args=()
   local arg_disk_size=200000
 
@@ -192,15 +194,6 @@ rdo_machine_create() {
       "--virtualbox-share-folder" "$(cd ./run && pwd):rdo-run"
     )
   fi
-
-  create_args+=(
-    --upcloud-userdata <(cat - <<EOF
-rancher:
-  docker:
-    engine: https://myservicefile
-EOF
-                        )
-  )
 
   ( print_progress "calling docker-machine create '${arg_docker_machine}' -- ${create_args[*]}"
 
@@ -240,6 +233,11 @@ EOF
       print_error "unable to create docker machine"
       exit 1
     fi
+  )
+
+  ( print_progress "enabling docker engine version '${engine_tag}'"
+
+    rdo_machine_engine "${engine_tag}"
   )
 
   ( print_progress "copying rdo utils"
@@ -320,14 +318,78 @@ rdo_machine_status() {
 }
 
 rdo_machine_engine() {
-  eval "$(args::init_options_string "rdo machine engine ENGINE-TAG" "engine_tag" "Use a specific docker engine version")"
-  eval "$(args::process)"
+  # eval "$(args::init_options_string "rdo machine engine ENGINE-TAG" "engine_tag" "Use a specific docker engine version")"
+  # eval "$(args::process)"
 
-  rdo__sudo_host "ros engine enable '${engine_tag}'"
+  # start of generated bash args 'rdo machine engine ENGINE-TAG'
+
+  while true; do
+    case "${1}" in
+      --help|-h)
+        echo "Usage: rdo machine engine ENGINE-TAG"
+        echo
+        echo "Use a specific docker engine version"
+        echo
+        echo "Run 'rdo machine engine ENGINE-TAG COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo machine engine ENGINE-TAG: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
+    print_error "rdo machine engine ENGINE-TAG: missing or empty argument"
+    exit 1
+  fi
+
+  local engine_tag="${1}"
+  shift
+
+  # end of generated bash args 'rdo machine engine ENGINE-TAG'
+  
+  rdo__sudo_host "cat - >> '/tmp/rtdo-docker-engine-${engine_tag}.yaml'" <<EOF
+docker:
+  image: rtdo/os-docker:${engine_tag}
+  command: ros user-docker
+  environment:
+  - HTTP_PROXY
+  - HTTPS_PROXY
+  - NO_PROXY
+  labels:
+    io.rancher.os.scope: system
+    io.rancher.os.after: console
+  net: host
+  pid: host
+  ipc: host
+  uts: host
+  privileged: true
+  restart: always
+  volumes_from:
+  - all-volumes
+  volumes:
+  - /sys:/host/sys
+  - /var/lib/system-docker:/var/lib/system-docker:shared
+EOF
+
+  rdo__sudo_host "mv '/tmp/rtdo-docker-engine-${engine_tag}.yaml' '/var/lib/rancher/conf/'"
+  rdo__sudo_host "ros engine enable '/var/lib/rancher/conf/rtdo-docker-engine-${engine_tag}.yaml'"
+  rdo__sudo_host "ros engine switch '/var/lib/rancher/conf/rtdo-docker-engine-${engine_tag}.yaml'"
 }
 
 rdo_machine_list_engines() {
-  rdo__sudo_host "ros engine list | cut -d ' ' -f 2 | grep -v -e '^$'"
+  rdo__sudo_host "ros engine list | tr -s ' ' | cut -d ' ' -f 2 | grep -v -e '^$'"
 }
 
 rdo_machine_push_engine() {
