@@ -193,6 +193,15 @@ rdo_machine_create() {
     )
   fi
 
+  create_args+=(
+    --upcloud-userdata <(cat - <<EOF
+rancher:
+  docker:
+    engine: https://myservicefile
+EOF
+                        )
+  )
+
   ( print_progress "calling docker-machine create '${arg_docker_machine}' -- ${create_args[*]}"
 
     docker-machine create "${create_args[@]}" "${arg_docker_machine}"
@@ -314,46 +323,7 @@ rdo_machine_engine() {
   eval "$(args::init_options_string "rdo machine engine ENGINE-TAG" "engine_tag" "Use a specific docker engine version")"
   eval "$(args::process)"
 
-  local conf_path="/var/lib/rancher/conf/rtdo/${engine_tag}"
-
-  if [[ -z "$(rdo__sudo_host "ros engine list | cut -d ' ' -f 2 | grep '${engine_tag}'" 2> /dev/null)" ]]; then
-    rdo__sudo_host "cat - > /tmp/docker-engine-${engine_tag}" <<EOF
-docker:
-  image: rtdo/os-docker:${engine_tag}
-  command: ros user-docker
-  environment:
-  - HTTP_PROXY
-  - HTTPS_PROXY
-  - NO_PROXY
-  labels:
-    io.rancher.os.scope: system
-    io.rancher.os.after: console
-  net: host
-  pid: host
-  ipc: host
-  uts: host
-  privileged: true
-  restart: always
-  volumes_from:
-  - all-volumes
-  volumes:
-  - /sys:/host/sys
-  - /var/lib/system-docker:/var/lib/system-docker:shared
-EOF
-
-    rdo__sudo_host "cat - >> '/tmp/docker-compose-${engine_tag}'" <<EOF
-
-  docker:
-    engine: file://${conf_path}/os-service.yml
-EOF
-
-    rdo__sudo_host "mkdir -p '${conf_path}'"
-
-    rdo__sudo_host "mv '/tmp/docker-engine-${engine_tag}' '${conf_path}/os-service.yml'"
-    rdo__sudo_host "mv '/tmp/docker-compose-${engine_tag}' '${conf_path}/docker-compose.yml'"
-  fi
-
-  rdo__sudo_host "ros service enable '${conf_path}'"
+  rdo__sudo_host "ros engine enable '${engine_tag}'"
 }
 
 rdo_machine_list_engines() {
