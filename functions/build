@@ -148,10 +148,11 @@ rdo_build_init() {
 
   rdo_build__context__empty --no-rebuild "stage:global"
 
+  rdo_build__context__run "dns"         --no-rebuild "run/dns:global"
+  rdo_build__context__run "opentracker" --no-rebuild "run/opentracker:global"
   rdo_build__context__run "router"      --no-rebuild "run/router:global"
-  rdo_build__context__run "opentracker" "run/opentracker:global"
-  rdo_build__context__run "dns"         "run/dns:global"
 
+  rdo_build__context__empty --no-rebuild --ancestor-project "utils" "run/mktorrent:global"
 }
 
 rdo_build_compile() {

@@ -25,8 +25,6 @@ rdo_docker() {
   #                   'rdo_docker_ps "${@}"'
   # args::new_command "pull" default "." \
   #                   'rdo_docker_pull "${@}"'
-  # args::new_command "stage" default "." \
-  #                   'rdo_docker_stage "${@}"'
   # args::new_command "targets" empty "." \
   #                   'rdo_docker_targets'
 
@@ -89,9 +87,6 @@ rdo_docker() {
     container)
       rdo_docker_container "${@}"
       ;;
-    context)
-      rdo_docker_context "${@}"
-      ;;
     images)
       args::verify_command_empty "${@}"
       rdo_docker_images
@@ -107,9 +102,6 @@ rdo_docker() {
       ;;
     pull)
       rdo_docker_pull "${@}"
-      ;;
-    stage)
-      rdo_docker_stage "${@}"
       ;;
     targets)
       args::verify_command_empty "${@}"
@@ -387,10 +379,6 @@ rdo_docker_pull() {
       docker pull "${tag_name}"
     fi
   done
-}
-
-rdo_docker_stage() {
-  rdo_docker context build --context-type "stage" --context-name "stage" "${@}"
 }
 
 rdo_docker_targets() {

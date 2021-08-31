@@ -2,6 +2,8 @@
 
 include_header torrent
 
+RDO_MKTORRENT_CONTAINER_NAME="rt-global-utils-mktorrent"
+
 rdo_torrent() {
   # eval "$(args::init_subcommand "rdo torrent" "Manage torrents.")"
 
@@ -155,7 +157,7 @@ rdo_torrent_create() {
 
   create_args+=("/torrents/${name}")
 
-  docker exec -t "rdo-utils-mktorrent" mktorrent "${create_args[@]}" > /dev/null
+  docker exec -t "${RDO_MKTORRENT_CONTAINER_NAME}" mktorrent "${create_args[@]}" > /dev/null
 
   echo "torrents/${name}"
 }
@@ -254,22 +256,20 @@ rdo_torrent_node() {
 # Helper methods:
 
 rdo_torrent__init() {
-  if [[ -n "$(rdo__running_container_id__name "rdo-utils-mktorrent")" ]]; then
+  if [[ -n "$(rdo__running_container_id__name "${RDO_MKTORRENT_CONTAINER_NAME}")" ]]; then
     return
   fi
 
-  if [[ -n "$(rdo__container_id__name "rdo-utils-mktorrent")" ]]; then
-    docker rm "rdo-utils-mktorrent"
+  if [[ -n "$(rdo__container_id__name "${RDO_MKTORRENT_CONTAINER_NAME}")" ]]; then
+    docker rm "${RDO_MKTORRENT_CONTAINER_NAME}"
   fi
-
-  rdo_docker context build --empty --no-rebuild --ancestor-project "utils" "run/mktorrent:global"
-
-  mkdir -p "./run/torrents"
 
   : "${RDO_RUN_PATH:?Missing environment variable.}"
 
+  mkdir -p "./run/torrents"
+
   docker run \
-         --name "rdo-utils-mktorrent" \
+         --name "${RDO_MKTORRENT_CONTAINER_NAME}" \
          --rm \
          --detach \
          --network none \
@@ -283,5 +283,5 @@ rdo_torrent__create_random_file() {
 
   local cmd="head -c '${filesize}' < <(head -c 8000 /dev/urandom; while true; do cat '${filename}'; done) > '${filename}'"
 
-  docker exec -t "rdo-utils-mktorrent" bash -c "${cmd}"
+  docker exec -t "${RDO_MKTORRENT_CONTAINER_NAME}" bash -c "${cmd}"
 }
