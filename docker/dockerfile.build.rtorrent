@@ -112,7 +112,7 @@ RUN \
     echo "*** UNIT TESTS FAILED ***"; \
     echo; \
     cat test/test-suite.log \
-  ); \
+  ) || true ; \
   \
   cp -rp /prefix /deploy/prefix
 
@@ -152,6 +152,8 @@ FROM "${REPOSITORY}/stage:global" AS stage.rtorrent
 
 COPY --from=configure.rtorrent /build/rtorrent/source/ /stage/rtorrent/source/
 COPY --from=configure.rtorrent /deploy/rtorrent/output/ /deploy/rtorrent/output/
+COPY --from=compile.libtorrent /deploy/prefix/ /deploy/prefix/
+
 COPY /rtorrent.tar.gz /stage/
 
 WORKDIR "/stage/rtorrent/source"
@@ -175,7 +177,7 @@ RUN set -xe; \
 FROM "${REPOSITORY}/build/rtorrent/compiler:${TAG_APPEND}" AS compile.rtorrent
 
 COPY --from=stage.rtorrent /deploy/rtorrent/source/ /build/rtorrent/source/
-COPY --from=compile.libtorrent /deploy/prefix/ /prefix/
+COPY --from=stage.rtorrent /deploy/prefix/ /prefix/
 
 WORKDIR "/build/rtorrent/output"
 
@@ -191,7 +193,9 @@ RUN \
     echo "*** UNIT TESTS FAILED ***"; \
     echo; \
     cat test/test-suite.log \
-  )
+  ) || true ; \
+  \
+  cp -rp /prefix /deploy/prefix
 
 FROM "${REPOSITORY}/build/rtorrent/run:${TAG_APPEND}"
 

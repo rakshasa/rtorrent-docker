@@ -8,6 +8,8 @@ FROM "${REPOSITORY}/ancestor/build:alpine-3" AS compiler
 ARG RDO_COMPILER="clang"
 ENV RDO_COMPILER="${RDO_COMPILER}"
 
+ENV LD_LIBRARY_PATH="/prefix/lib"
+
 RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
   \
   apk add \
@@ -60,6 +62,8 @@ RUN echo -e "\033[0;32msetting configure flags\033[0m"; set -xe; \
 
 
 FROM "${REPOSITORY}/ancestor/run:alpine-3" AS run
+
+ENV LD_LIBRARY_PATH="/prefix/lib"
 
 RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
   \
