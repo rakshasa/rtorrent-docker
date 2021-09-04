@@ -189,9 +189,9 @@ rdo_torrent_wait() {
   local failed
 
   local start_time=$(( SECONDS ))
-  local timeout_hash_done=$(( SECONDS + 10 ))
-  local timeout_seeding=$(( SECONDS + 10 ))
-  local timeout_completed=$(( SECONDS + 25 ))
+  local timeout_hash_done=$(( SECONDS + 20 ))
+  local timeout_seeding=$(( SECONDS + 20 ))
+  local timeout_completed=$(( SECONDS + 45 ))
 
   local current_category="hash_done"
   local current_timeout=$(( timeout_hash_done ))

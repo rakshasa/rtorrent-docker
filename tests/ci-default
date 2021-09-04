@@ -69,10 +69,17 @@ rdo_torrent_wait --print --wait-all \
 # Leechers:
 #
 
-test_clients=(
-  "rt-leech-v4v6-1"
-  "rt-leech-v4-"{1..2}
-  "rt-leech-v6-"{1..2}
+connected_clients=(
+  "rt-connected-global-v4v6"
+  "rt-connected-globalv4-v4v6"
+  "rt-connected-globalv4-v4only"
+  "rt-connected-globalv6-v4v6"
+  "rt-connected-globalv6-v6only"
+)
+
+blocked_clients=(
+  "rt-blocked-globalv4-v6only"
+  "rt-blocked-globalv6-v4only"
 )
 
 default_rtorrent_v4_args=(
@@ -85,17 +92,41 @@ default_rtorrent_v6_args=(
   --dns-inet6 "rt-dns-global:rt-global-seed"
 )
 
-rdo_stage_rtorrent "${default_rtorrent_v4_args[@]}" --network "rt-global-seed" "rt-leech-v4v6-1"
-rdo_stage_rtorrent "${default_rtorrent_v4_args[@]}" --network "rt-global-v4" "rt-leech-v4-"{1..2}
-rdo_stage_rtorrent "${default_rtorrent_v6_args[@]}" --network "rt-global-v6" "rt-leech-v6-"{1..2}
+rdo_stage_rtorrent "${default_rtorrent_v4_args[@]}" --network "rt-global-seed" \
+  "rt-connected-global-v4v6"
+rdo_stage_rtorrent "${default_rtorrent_v4_args[@]}" --network "rt-global-v4" \
+  "rt-connected-globalv4-v4v6" \
+  "rt-connected-globalv4-v4only" \
+  "rt-blocked-globalv4-v6only"
+rdo_stage_rtorrent "${default_rtorrent_v6_args[@]}" --network "rt-global-v6" \
+  "rt-connected-globalv6-v4v6" \
+  "rt-connected-globalv6-v6only" \
+  "rt-blocked-globalv6-v4only"  
 
-rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-global"
+rdo_torrent_node \
+  $(printf -- " --leecher %s" "${connected_clients[@]}") \
+  $(printf -- " --leecher %s" "${blocked_clients[@]}") \
+  "torrent-global"
+
+# Also test 'prefer-ipv6.
+rdo_stage_append_rc \
+  --node "rt-connected-globalv6-v6only" \
+  --node "rt-blocked-globalv4-v6only" \
+  'network.block.ipv4.set = true'
+rdo_stage_append_rc \
+  --node "rt-connected-globalv4-v4only" \
+  --node "rt-blocked-globalv6-v4only" \
+  'network.block.ipv6.set = true'
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
                  \
-                 $(printf -- " --hash-done %s:torrent-global" "${test_clients[@]}") \
-                 $(printf -- " --not-seeding %s:torrent-global" "${test_clients[@]}") \
-                 $(printf -- " --completed %s:torrent-global" "${test_clients[@]}")
+                 $(printf -- " --hash-done %s:torrent-global" "${connected_clients[@]}") \
+                 $(printf -- " --not-seeding %s:torrent-global" "${connected_clients[@]}") \
+                 $(printf -- " --completed %s:torrent-global" "${connected_clients[@]}") \
+                 \
+                 $(printf -- " --hash-done %s:torrent-global" "${blocked_clients[@]}") \
+                 $(printf -- " --not-seeding %s:torrent-global" "${blocked_clients[@]}") \
+                 $(printf -- " --not-completed %s:torrent-global" "${blocked_clients[@]}")
 
 rdo_test_end
