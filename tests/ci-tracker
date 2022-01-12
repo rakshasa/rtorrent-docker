@@ -1,0 +1,117 @@
+#!/bin/bash
+
+#
+# Test tracker request behavior of rtorrent.
+#
+
+rdo_test_begin
+
+#
+# Topology, trackers and torrents:
+#
+
+rdo_stage_network                "rt-global"
+rdo_stage_network --disable-ipv6 "rt-global-v4"
+rdo_stage_network --disable-ipv4 "rt-global-v6"
+
+rdo_network_forward --bridge "rt-global" --ingress-ipv4 "rt-global-v4"
+rdo_network_forward --bridge "rt-global" --ingress-ipv6 "rt-global-v6"
+
+rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
+rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
+
+rdo_stage_deploy
+
+
+#
+# Seeders:
+#
+
+# Due to trackers not properly supporting both ipv4 and ipv6 properly,
+# we need two seeders.
+rdo_stage_rtorrent \
+  --run-template "rt-default" \
+  --dns-inet "rt-dns-global:rt-global" \
+  --network "rt-global-v4" \
+  "rt-seed-global-v4"
+rdo_stage_rtorrent \
+  --run-template "rt-default" \
+  --dns-inet6 "rt-dns-global:rt-global" \
+  --network "rt-global-v6" \
+  "rt-seed-global-v6"
+
+# rdo_stage_append_rc \
+#   --node "rt-seed-global-v6" \
+#   'network.prefer.ipv6.set = true'
+
+rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global"
+rdo_torrent_node   --seeder "rt-seed-global"       "torrent-global"
+rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global"
+
+rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global-v4only"
+rdo_torrent_node   --seeder "rt-seed-global"       "torrent-global-v4only"
+rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global-v4only"
+
+rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global-v6only"
+rdo_torrent_node   --seeder "rt-seed-global"       "torrent-global-v6only"
+rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global-v6only"
+
+rdo_stage_deploy
+rdo_torrent_wait --print --wait-all \
+                 \
+                 --seeding       "rt-seed-global-v4:torrent-global" \
+                 --seeding       "rt-seed-global-v6:torrent-global"
+
+
+#
+# Verify that tracker node with 'tracker-split' isolates v4/v6 peers:
+#
+
+# seed-v4, leech-v4: succeeds
+# seed-v4, leech-v6: fails if split and curl prefers v6 not v4in6, succeeds if shared
+# seed-v6, leech-v6: succeeds
+# seed-v6, leech-v4: fails
+
+# TODO: Add v4in6 drop rule in forward?
+
+
+
+#
+# Tests:
+#
+#  * Verify trackers work for v4v6, v4only and v6only. (Already handled in ci-default?)
+#  * Verify that rtorrent connects to both the v4 and v6 trackers if available.
+#    * Use separate tracker instances. (rejected)
+#    * Add tracker template that starts different v4/v6 instances.
+
+
+# Test using both a split and a shared tracker.
+
+
+# * leech-v4
+#   * tracker-v4
+#     * download torrent-v4
+
+
+
+
+#
+# Verify that rtorrent sends requests to both IPv4 and IPv6 addresses of a tracker.
+#
+
+# To implement these tests cleanly we need a split tracker on the same
+# domain, implement and test this first.
+
+#
+# Expected results (shared tracker, single request):
+#
+#  * seed-v4v6,   leech-v4v6:   success
+#  * seed-v4only, leech-v6only: unknown (if v4in6 is used)
+#  * seed-v6only, leech-v4:     failure
+#
+# Expected results (split tracker, single request):
+#
+#  * seed-v4v6,   leech-v4v6:   success
+#  * seed-v4only, leech-v6only: unknown (if v4in6 is used)
+#  * seed-v6only, leech-v4:     failure
+

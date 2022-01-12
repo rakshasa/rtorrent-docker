@@ -1,0 +1,52 @@
+  # start of generated bash args 'rdo stage network NAME'
+
+  local enable_ipv4=yes
+  local enable_ipv6=yes
+
+  while true; do
+    case "${1:-}" in
+      --disable-ipv4)
+        shift
+        enable_ipv4=no
+        ;;
+      --disable-ipv6)
+        shift
+        enable_ipv6=no
+        ;;
+      --help|-h)
+        echo "Usage: rdo stage network NAME"
+        echo
+        echo "Stage a network"
+        echo
+        echo "Options:"
+        echo "      --disable-ipv4   Disable IPv4"
+        echo "      --disable-ipv6   Disable IPv6"
+        echo
+        echo "Run 'rdo stage network NAME COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1:-}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo stage network NAME: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1:-}" ]]; then
+    print_error "rdo stage network NAME: missing or empty argument"
+    exit 1
+  fi
+
+  local name="${1}"
+  shift
+
+  # end of generated bash args 'rdo stage network NAME'

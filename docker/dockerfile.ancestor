@@ -41,6 +41,7 @@ RUN \
         iproute2 \
         iptables \
         ip6tables \
+        netcat-openbsd \
         tar \
         tmux; \
   elif [ -f "/etc/debian_version" ]; then \

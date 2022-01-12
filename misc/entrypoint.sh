@@ -8,6 +8,20 @@ if [[ -f "/run/self/resolv.conf" ]]; then
   cp "/run/self/resolv.conf" "/etc/resolv.conf"
 fi
 
+run_netcat_server() {
+  local hostname="${1:?Missing hostname argument.}"
+  local reply="${2:?Missing reply argument.}"
+
+  while true; do
+    nc -N -l "${hostname}" 10000 <<EOF
+${reply}
+EOF
+  done
+}
+
+run_netcat_server 0.0.0.0 "ipv4" & disown
+run_netcat_server      :: "ipv6" & disown
+
 TIMEOUT=$(( SECONDS + 600 ))
 while true; do
   if (( SECONDS > TIMEOUT )); then

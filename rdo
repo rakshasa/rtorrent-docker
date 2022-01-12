@@ -4,13 +4,9 @@
 #
 # https://github.com/rakshasa/rtorrent-docker
 
-set -e
+set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
-
-# Deprecated:
-PROJECT_PATH="."
-DATA_PATH="./data"
 
 source "./functions/common/init"
 

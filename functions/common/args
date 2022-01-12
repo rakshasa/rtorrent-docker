@@ -81,7 +81,7 @@ EOF
 args::init_options_string() {
   local arg_name="${2:?Missing arg name argument.}"
 
-  args::__init "${1}" "${@:3}"
+  args::__init "${1:?Missing first argument.}" "${@:3}"
   cat - <<EOF
 local args__arg_name="${arg_name}"
 local args__has_commands=no
@@ -116,7 +116,7 @@ args::verify_command_empty() {
 }
 
 args::verify_command_string() {
-  if (( ${#} != 1 )) || [[ -z "${1}" ]]; then
+  if (( ${#} != 1 )) || [[ -z "${1:-}" ]]; then
     print_error "${args__root} ${args__cmd}: argument must be a single string: ${@}"
     exit 1
   fi
@@ -157,7 +157,7 @@ EOF
 
   cat - <<EOF
 while true; do
-  case "\${1}" in
+  case "\${1:-}" in
 EOF
 
   if (( ${#args__options[@]} != 0 )); then
@@ -330,7 +330,7 @@ EOF
 
   if [[ "${args__skip_unknown}" != "yes" ]]; then
     cat - <<EOF
-      if [[ -n "\${1}" ]] && [[ -z "\${1##-*}" ]]; then
+      if [[ -n "\${1:-}" ]] && [[ -z "\${1##-*}" ]]; then
         ${args__print_error} "\${args__root}: unknown flag: \${1}"
         return 1
       fi
@@ -373,7 +373,7 @@ EOF
 args::process_command() {
   cat - <<EOF
 local args__root="${args__root}"
-local args__cmd="\${1}"
+local args__cmd="\${1:-}"
 shift || :
 
 case "\${args__cmd}" in
@@ -473,7 +473,7 @@ EOF
     done
   fi
 
-  if (( ${#args__commands[@]} != 0 )); then
+  if [[ -v args__commands ]] && (( ${#args__commands[@]} != 0 )); then
       cat - <<EOF
       echo
       echo "Commands:"
@@ -495,7 +495,8 @@ EOF
 
 args::process() {
   if [[ "${args__is_processing}" != "no" ]]; then
-    print_normal "args::process->${args__root}" >&2
+    # print_normal "args::process->${args__root}" >&2
+    :
   fi
 
   local args__need_seperator="no"
@@ -537,7 +538,7 @@ if (( \${#} > 1 )); then
   exit 1
 fi
 
-if (( \${#} == 0 )) || [[ -z "\${1}" ]]; then
+if (( \${#} == 0 )) || [[ -z "\${1:-}" ]]; then
   ${args__print_error} "${args__root}: missing or empty argument"
   exit 1
 fi
