@@ -1,0 +1,49 @@
+  # start of generated bash args 'rdo stage append-rc APPEND-TEXT'
+
+  local node_list=()
+  local args__opt_value__node=
+
+  while true; do
+    case "${1:-}" in
+      --node)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        args__opt_value__node="${args__1}"
+        shift 2
+        node_list+=("${args__1}")
+        ;;
+      --help|-h)
+        echo "Usage: rdo stage append-rc APPEND-TEXT"
+        echo
+        echo "Append to node's rc file"
+        echo
+        echo "Options:"
+        echo "      --node   Name of the node"
+        echo
+        echo "Run 'rdo stage append-rc APPEND-TEXT COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1:-}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo stage append-rc APPEND-TEXT: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1:-}" ]]; then
+    print_error "rdo stage append-rc APPEND-TEXT: missing or empty argument"
+    exit 1
+  fi
+
+  local append_text="${1}"
+  shift
+
+  # end of generated bash args 'rdo stage append-rc APPEND-TEXT'

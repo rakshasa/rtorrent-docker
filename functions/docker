@@ -30,94 +30,11 @@ rdo_docker() {
 
   # eval "$(args::process)"
 
-  while true; do
-    case "${1}" in
-      --help|-h|'')
-        echo "Usage: rdo docker COMMAND"
-        echo
-        echo "Manage docker."
-        echo
-        echo "Commands:"
-        echo "  args        List all available build args"
-        echo "  build       Build an image"
-        echo "  children    ."
-        echo "  clean       ."
-        echo "  container   ."
-        echo "  context     ."
-        echo "  images      ."
-        echo "  inspect     ."
-        echo "  network     ."
-        echo "  ps          ."
-        echo "  pull        ."
-        echo "  stage       ."
-        echo "  targets     ."
-        echo
-        echo "Run 'rdo docker COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  local args__root="rdo docker"
-  local args__cmd="${1}"
-  shift || :
-
-  case "${args__cmd}" in
-    args)
-      args::verify_command_empty "${@}"
-      rdo_docker_args
-      ;;
-    build)
-      rdo_docker_build "${@}"
-      ;;
-    children)
-      rdo_docker_children "${@}"
-      ;;
-    clean)
-      rdo_docker_clean "${@}"
-      ;;
-    container)
-      rdo_docker_container "${@}"
-      ;;
-    images)
-      args::verify_command_empty "${@}"
-      rdo_docker_images
-      ;;
-    inspect)
-      rdo_docker_inspect "${@}"
-      ;;
-    network)
-      rdo_docker_network "${@}"
-      ;;
-    ps)
-      rdo_docker_ps "${@}"
-      ;;
-    pull)
-      rdo_docker_pull "${@}"
-      ;;
-    targets)
-      args::verify_command_empty "${@}"
-      rdo_docker_targets
-      ;;
-    *)
-      print_error "rdo docker: unknown command: ${args__cmd}"
-      exit 1
-      ;;
-  esac
+  source ./functions/_args/rdo_docker
 }
 
 rdo_docker_args() {
-  cd "${PROJECT_PATH}/docker"
-
-  local target_list=($(ls dockerfile.*[!~]))
+  local target_list=($(cd ./docker && ls dockerfile.*[!~]))
   declare -A arg_list
 
   for arg in $(sed -nE 's/^ARG ([^=]*)[^$]*$/\1/p' "${target_list[@]}"); do
@@ -256,10 +173,6 @@ rdo_docker_build() {
       return
     fi
   done
-
-  # Change cwd to PROJECT_PATH so that docker doesn't get confused by
-  # absolute windows paths that might be ambigious.
-  cd "${PROJECT_PATH}"
 
   args+=(--progress plain)
 

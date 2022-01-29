@@ -151,7 +151,7 @@ EOF
     esac
   done
 
-  if [[ "${skip_line}" == "yes" ]]; then
+  if [[ "${skip_line:-}" == "yes" ]]; then
     printf '\n'
   fi
 
@@ -160,7 +160,7 @@ while true; do
   case "\${1:-}" in
 EOF
 
-  if (( ${#args__options[@]} != 0 )); then
+  if [[ -v args__options ]] && (( ${#args__options[@]} != 0 )); then
     local name
     for name in "${args__options[@]}"; do
       if [[ -n "${args__option_flags[${name}]}" ]]; then
@@ -451,7 +451,7 @@ EOF
     justify_width=${command_width}
   fi
 
-  if (( ${#args__options[@]} != 0 )); then
+  if [[ -v args__options ]] && (( ${#args__options[@]} != 0 )); then
     cat - <<EOF
       echo
       echo "Options:"

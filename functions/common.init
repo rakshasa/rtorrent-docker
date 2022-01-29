@@ -24,15 +24,13 @@ get_project_path() {
 }
 
 rdo_bash() {
-  cd "${PROJECT_PATH}"
-
-  if ! [[ -f "${DATA_PATH}/env.bash" ]]; then
-    print_error "rdo bash: environment not initialized, could not find '${DATA_PATH}/env.bash'"
+  if ! [[ -f "./data/env.bash" ]]; then
+    print_error "rdo bash: environment not initialized, could not find './data/env.bash'"
     exit 1
   fi
 
   print_progress "entering custom bash session"
-  /usr/bin/env bash --init-file "${DATA_PATH}/env.bash"
+  /usr/bin/env bash --init-file "./data/env.bash"
   print_warning "exiting custom bash session"
 }
 

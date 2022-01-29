@@ -1,0 +1,76 @@
+  # start of generated bash args 'rdo stage'
+
+  while true; do
+    case "${1:-}" in
+      --help|-h|'')
+        echo "Usage: rdo stage"
+        echo
+        echo "Manage staging of environments."
+        echo
+        echo "Commands:"
+        echo "  init        Initialize new environment for staging"
+        echo "  deploy      Deploy environment"
+        echo "  clean       Remove environment"
+        echo "  append-rc   Append to node's rc file"
+        echo "  network     Add network"
+        echo "  router      Add router"
+        echo "  dns         Add dns"
+        echo "  rtorrent    Add node"
+        echo "  tracker     Add tracker"
+        echo
+        echo "Run 'rdo stage COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1:-}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo stage"
+  local args__cmd="${1:-}"
+  shift || :
+
+  case "${args__cmd}" in
+    init)
+      args::verify_command_empty "${@}"
+      rdo_stage_init
+      ;;
+    deploy)
+      args::verify_command_empty "${@}"
+      rdo_stage_deploy
+      ;;
+    clean)
+      args::verify_command_empty "${@}"
+      rdo_stage_clean
+      ;;
+    append-rc)
+      rdo_stage_append_rc "${@}"
+      ;;
+    network)
+      rdo_stage_network "${@}"
+      ;;
+    router)
+      rdo_stage_router "${@}"
+      ;;
+    dns)
+      rdo_stage_dns "${@}"
+      ;;
+    rtorrent)
+      rdo_stage_rtorrent "${@}"
+      ;;
+    tracker)
+      rdo_stage_tracker "${@}"
+      ;;
+    *)
+      print_error "rdo stage: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
+
+  # end of generated bash args 'rdo stage'

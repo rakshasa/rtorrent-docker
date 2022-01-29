@@ -1,0 +1,84 @@
+  # start of generated bash args 'rdo docker'
+
+  while true; do
+    case "${1:-}" in
+      --help|-h|'')
+        echo "Usage: rdo docker"
+        echo
+        echo "Manage docker."
+        echo
+        echo "Commands:"
+        echo "  args        List all available build args"
+        echo "  build       Build an image"
+        echo "  children    ."
+        echo "  clean       ."
+        echo "  container   ."
+        echo "  images      ."
+        echo "  inspect     ."
+        echo "  network     ."
+        echo "  ps          ."
+        echo "  pull        ."
+        echo "  targets     ."
+        echo
+        echo "Run 'rdo docker COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1:-}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  local args__root="rdo docker"
+  local args__cmd="${1:-}"
+  shift || :
+
+  case "${args__cmd}" in
+    args)
+      args::verify_command_empty "${@}"
+      rdo_docker_args
+      ;;
+    build)
+      rdo_docker_build "${@}"
+      ;;
+    children)
+      rdo_docker_children "${@}"
+      ;;
+    clean)
+      rdo_docker_clean "${@}"
+      ;;
+    container)
+      rdo_docker_container "${@}"
+      ;;
+    images)
+      args::verify_command_empty "${@}"
+      rdo_docker_images
+      ;;
+    inspect)
+      rdo_docker_inspect "${@}"
+      ;;
+    network)
+      rdo_docker_network "${@}"
+      ;;
+    ps)
+      rdo_docker_ps "${@}"
+      ;;
+    pull)
+      rdo_docker_pull "${@}"
+      ;;
+    targets)
+      args::verify_command_empty "${@}"
+      rdo_docker_targets
+      ;;
+    *)
+      print_error "rdo docker: unknown command: ${args__cmd}"
+      exit 1
+      ;;
+  esac
+
+  # end of generated bash args 'rdo docker'

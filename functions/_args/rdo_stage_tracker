@@ -1,0 +1,97 @@
+  # start of generated bash args 'rdo stage tracker NODE-NAME'
+
+  local resolve_conf
+  local networks=()
+  local run_template
+  local args__opt_value__dns_inet_1=
+  local args__opt_value__dns_inet_2=
+  local args__opt_value__dns_inet6_1=
+  local args__opt_value__dns_inet6_2=
+  local args__opt_value__network=
+  local args__opt_value__run_template=
+
+  while true; do
+    case "${1:-}" in
+      --dns-inet)
+        local args__1="${2%%:*}"
+        local args__2="${2##*:}"
+        local args__1="${args__1:?Missing argument for '${1}'.}"
+        local args__2="${args__2:?Missing argument for '${1}'.}"
+        args__opt_value__dns_inet_1="${args__1}"
+        args__opt_value__dns_inet_2="${args__2}"
+
+        if [[ "${args__1}:${args__2}" != "${2}" ]]; then
+          print_error "${args__root}: invalid option format: ${1} ${2}"
+          return 1
+        fi
+
+        shift 2
+        resolve_conf="nameserver $(cat ./run/current/dns/${args__1}/interfaces/${args__2}/inet)"
+        ;;
+      --dns-inet6)
+        local args__1="${2%%:*}"
+        local args__2="${2##*:}"
+        local args__1="${args__1:?Missing argument for '${1}'.}"
+        local args__2="${args__2:?Missing argument for '${1}'.}"
+        args__opt_value__dns_inet6_1="${args__1}"
+        args__opt_value__dns_inet6_2="${args__2}"
+
+        if [[ "${args__1}:${args__2}" != "${2}" ]]; then
+          print_error "${args__root}: invalid option format: ${1} ${2}"
+          return 1
+        fi
+
+        shift 2
+        resolve_conf="nameserver $(cat ./run/current/dns/${args__1}/interfaces/${args__2}/inet6)"
+        ;;
+      --network|-n)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        args__opt_value__network="${args__1}"
+        shift 2
+        networks+=("${args__1}")
+        ;;
+      --run-template|-r)
+        local args__1="${2:?Missing argument for '${1}'.}"
+        args__opt_value__run_template="${args__1}"
+        shift 2
+        run_template=("${args__1}")
+        ;;
+      --help|-h)
+        echo "Usage: rdo stage tracker NODE-NAME"
+        echo
+        echo "Add tracker to staging of environments."
+        echo
+        echo "Options:"
+        echo "      --dns-inet       Set dns resolver to a 'dns_node:network'"
+        echo "      --dns-inet6      Set dns resolver to a 'dns_node:network'"
+        echo "  -n, --network        Connect tracker to network"
+        echo "  -r, --run-template   Use template to create run script"
+        echo
+        echo "Run 'rdo stage tracker NODE-NAME COMMAND --help' for more information on a command."
+        exit 0
+        ;;
+      *)
+        if [[ -n "${1:-}" ]] && [[ -z "${1##-*}" ]]; then
+          print_error "${args__root}: unknown flag: ${1}"
+          return 1
+        fi
+
+        break
+        ;;
+    esac
+  done
+
+  if (( ${#} > 1 )); then
+    print_error "rdo stage tracker NODE-NAME: too many arguments"
+    exit 1
+  fi
+
+  if (( ${#} == 0 )) || [[ -z "${1:-}" ]]; then
+    print_error "rdo stage tracker NODE-NAME: missing or empty argument"
+    exit 1
+  fi
+
+  local node_name="${1}"
+  shift
+
+  # end of generated bash args 'rdo stage tracker NODE-NAME'
