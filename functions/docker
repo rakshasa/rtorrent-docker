@@ -295,7 +295,7 @@ rdo_docker_pull() {
 }
 
 rdo_docker_targets() {
-  cd "${PROJECT_PATH}/docker"
+  cd "./docker"
 
   local target_list
   target_list=($(ls dockerfile.*[!~]))

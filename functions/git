@@ -9,7 +9,7 @@ rdo_git() {
   eval "$(args::init_subcommand "rdo build" "Build project.")"
 
   args::new_command "clone" empty "Clone all repositories" \
-                    'git_clone'
+                    'rdo_git_clone'
 
   eval "$(args::process)"
 }

@@ -421,11 +421,11 @@ rdo_machine_push_engine() {
 # Helper functions
 
 rdo_machine__current() {
-  if ! [[ -f "${DATA_PATH}/env.engine" ]]; then
+  if ! [[ -f "./data/env.engine" ]]; then
     return
   fi
   
-  sed -n -e '/DOCKER_MACHINE_NAME/!d; s/"//g; s/export DOCKER_MACHINE_NAME=//' "${DATA_PATH}/env.engine"
+  sed -n -e '/DOCKER_MACHINE_NAME/!d; s/"//g; s/export DOCKER_MACHINE_NAME=//' "./data/env.engine"
 }
 
 rdo_machine__status() {

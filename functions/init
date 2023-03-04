@@ -69,7 +69,7 @@ rdo_init() {
 }
 
 rdo_init_default() {
-  rm -f "${DATA_PATH}/env.*" &> /dev/null || :
+  rm -f "./data/env.*" &> /dev/null || :
 
   rdo_init__init
   rdo_init__create_env engine
@@ -78,7 +78,7 @@ rdo_init_default() {
 }
 
 rdo_init_machine() {
-  rm -f "${DATA_PATH}/env.*" &> /dev/null || :
+  rm -f "./data/env.*" &> /dev/null || :
 
   rdo_init__init
   rdo_init__create_env machine rdo
@@ -121,12 +121,12 @@ rdo_init_verify() {
 # Helper functions
 
 rdo_init__init() {
-  mkdir -p "${DATA_PATH:?Missing data path variable.}"
+  mkdir -p "./data" "./context/run"
 }
 
 rdo_init__create_env() {
   local arg_repository="rdo"
-  local project_path="$(get_project_path)"
+  local project_path="$(pwd -P)"
 
   case "${1}" in
     machine)
@@ -141,7 +141,7 @@ rdo_init__create_env() {
       exit 1
   esac      
   
-  cat > "${DATA_PATH}/env.bash" <<EOF
+  cat > "./data/env.bash" <<EOF
 source ~/.bash_profile
 
 export PATH="${project_path}:\${PATH}"
@@ -156,25 +156,25 @@ export RDO_RUN_PATH="/rdo/run"
 EOF
 
   if [[ -n "${arg_docker_machine}" ]]; then
-    cat >> "${DATA_PATH}/env.bash" <<EOF
+    cat >> "./data/env.bash" <<EOF
 export RDO_DOCKER_MACHINE="${arg_docker_machine}"
 
 export PROMPT_COMMAND+="; PS1=\"<\\\${DOCKER_MACHINE_NAME}:\\\${DOCKER_CONTEXT}> \\\${PS1}\""
 EOF
   else
-    cat >> "${DATA_PATH}/env.bash" <<EOF
+    cat >> "./data/env.bash" <<EOF
 
 export PROMPT_COMMAND+="; PS1=\"<\\\${DOCKER_CONTEXT}> \\\${PS1}\""
 EOF
   fi
 
   if [[ -n "${arg_repository}" ]]; then
-    cat >> "${DATA_PATH}/env.bash" <<EOF
+    cat >> "./data/env.bash" <<EOF
 export RDO_REPOSITORY="${arg_repository}"
 EOF
   fi
 
-  cat >> "${DATA_PATH}/env.bash" <<EOF
+  cat >> "./data/env.bash" <<EOF
 
 source "${project_path}/data/env.engine"
 source "${project_path}/misc/docker.bash"

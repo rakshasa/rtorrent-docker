@@ -2,27 +2,6 @@
 
 include_header common.init
 
-get_project_path() {
-  if [[ -z "${PROJECT_PATH}" ]]; then
-    print_error "cd_project_path: PROJECT_PATH variable not set"
-    exit 1
-  fi
-
-  local project_path="$(cd "${PROJECT_PATH}" &> /dev/null && pwd -P)"
-
-  if [[ "${project_path}" == "/" ]]; then
-    print_error "cd_project_path: path is root"
-    exit 1
-  fi
-
-  if [[ -z "${project_path}" ]]; then
-    print_error "cd_project_path: failed to enter directory '${PROJECT_PATH}'"
-    exit 1
-  fi
-
-  echo "${project_path}"
-}
-
 rdo_bash() {
   if ! [[ -f "./data/env.bash" ]]; then
     print_error "rdo bash: environment not initialized, could not find './data/env.bash'"

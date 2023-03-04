@@ -35,7 +35,8 @@ do_tags() {
 }
 
 tags_docker() {
-  cd "${PROJECT_PATH}/docker"
+  cd "./docker"
+
   rm -f TAGS || :
 
   if etags --version | grep Exuberant &> /dev/null; then
