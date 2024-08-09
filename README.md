@@ -29,6 +29,35 @@ rdo git clone
 Clones the git repositories.
 
 
+Prepare Autoconf Scripts
+------------------------
+
+```bash
+# This will fail when attempting to build libtorrent due to missing autoconf scripts.
+rdo build all
+
+docker run --rm -it --volume "type=bind,source=${PWD}/data,target=/data/" rdo/build/rtorrent/compiler:default /bin/bash
+```
+
+While in the docker container, run the following:
+
+```bash
+cd /data/libtorrent
+
+aclocal -I scripts
+autoconf -i
+autoheader
+automake --add-missing
+
+cd /data/rtorrent
+
+aclocal -I scripts
+autoconf -i
+autoheader
+automake --add-missing
+```
+
+
 Build Docker Images
 -------------------
 

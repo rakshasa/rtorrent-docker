@@ -13,7 +13,7 @@ while [ ${#} -ge 2 ]; do
   fi
 
   if [ ! -e "${dst_path}" ] || ! diff -q "${src_path}" "${dst_path}"; then
-    mv -v "${src_path}" "${dst_path}";
+    mv -v "${src_path}" "${dst_path}"
   fi
 done
 

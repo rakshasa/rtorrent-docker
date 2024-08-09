@@ -11,7 +11,7 @@ ARG TAG_APPEND
 FROM "${REPOSITORY}/build/rtorrent/compiler:${TAG_APPEND}" AS stage.configure
 
 COPY /libtorrent.tar.gz /rtorrent.tar.gz /stage/
-     
+
 WORKDIR "/deploy/libtorrent/configure"
 
 RUN set -xe; \

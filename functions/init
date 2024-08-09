@@ -135,17 +135,26 @@ rdo_init__create_env() {
       ;;
     engine)
       local arg_docker_type="engine"
+      local arg_docker_machine=""
       ;;
     *)
       print_error "rdo_init__create_env: no valid environment type provided"
       exit 1
-  esac      
-  
+  esac
+
   cat > "./data/env.bash" <<EOF
-source ~/.bash_profile
+source ~/.bash_profile || source ~/.bashrc
 
 export PATH="${project_path}:\${PATH}"
 export EXEC_PTY="$((command -v winpty) || (command -v console) || :)"
+
+if [[ -n "\${PROMPT_COMMAND}" ]]; then
+  if type -t __git_ps1 &> /dev/null; then
+    export PROMPT_COMMAND='__git_ps1 "\\\\h:" " \\[\\e[\\\$(if [[ \\\$? != 0 ]]; then echo 31m; elif [[ \\\${USER} = root ]]; then echo 32m; else echo 0m; fi)\\]\\\\W\\[\\e[0m\\]>"'
+  else
+    export PROMPT_COMMAND='PS1="\\\\h: \\[\\e[\$(if [[ \$? != "0" ]]; then echo 31m; elif [[ "\${USER}" = "root" ]]; then echo 32m; else echo 0m; fi)\\]\\\\W\\[\\e[0m\\]>"'
+  fi
+fi
 
 export DOCKER_CONTEXT="default"
 
@@ -159,12 +168,12 @@ EOF
     cat >> "./data/env.bash" <<EOF
 export RDO_DOCKER_MACHINE="${arg_docker_machine}"
 
-export PROMPT_COMMAND+="; PS1=\"<\\\${DOCKER_MACHINE_NAME}:\\\${DOCKER_CONTEXT}> \\\${PS1}\""
+export PROMPT_COMMAND="\${PROMPT_COMMAND}; PS1=\"<\\\${DOCKER_MACHINE_NAME}:\\\${DOCKER_CONTEXT}> \\\${PS1}\""
 EOF
   else
     cat >> "./data/env.bash" <<EOF
 
-export PROMPT_COMMAND+="; PS1=\"<\\\${DOCKER_CONTEXT}> \\\${PS1}\""
+export PROMPT_COMMAND="\${PROMPT_COMMAND}; PS1=\"<\\\${DOCKER_CONTEXT}> \\\${PS1}\""
 EOF
   fi
 
