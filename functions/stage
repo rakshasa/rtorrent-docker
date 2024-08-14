@@ -69,8 +69,8 @@ rdo_stage_clean() {
 
   rdo_network_clean
 
-  rm -rf ./run/current &> /dev/null
-  rm -rf ./run/torrents/* &> /dev/null
+  sudo rm -rf ./run/current &> /dev/null
+  sudo rm -rf ./run/torrents/* &> /dev/null
   print_progress "stage cleaned"
 }
 
@@ -133,10 +133,19 @@ rdo_stage_network() {
     )
   fi
 
-  local network_id ipv4_cidr
+  local network_id ifname ipv4_cidr
   network_id="$(docker network create "${args[@]}" "${name}")"
   ifname="br-${network_id:0:12}"
+
   ipv4_cidr="$(docker network inspect --format '{{ (index .IPAM.Config 0).Subnet }}' "${name}")"
+
+  if [[ "${ipv4_cidr}" =~ ^[0-9a-f:/]*$ ]]; then
+    ipv4_cidr="$(docker network inspect --format '{{ (index .IPAM.Config 1).Subnet }}' "${name}")"
+  fi
+  if [[ "${ipv4_cidr}" =~ ^[0-9a-f:/]*$ ]]; then
+    print_error "could not get ipv4 cidr for network: ${name}"
+    exit 1
+  fi
 
   echo "${network_index}" > "${self_path}/index"
   echo "${ifname}"        > "${self_path}/ifname"
@@ -160,6 +169,9 @@ rdo_stage_network() {
     echo "${ipv4_cidr}"          > "${self_path}/ipv4_cidr"
     echo "${ipv4_cidr%%/*}"      > "${self_path}/ipv4_address"
     echo "${ipv4_cidr##*/}"      > "${self_path}/ipv4_prefix"
+    echo "${ipv4_cidr%.*}.1"     > "${self_path}/ipv4_gateway"
+
+    touch "${self_path}/routes_ipv4"
 
     commands+=("iptables ${default_iptables_args[*]} -t filter -I DOCKER-USER -i '${ifname}' -o '${ifname}' -j ACCEPT")
   fi
@@ -174,10 +186,12 @@ rdo_stage_network() {
     echo "${ipv6_subnet_cidr}"   > "${self_path}/ipv6_subnet_cidr"
     echo "${ipv6_gateway}"       > "${self_path}/ipv6_gateway"
 
+    touch "${self_path}/routes_ipv6"
+
     commands+=("ip6tables ${default_iptables_args[*]} -t filter -I DOCKER-USER -i '${ifname}' -o '${ifname}' -j ACCEPT")
   fi
 
-  rdo__sudo_host bash -c "\"$(printf "%s && " "${commands[@]}" && printf ":\n")\""
+  rdo__sudo_host bash -c "$(printf "%s && " "${commands[@]}" && printf ":\n")"
 
   echo "networks/${name}"
 }
@@ -196,7 +210,7 @@ rdo_stage_dns() {
   local create_args=()
 
   create_args+=(
-    --mount "type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock"
+    --mount "type=bind,src=/var/run/docker.sock,dst=/docker.sock"
   )
 
   rdo_stage__container__create
@@ -432,6 +446,20 @@ rdo_stage__container__update_run() {
 
     echo "eth${eth_index}" > "${self_path}/interfaces/${network}/ifname"
     cp "${self_path}/net/eth${eth_index}/"{ifindex,iflink,iflink-index} "${self_path}/interfaces/${network}/"
+
+    declare route route_cidr network_gateway
+    for route in $(cat "./run/current/networks/${network}/routes_ipv4" 2> /dev/null); do
+      route_cidr="$(cat "./run/current/networks/${route}/ipv4_cidr")"
+      network_gateway="$(cat "./run/current/networks/${network}/ipv4_gateway")"
+
+      rdo__sudo_host nsenter --net="${sandbox_key}" -- ip -4 route add "${route_cidr}" via "${network_gateway}" dev "eth${eth_index}"
+    done
+    for route in $(cat "./run/current/networks/${network}/routes_ipv6" 2> /dev/null); do
+      route_cidr="$(cat "./run/current/networks/${route}/ipv6_subnet_cidr")"
+      network_gateway="$(cat "./run/current/networks/${network}/ipv6_gateway")"
+
+      rdo__sudo_host nsenter --net="${sandbox_key}" -- ip -6 route add "${route_cidr}" via "${network_gateway}" dev "eth${eth_index}"
+    done
 
     : $(( eth_index++ ))
   done

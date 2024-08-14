@@ -57,7 +57,7 @@ rdo__call_tar_cf() {
 
 rdo__call_host() {
   case "${RDO_DOCKER_TYPE}" in
-    "default")
+    "engine")
       "${@}"
     ;;
     "machine")
@@ -73,7 +73,7 @@ rdo__call_host() {
 
 rdo__sudo_host() {
   case "${RDO_DOCKER_TYPE}" in
-    "default")
+    "engine")
       sudo "${@}"
     ;;
     "machine")

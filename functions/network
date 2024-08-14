@@ -47,7 +47,7 @@ rdo_network_ls() {
 }
 
 rdo_network_iptables_flush() {
-  rdo__sudo_host rdo-iptables-flush
+  rdo__call_host sudo ./misc/rdo-iptables-flush
 }
 
 rdo_network_iptables_save() {
@@ -83,6 +83,9 @@ rdo_network_forward() {
       "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${outer_network_bridge}' -o '${ifname}' -j ACCEPT"
       "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${ifname}' -o '${outer_network_bridge}' -j ACCEPT"
     )
+
+    echo "${ingress_network}" >> "./run/current/networks/${bridge_name}/routes_ipv4"
+    echo "${bridge_name}"     >> "./run/current/networks/${ingress_network}/routes_ipv4"
   done
 
   local ingress_network
@@ -99,9 +102,12 @@ rdo_network_forward() {
       "ip6tables ${rule_args[*]} -t filter -I DOCKER-USER -i '${outer_network_bridge}' -o '${ifname}' -j ACCEPT"
       "ip6tables ${rule_args[*]} -t filter -I DOCKER-USER -i '${ifname}' -o '${outer_network_bridge}' -j ACCEPT"
     )
+
+    echo "${ingress_network}" >> "./run/current/networks/${bridge_name}/routes_ipv6"
+    echo "${bridge_name}"     >> "./run/current/networks/${ingress_network}/routes_ipv6"
   done
 
-  rdo__sudo_host bash -c "\"$(printf "%s && " "${cmd_list[@]}" && printf ":\n")\""
+  rdo__sudo_host bash -c "$(printf "%s && " "${cmd_list[@]}" && printf ":\n")"
 }
 
 rdo_network_nat() {
@@ -166,7 +172,7 @@ rdo_network_nat() {
     )
   done
 
-  rdo__sudo_host bash -c "\"$(printf "%s && " "${cmd_list[@]}" && printf ":\n")\""
+  rdo__sudo_host bash -c "$(printf "%s && " "${cmd_list[@]}" && printf ":\n")"
 }
 
 rdo_network_tc() {
@@ -254,7 +260,7 @@ rdo_network_tc_replace_root_tbf() {
     cmd_list+="$(echo "echo 'tc_replace_root_tbf/${node_name}/${node_ifname}/rate:${rate}' && ${tc_command[@]} && ")"
   done
 
-  rdo__sudo_host bash -c "\"${cmd_list} : \""
+  rdo__sudo_host bash -c "${cmd_list} :"
 }
 
 rdo_network_tc_del_root() {
@@ -302,5 +308,5 @@ rdo_network_tc_del_root() {
     cmd_list+="$(echo "echo 'tc_del_root/${node_name}/${node_ifname}' && ${tc_command[@]} && ")"
   done
 
-  rdo__sudo_host bash -c "\"${cmd_list} : \""
+  rdo__sudo_host bash -c "${cmd_list} :"
 }

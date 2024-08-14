@@ -145,7 +145,7 @@ rdo_init__create_env() {
   cat > "./data/env.bash" <<EOF
 source ~/.bash_profile || source ~/.bashrc
 
-export PATH="${project_path}:\${PATH}"
+export PATH="${project_path}:${project_path}/misc:\${PATH}"
 export EXEC_PTY="$((command -v winpty) || (command -v console) || :)"
 
 if [[ -n "\${PROMPT_COMMAND}" ]]; then
@@ -161,17 +161,18 @@ export DOCKER_CONTEXT="default"
 export RDO_BASH_SESSION="yes"
 export RDO_DOCKER_TYPE="${arg_docker_type}"
 export RDO_IPV6_ROUTING_PREFIX="fc97"
-export RDO_RUN_PATH="/rdo/run"
 EOF
 
   if [[ -n "${arg_docker_machine}" ]]; then
     cat >> "./data/env.bash" <<EOF
+export RDO_RUN_PATH="/rdo/run"
 export RDO_DOCKER_MACHINE="${arg_docker_machine}"
 
 export PROMPT_COMMAND="\${PROMPT_COMMAND}; PS1=\"<\\\${DOCKER_MACHINE_NAME}:\\\${DOCKER_CONTEXT}> \\\${PS1}\""
 EOF
   else
     cat >> "./data/env.bash" <<EOF
+export RDO_RUN_PATH="${project_path}/run"
 
 export PROMPT_COMMAND="\${PROMPT_COMMAND}; PS1=\"<\\\${DOCKER_CONTEXT}> \\\${PS1}\""
 EOF
