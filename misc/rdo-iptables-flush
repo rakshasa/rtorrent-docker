@@ -2,10 +2,10 @@
 
 set -e -o pipefail
 
-ipv4_nat_rules="$(iptables-save     --table nat    | sed -n -e '/ -m comment --comment "rdo network/h; s/^-A /iptables --table nat -D /p')"
-ipv6_nat_rules="$(ip6tables-save    --table nat    | sed -n -e '/ -m comment --comment "rdo network/h; s/^-A /ip6tables --table nat -D /p')"
-ipv4_filter_rules="$(iptables-save  --table filter | sed -n -e '/ -m comment --comment "rdo network/h; s/^-A /iptables --table filter -D /p')"
-ipv6_filter_rules="$(ip6tables-save --table filter | sed -n -e '/ -m comment --comment "rdo network/h; s/^-A /ip6tables --table filter -D /p')"
+ipv4_nat_rules="$(iptables-save     --table nat    | sed -n -e '/ -m comment --comment "rdo network/s/^-A /iptables --table nat -D /p')"
+ipv6_nat_rules="$(ip6tables-save    --table nat    | sed -n -e '/ -m comment --comment "rdo network/s/^-A /ip6tables --table nat -D /p')"
+ipv4_filter_rules="$(iptables-save  --table filter | sed -n -e '/ -m comment --comment "rdo network/s/^-A /iptables --table filter -D /p')"
+ipv6_filter_rules="$(ip6tables-save --table filter | sed -n -e '/ -m comment --comment "rdo network/s/^-A /ip6tables --table filter -D /p')"
 
 rules="$(printf "%s\n%s\n" "${ipv4_nat_rules}" "${ipv6_nat_rules}" "${ipv4_filter_rules}" "${ipv6_filter_rules}")"
 

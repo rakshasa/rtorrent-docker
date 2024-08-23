@@ -1,5 +1,5 @@
-#!/bin/bash
+#!/bin/sh
 
 cat - <<EOF
-/dockerdns --no-recursion --domain rt
+/entrypoint.sh --no-recursion --domain rt --dns-bind '[::]:53'
 EOF

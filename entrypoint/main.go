@@ -40,8 +40,8 @@ func main() {
 	failed := make(chan error, 1)
 
 	go func() {
-		// cmd := exec.CommandContext(ctx, "/docker-container-dns")
-		cmd := exec.Command("/docker-container-dns")
+		log.Printf("executing: /run/self/run")
+		cmd := exec.Command("/bin/sh", "/run/self/run")
 
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

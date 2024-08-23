@@ -1,15 +1,11 @@
 ARG REPOSITORY
 
 
-FROM "rtdo/docker-container-dns:latest" AS docker-dns
-
-
 FROM "${REPOSITORY}/build/entrypoint:global" AS entrypoint
 
 
-FROM "scratch"
+FROM "rtdo/docker-container-dns:latest"
 
-COPY --from=docker-dns /docker-container-dns /
 COPY --from=entrypoint /entrypoint /
 
 ENTRYPOINT ["/entrypoint"]

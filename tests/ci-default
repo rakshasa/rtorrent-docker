@@ -43,10 +43,17 @@ rdo_stage_rtorrent \
 
 # Due to trackers not properly supporting both ipv4 and ipv6 properly,
 # we need two seeders.
+#
+# FIXME: This should be in global-seed network, however we use v6 to force tracker to use ipv6.
+# rdo_stage_rtorrent \
+#   --run-template "rt-default" \
+#   --dns-inet6 "rt-dns-global:rt-global-seed" \
+#   --network "rt-global-seed" \
+#   "rt-seed-global-v6"
 rdo_stage_rtorrent \
   --run-template "rt-default" \
   --dns-inet6 "rt-dns-global:rt-global-seed" \
-  --network "rt-global-seed" \
+  --network "rt-global-v6" \
   "rt-seed-global-v6"
 
 rdo_stage_append_rc \
