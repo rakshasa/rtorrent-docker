@@ -46,10 +46,14 @@ rdo_stage_rtorrent \
 #
 # FIXME: This should be in global-seed network, however we use v6 to force tracker to use ipv6.
 # rdo_stage_rtorrent \
+#
+# Fix opentracker compile, upgrade alpine, use ipv4in6 with one tracker, add separate tests for ipv6-only tracker.
+#
 #   --run-template "rt-default" \
 #   --dns-inet6 "rt-dns-global:rt-global-seed" \
 #   --network "rt-global-seed" \
 #   "rt-seed-global-v6"
+
 rdo_stage_rtorrent \
   --run-template "rt-default" \
   --dns-inet6 "rt-dns-global:rt-global-seed" \
@@ -77,9 +81,9 @@ rdo_torrent_wait --print --wait-all \
                  \
                  --hash-done     "rt-seed-global:torrent-global" \
                  --seeding       "rt-seed-global:torrent-global" \
-                 \
-                 --hash-done     "rt-seed-global-v6:torrent-global" \
-                 --seeding       "rt-seed-global-v6:torrent-global"
+                 # \
+                 # --hash-done     "rt-seed-global-v6:torrent-global" \
+                 # --seeding       "rt-seed-global-v6:torrent-global"
 
 
 #

@@ -26,7 +26,6 @@ RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
       cppunit-dev \
       curl-dev \
       libc-dev \
-      libexecinfo-dev \
       musl-dev \
       ncurses-dev \
       openssl-dev \
@@ -70,7 +69,6 @@ RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
   apk add \
       curl \
       cppunit \
-      libexecinfo \
       libgcc \
       libstdc++ \
       lldb \

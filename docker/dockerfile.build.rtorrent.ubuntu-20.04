@@ -9,7 +9,11 @@ FROM "${REPOSITORY}/ancestor/build:ubuntu-20.04" AS compiler
 ARG RDO_COMPILER="clang"
 ENV RDO_COMPILER="${RDO_COMPILER}"
 
-RUN --mount=type=cache,id=rdo-ubuntu-apt-cache,sharing=locked,target=/var/lib/apt/lists/ \
+RUN chsh -s /bin/bash
+
+RUN --mount=type=cache,id=rdo-ubuntu-apt-cache,sharing=locked,target=/var/lib/apt/lists/; set -eux; \
+  \
+  apt-get update; \
   \
   apt-get install -y \
     autoconf \
@@ -17,23 +21,23 @@ RUN --mount=type=cache,id=rdo-ubuntu-apt-cache,sharing=locked,target=/var/lib/ap
     binutils \
     file \
     libtool \
-    linux-headers \
+    linux-headers-generic \
     make \
+    pkgconf \
     \
-    cppunit-dev \
-    curl-dev \
     libc-dev \
+    libcppunit-dev \
+    libcurl4-openssl-dev \
     ncurses-dev \
-    openssl-dev \
-    zlib-dev \
-    \
-    libexecinfo-dev; \
+    libssl-dev \
+    zlib1g-dev; \
   \
   echo -e "\033[0;32musing compiler family ${RDO_COMPILER}\033[0m"; set -xe; \
   \
   if [ "${RDO_COMPILER}" = "clang" ]; then \
     # clang requires crtbeginS.o from gcc and std headers from g++ \
     echo "export CC=clang CXX=clang++" >> /env.configure; \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt-get install -y \
       gcc \
       g++ \
@@ -42,6 +46,7 @@ RUN --mount=type=cache,id=rdo-ubuntu-apt-cache,sharing=locked,target=/var/lib/ap
     \
   elif [ "${RDO_COMPILER}" = "gcc" ]; then \
     echo "export CC=gcc CXX=g++" >> /env.configure; \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt-get install -y \
         gcc \
         g++ \
@@ -50,30 +55,36 @@ RUN --mount=type=cache,id=rdo-ubuntu-apt-cache,sharing=locked,target=/var/lib/ap
   else \
     echo -e "\033[0;31munknown compiler family: ${RDO_COMPILER}\033[0m"; \
     exit 1; \
-  fi
+  fi; \
+  \
+  apt list --installed
 
-RUN echo -e "\033[0;32msetting configure flags\033[0m"; set -xe; \
+RUN echo -e "\033[0;32msetting configure flags\033[0m"; set -eux; \
   \
   echo "export PKG_CONFIG_PATH=\"/prefix/lib/pkgconfig:/usr/lib/pkgconfig\"" >> /env.configure; \
   echo "export CXXFLAGS=\"-Wno-exceptions -Wno-pessimizing-move\"" >> /env.configure
 
 
-FROM "${REPOSITORY}/ancestor/run::ubuntu-20.04" AS run
+FROM "${REPOSITORY}/ancestor/run:ubuntu-20.04" AS run
 
-RUN --mount=type=cache,id=rdo-ubuntu-apt-cache,sharing=locked,target=/var/lib/apt/lists/ \
+RUN chsh -s /bin/bash
+
+RUN --mount=type=cache,id=rdo-ubuntu-apt-cache,sharing=locked,target=/var/lib/apt/lists/; set -eux; \
+  \
+  apt-get update; \
+  apt-cache search --names-only '^libcppunit'; \
   \
   apt-get install -y \
-    curl \
-    cppunit \
-    libexecinfo \
-    libgcc \
-    libstdc++ \
+    libcurl4 \
+    zlib1g \
+    \
+    libgcc-s1 \
+    libstdc++6 \
     lldb \
     musl \
-    ncurses \
-    openssl \
-    tcpdump \
-    zlib
+    ncurses-base \
+    libssl1.1 \
+    tcpdump
 
 
 # Fake endpoint:

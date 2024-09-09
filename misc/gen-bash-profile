@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 CONTEXT_NAME="${1:?Missing context name argument.}"
 TAG_FULL="${2:?Missing tag full argument.}"

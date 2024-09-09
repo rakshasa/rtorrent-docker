@@ -139,12 +139,14 @@ rdo_build_init() {
 
   rdo_docker_build --filename "entrypoint" --context "./entrypoint" "build/entrypoint:global"
 
-  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "build" --base-image "alpine:3.14" "ancestor/build:alpine-3"
-  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "run"   --base-image "alpine:3.14" "ancestor/run:alpine-3"
-  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "utils" --base-image "alpine:3.14" "ancestor/utils:alpine-3"
+  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "build" --base-image "alpine:3.20" "ancestor/build:alpine-3"
+  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "run"   --base-image "alpine:3.20" "ancestor/run:alpine-3"
+  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "utils" --base-image "alpine:3.20" "ancestor/utils:alpine-3"
 
   rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "build" --base-image "ubuntu:20.04" "ancestor/build:ubuntu-20.04"
   rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "run"   --base-image "ubuntu:20.04" "ancestor/run:ubuntu-20.04"
+  # rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "build" --base-image "ubuntu:24.04" "ancestor/build:ubuntu-24.04"
+  # rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "run"   --base-image "ubuntu:24.04" "ancestor/run:ubuntu-24.04"
 
   rdo_build__context__empty --no-rebuild "stage:global"
 
@@ -158,15 +160,20 @@ rdo_build_init() {
 rdo_build_compile() {
   rdo_init verify
 
-  rdo_build__context__empty --filename "build.rtorrent.alpine" --target "compiler" "build/rtorrent/compiler:alpine-3"
-  rdo_build__context__empty --filename "build.rtorrent.alpine" --target "run"      "build/rtorrent/run:alpine-3"
+  rdo_build__context__empty --filename "build.rtorrent.alpine" --target "compiler"     "build/rtorrent/compiler:alpine-3"
+  rdo_build__context__empty --filename "build.rtorrent.alpine" --target "run"          "build/rtorrent/run:alpine-3"
   rdo_build__context__rtorrent --filename "build.rtorrent"     --tag-append "alpine-3" "run/rtorrent:alpine-3"
 
-  docker image tag "rdo/run/rtorrent:alpine-3" "rdo/run/rtorrent:default"
+  # rdo_build__context__empty --filename "build.rtorrent.ubuntu-20.04" --target "compiler"         "build/rtorrent/compiler:ubuntu-20.04"
+  # rdo_build__context__empty --filename "build.rtorrent.ubuntu-20.04" --target "run"              "build/rtorrent/run:ubuntu-20.04"
+  # rdo_build__context__rtorrent --filename "build.rtorrent"           --tag-append "ubuntu-20.04" "run/rtorrent:ubuntu-20.04"
 
-  # rdo_build__context__empty --filename "build.rtorrent.ubuntu-20.04" --target "compiler" "build/rtorrent/compiler:ubuntu-20.04"
-  # rdo_build__context__empty --filename "build.rtorrent.ubuntu-20.04" --target "run"      "build/rtorrent/run:ubuntu-20.04"
-  # rdo_build__build --context-type "rtorrent" --context-name "rtorrent" --filename "build.rtorrent" --tag-append "ubuntu-20.04" "run/rtorrent"
+  # rdo_build__context__empty --filename "build.rtorrent.ubuntu-24.04" --target "compiler" "build/rtorrent/compiler:ubuntu-24.04"
+  # rdo_build__context__empty --filename "build.rtorrent.ubuntu-24.04" --target "run"      "build/rtorrent/run:ubuntu-24.04"
+  # rdo_build__build --context-type "rtorrent" --context-name "rtorrent" --filename "build.rtorrent" --tag-append "ubuntu-24.04" "run/rtorrent"
+
+  docker image tag "rdo/run/rtorrent:alpine-3" "rdo/run/rtorrent:default"
+  # docker image tag "rdo/run/rtorrent:ubuntu-24.04" "rdo/run/rtorrent:default"
 }
 
 rdo_build_test_libtorrent() {

@@ -1,5 +1,10 @@
 #!/bin/bash
 
 cat - <<EOF
+
+syslogd -t -l 8 -O /run/self/logs/syslogd.log
+sleep 1
+
 opentracker -f /etc/opentracker/opentracker.conf
+
 EOF

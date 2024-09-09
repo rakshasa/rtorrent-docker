@@ -20,13 +20,17 @@ RUN set -xe; \
   \
   git clone git://erdgeist.org/opentracker; \
   ( cd opentracker; \
-    git checkout 6e591d7437fb174be4e288f04a3c5d75f1c5db4f; \
     \
     sed -i -e 's|^PREFIX?=..$||' Makefile; \
     sed -i -e 's|^LIBOWFAT_HEADERS=\$(PREFIX)/libowfat$|LIBOWFAT_HEADERS=/usr/include/libowfat|' Makefile; \
     sed -i -e 's|^LIBOWFAT_LIBRARY=\$(PREFIX)/libowfat$|LIBOWFAT_LIBRARY=/usr/lib|' Makefile; \
     \
-    FEATURES="-DWANT_V6 -DWANT_IP_FROM_QUERY_STRING -DWANT_LOG_NUMWANT -DWANT_SYSLOGS" \
+    FEATURES="\
+      -D_DEBUG_HTTPERROR \
+      -DWANT_IP_FROM_QUERY_STRING \
+      -DWANT_LOG_NUMWANT \
+      -DWANT_NO_AUTO_FREE \
+      -DWANT_SYSLOGS" \
       make; \
   )
 
