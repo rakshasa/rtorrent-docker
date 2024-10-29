@@ -36,7 +36,7 @@ Prepare Autoconf Scripts
 # This will fail when attempting to build libtorrent due to missing autoconf scripts.
 rdo build all
 
-docker run --rm -it --volume "type=bind,source=${PWD}/data,target=/data/" rdo/build/rtorrent/compiler:default /bin/bash
+docker run --rm -it --mount "type=bind,source=${PWD}/data,target=/data/" rdo/build/rtorrent/compiler:alpine-3 /bin/bash
 ```
 
 While in the docker container, run the following:
@@ -71,4 +71,13 @@ Run CI tests
 
 ```bash
 rdo batch tests/ci-all
+```
+
+
+Cleanup for Release
+-------------------
+
+```
+make maintainer-clean
+autoreconf --force --install
 ```

@@ -16,7 +16,8 @@ rdo_test_begin
 rdo_stage_network "rt-global"
 rdo_stage_network "rt-isolated"
 
-rdo_network_nat   --network "rt-isolated" --bridge "rt-global"
+#rdo_network_nat   --network "rt-isolated" --bridge "rt-global"
+rdo_network_forward --bridge "rt-isolated" --ingress "rt-global"
 
 rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
 rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"

@@ -11,10 +11,11 @@ RUN --mount=type=cache,id=rdo-apk-cache,sharing=locked,target=/var/cache/apk/ \
   apk add \
     gcc \
     git \
+    libowfat-dev \
     make \
     musl-dev \
-    zlib-dev \
-    libowfat-dev
+    patch \
+    zlib-dev
 
 RUN set -xe; \
   \
@@ -25,8 +26,64 @@ RUN set -xe; \
     sed -i -e 's|^LIBOWFAT_HEADERS=\$(PREFIX)/libowfat$|LIBOWFAT_HEADERS=/usr/include/libowfat|' Makefile; \
     sed -i -e 's|^LIBOWFAT_LIBRARY=\$(PREFIX)/libowfat$|LIBOWFAT_LIBRARY=/usr/lib|' Makefile; \
     \
+    printf "%s\n" \
+      'diff --git a/opentracker.c b/opentracker.c' \
+      'index 14e9989..56e7814 100644' \
+      '--- a/opentracker.c' \
+      '+++ b/opentracker.c' \
+      '@@ -252,6 +252,22 @@ static void handle_accept(const int64 serversocket) {' \
+      '   tai6464           t;' \
+      ' ' \
+      '   while ((sock = socket_accept6(serversocket, ip, &port, NULL)) != -1) {' \
+      '+    char ip6_str[INET6_ADDRSTRLEN] = {0};' \
+      '+' \
+      '+    if (ip6_isv4mapped(ip)) {' \
+      '+      inet_ntop(AF_INET, ip + 12, ip6_str, INET6_ADDRSTRLEN);' \
+      '+    } else {' \
+      '+      inet_ntop(AF_INET6, ip, ip6_str, INET6_ADDRSTRLEN);' \
+      '+    }' \
+      '+' \
+      '+    printf("accepting connection from %s:%d\n", ip6_str, port);' \
+      '+' \
+      '+    // print 'ip' in hex' \
+      '+    for (int i = 0; i < 16; i++) {' \
+      '+      printf("%02x", (unsigned char)ip[i]);' \
+      '+    }' \
+      '+    printf("\n");' \
+      '+' \
+      ' ' \
+      '     /* Put fd into a non-blocking mode */' \
+      '     io_nonblock(sock);' \
+      'diff --git a/ot_http.c b/ot_http.c' \
+      'index 5c622e2..1950598 100644' \
+      '--- a/ot_http.c' \
+      '+++ b/ot_http.c' \
+      '@@ -671,8 +671,19 @@ ssize_t http_handle_request(const int64 sock, struct ot_workstruct *ws) {' \
+      '   ssize_t reply_off, len;' \
+      '   char   *read_ptr = ws->request, *write_ptr;' \
+      ' ' \
+      '-#ifdef WANT_FULLLOG_NETWORKS' \
+      '   struct http_data *cookie = io_getcookie(sock);' \
+      '+' \
+      '+  char ip6_str[INET6_ADDRSTRLEN] = {0};' \
+      '+' \
+      '+  if (ip6_isv4mapped(cookie->ip)) {' \
+      '+    inet_ntop(AF_INET, cookie->ip + 12, ip6_str, INET6_ADDRSTRLEN);' \
+      '+  } else {' \
+      '+    inet_ntop(AF_INET6, cookie->ip, ip6_str, INET6_ADDRSTRLEN);' \
+      '+  }' \
+      '+' \
+      '+  printf("http_handle_request: %s\n---\n %.*s\n---\n", ip6_str, (int)ws->request_size, ws->request);' \
+      '+' \
+      '+#ifdef WANT_FULLLOG_NETWORKS' \
+      '   if (loglist_check_address(cookie->ip)) {' \
+      '     ot_log *log = malloc(sizeof(ot_log));' \
+      '     if (log) {' \
+      | patch -p1; \
+    \
     FEATURES="\
       -D_DEBUG_HTTPERROR \
+      -DWANT_FULLLOG_NETWORKS \
       -DWANT_IP_FROM_QUERY_STRING \
       -DWANT_LOG_NUMWANT \
       -DWANT_NO_AUTO_FREE \

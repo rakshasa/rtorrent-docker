@@ -170,6 +170,8 @@ rdo_network_nat() {
       "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${egress_ifname}' -o '${inner_network_bridge}' -m state --state RELATED,ESTABLISHED -j ACCEPT"
       "iptables ${rule_args[*]} -t filter -I DOCKER-USER -i '${inner_network_bridge}' -o '${egress_ifname}' -j MARK --set-mark '${mark}'"
     )
+
+    echo "${bridge_name}" >> "./run/current/networks/${inner_network}/routes_ipv4"
   done
 
   rdo__sudo_host bash -c "$(printf "%s && " "${cmd_list[@]}" && printf ":\n")"

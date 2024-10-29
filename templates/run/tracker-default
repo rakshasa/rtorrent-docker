@@ -1,9 +1,15 @@
 #!/bin/bash
 
-cat - <<EOF
+cat - <<"EOF"
 
-syslogd -t -l 8 -O /run/self/logs/syslogd.log
-sleep 1
+for nw in $(ls /run/self/interfaces/); do
+  if [ -f "/run/self/interfaces/${nw}/inet" ]; then
+    echo "listen.tcp_udp $(cat /run/self/interfaces/${nw}/inet)" >> /etc/opentracker/opentracker.conf
+  fi
+  if [ -f "/run/self/interfaces/${nw}/inet6" ]; then
+    echo "listen.tcp_udp $(cat /run/self/interfaces/${nw}/inet6)" >> /etc/opentracker/opentracker.conf
+  fi
+done
 
 opentracker -f /etc/opentracker/opentracker.conf
 
