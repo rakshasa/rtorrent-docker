@@ -44,6 +44,7 @@ While in the docker container, run the following:
 ```bash
 cd /data/libtorrent
 
+libtoolize
 aclocal -I scripts
 autoconf -i
 autoheader
