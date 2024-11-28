@@ -31,15 +31,27 @@ rdo_stage_tracker --run-template "tracker-default" --network "rt-global-seed" "r
 rdo_stage_deploy
 
 
+################ Multi-file torrents!!! ################
+
+
 #
 # Seeders:
 #
 
+# rdo_stage_rtorrent \
+#   --run-template "rt-default" \
+#   --dns-inet "rt-dns-global:rt-global-seed" \
+#   --network "rt-global-seed" \
+#   "rt-seed-global"
+
+# We need to force leechers to announce using ipv4, this needs to be fixed so clients prefer ipv4 when available.
+
 rdo_stage_rtorrent \
   --run-template "rt-default" \
   --dns-inet "rt-dns-global:rt-global-seed" \
-  --network "rt-global-seed" \
-  "rt-seed-global"
+  --network "rt-global-v4" \
+  "rt-seed-global-v4"
+
 
 # Due to trackers not properly supporting both ipv4 and ipv6 properly,
 # we need two seeders.
@@ -65,25 +77,25 @@ rdo_stage_append_rc \
   'network.prefer.ipv6.set = true'
 
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global"
-rdo_torrent_node   --seeder "rt-seed-global"       "torrent-global"
+rdo_torrent_node   --seeder "rt-seed-global-v4"    "torrent-global"
 rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global"
 
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global-v4only"
-rdo_torrent_node   --seeder "rt-seed-global"       "torrent-global-v4only"
+rdo_torrent_node   --seeder "rt-seed-global-v4"    "torrent-global-v4only"
 rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global-v4only"
 
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global-v6only"
-rdo_torrent_node   --seeder "rt-seed-global"       "torrent-global-v6only"
+rdo_torrent_node   --seeder "rt-seed-global-v4"    "torrent-global-v6only"
 rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global-v6only"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
                  \
-                 --hash-done     "rt-seed-global:torrent-global" \
-                 --seeding       "rt-seed-global:torrent-global" \
-                 # \
-                 # --hash-done     "rt-seed-global-v6:torrent-global" \
-                 # --seeding       "rt-seed-global-v6:torrent-global"
+                 --hash-done     "rt-seed-global-v4:torrent-global" \
+                 --seeding       "rt-seed-global-v4:torrent-global" \
+                 \
+                 --hash-done     "rt-seed-global-v6:torrent-global" \
+                 --seeding       "rt-seed-global-v6:torrent-global"
 
 
 #

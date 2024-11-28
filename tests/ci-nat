@@ -11,25 +11,25 @@ rdo_test_begin
 # Topology, trackers and torrents:
 #
 
-rdo_stage_network "rt-global"
+rdo_stage_network --disable-ipv6 "rt-global-v4"
 
 rdo_stage_network "rt-nat-1"
-rdo_network_nat   --network "rt-nat-1" --bridge "rt-global"
+rdo_network_nat   --network "rt-nat-1" --bridge "rt-global-v4"
 
 rdo_stage_network "rt-nat-2"
-rdo_network_nat   --network "rt-nat-2" --bridge "rt-global"
+rdo_network_nat   --network "rt-nat-2" --bridge "rt-global-v4"
 
 rdo_stage_network "rt-nat-3"
-rdo_network_nat   --network "rt-nat-3" --bridge "rt-global"
+rdo_network_nat   --network "rt-nat-3" --bridge "rt-global-v4"
 
-rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
-rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global"
+rdo_stage_dns     --run-template "dns-default"     --network "rt-global-v4" "rt-dns-global"
+rdo_stage_tracker --run-template "tracker-default" --network "rt-global-v4" "rt-tracker-global"
 
 rdo_stage_deploy
 
 default_rtorrent_args=(
   --run-template "rt-default"
-  --dns-inet "rt-dns-global:rt-global"
+  --dns-inet "rt-dns-global:rt-global-v4"
 )
 
 
@@ -39,7 +39,7 @@ default_rtorrent_args=(
 
 rdo_stage_rtorrent \
   "${default_rtorrent_args[@]}" \
-  --network "rt-global" \
+  --network "rt-global-v4" \
   "rt-seed-global"
 
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global"

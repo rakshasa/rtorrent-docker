@@ -16,6 +16,7 @@ log.open_file = "connection", /run/self/logs/connection.log
 log.open_file = "dht_all", /run/self/logs/dht_all.log
 log.open_file = "net", /run/self/logs/net.log
 log.open_file = "peer_list", /run/self/logs/peer_list.log
+log.open_file = "storage", /run/self/logs/storage.log
 log.open_file = "system", /run/self/logs/system.log
 
 try = ((log.add_output, "connection", "connection"))
@@ -23,6 +24,7 @@ try = ((log.add_output, "dht_all", "dht_all"))
 try = ((log.add_output, "net_resolver", "net"))
 try = ((log.add_output, "peer_list_address", "peer_list"))
 try = ((log.add_output, "peer_list_events", "peer_list"))
+try = ((log.add_output, "storage", "storage"))
 try = ((log.add_output, "system", "system"))
 
 
@@ -30,7 +32,7 @@ try = ((log.add_output, "system", "system"))
 log.open_file = "rtorrent", /run/self/logs/rtorrent.log
 log.open_file = "torrent", /run/self/logs/torrent.log
 log.open_file = "socket", /run/self/logs/socket.log
-log.open_file = "storage", /run/self/logs/storage.log
+log.open_file = "storage", /run/self/logs/storage_debug.log
 log.open_file = "thread", /run/self/logs/thread.log
 log.open_file = "tracker", /run/self/logs/tracker.log
 log.open_file = "old_dht", /run/self/logs/old_dht.log
