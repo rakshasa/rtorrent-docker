@@ -1,0 +1,78 @@
+#!/bin/bash
+
+
+rdo_test_begin
+
+# TODO: Disable dht.
+
+#
+# Topology, trackers and torrents:
+#
+
+rdo_stage_network "rt-global"
+
+rdo_stage_dns     --run-template "dns-default"     --network "rt-global" "rt-dns-global"
+rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global-1"
+rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global-2"
+rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tracker-global-3"
+
+rdo_stage_deploy
+
+default_client_args=(
+  --run-template "rt-default"
+  --network "rt-global"
+  --dns-inet "rt-dns-global:rt-global"
+)
+
+#
+# Seeders:
+#
+
+rdo_stage_rtorrent "${default_client_args[@]}" "rt-seed-global"
+
+rdo_torrent_create --domain "rt-tracker-global-1.rt" "torrent-single"
+rdo_torrent_create --domain "rt-tracker-global-1.rt,rt-tracker-global-2.rt" "torrent-multiple"
+
+rdo_torrent_node --seeder "rt-seed-global" "torrent-single"
+rdo_torrent_node --seeder "rt-seed-global" "torrent-multiple"
+
+rdo_stage_deploy
+rdo_torrent_wait --print --wait-all \
+                 --hash-done     "rt-seed-global:torrent-single" \
+                 --seeding       "rt-seed-global:torrent-single" \
+                 --hash-done     "rt-seed-global:torrent-multiple" \
+                 --seeding       "rt-seed-global:torrent-multiple"
+
+
+#
+# Leechers:
+#
+
+default_clients=(
+  "rt-leech-global-"{1..4}
+)
+
+rdo_stage_rtorrent "${default_client_args[@]}" \
+  --network "rt-global" \
+  "rt-leech-global-"{1..4}
+
+rdo_torrent_node \
+  $(printf -- " --leecher %s" "${default_clients[@]}") \
+  "torrent-single"
+
+rdo_torrent_node \
+  $(printf -- " --leecher %s" "${default_clients[@]}") \
+  "torrent-multiple"
+
+rdo_stage_deploy
+rdo_torrent_wait --print --wait-all \
+                 \
+                 $(printf -- " --hash-done %s:torrent-single" "${default_clients[@]}") \
+                 $(printf -- " --not-seeding %s:torrent-single" "${default_clients[@]}") \
+                 $(printf -- " --completed %s:torrent-single" "${default_clients[@]}") \
+                 \
+                 $(printf -- " --hash-done %s:torrent-multiple" "${default_clients[@]}") \
+                 $(printf -- " --not-seeding %s:torrent-multiple" "${default_clients[@]}") \
+                 $(printf -- " --completed %s:torrent-multiple" "${default_clients[@]}")
+
+rdo_test_end

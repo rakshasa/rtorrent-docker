@@ -111,8 +111,9 @@ RUN \
   make -j12 check || ( \
     echo "*** UNIT TESTS FAILED ***"; \
     echo; \
-    cat test/test-suite.log \
-  ) || true ; \
+    cat test/test-suite.log; \
+    false \
+  ); \
   \
   cp -rp /prefix /deploy/prefix
 
@@ -128,6 +129,8 @@ RUN autoreconf -fi
 
 WORKDIR "/build/rtorrent/output"
 
+ARG RTORRENT_ARGS=""
+
 RUN set -xe; \
   cat /env.configure; \
   . /env.configure; \
@@ -137,7 +140,8 @@ RUN set -xe; \
     INSTALL="/usr/bin/install -C" \
     --enable-debug \
     --enable-extra-debug \
-    --disable-execinfo; \
+    --disable-execinfo \
+    ${RTORRENT_ARGS}; \
   \
   rdo-find-move --replace "/build/rtorrent/output" "/deploy/rtorrent/output" \
     "( \
@@ -192,10 +196,12 @@ RUN \
   make -j12 check || ( \
     echo "*** UNIT TESTS FAILED ***"; \
     echo; \
-    cat test/test-suite.log \
-  ) || true ; \
+    cat test/test-suite.log; \
+    false \
+  ); \
   \
   cp -rp /prefix /deploy/prefix
+
 
 FROM "${REPOSITORY}/build/rtorrent/run:${TAG_APPEND}"
 

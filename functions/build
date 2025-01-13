@@ -6,121 +6,33 @@ rdo_build() {
   local arg_repository="${RDO_REPOSITORY:?Not in rdo bash session.}"
   local arg_tag_append=
 
-  # eval "$(args::init_subcommand "rdo build" "Build project.")"
+  eval "$(args::init_subcommand "rdo build" "Build project.")"
 
-  # args::new_option "compiler" string "c" "Select the compiler to use" \
-  #                  'local global_build_args=()' 'global_build_args+=("--build-arg" "COMPILER=${args__1}")'
-  # args::new_option "dry-run" empty "" "Do not actually build the container" \
-  #                  '' 'global_build_args+=("--dry-run")'
-  # args::new_option "rebuild" empty "" "Rebuild all base images" \
-  #                  'local arg_rebuild=' 'global_build_args+=("--rebuild"); arg_rebuild="yes"'
+  args::new_option "compiler" string "c" "Select the compiler to use" \
+                   'local global_build_args=()' 'global_build_args+=("--build-arg" "COMPILER=${args__1}")'
+  args::new_option "dry-run" empty "" "Do not actually build the container" \
+                   '' 'global_build_args+=("--dry-run")'
+  args::new_option "rebuild" empty "" "Rebuild all base images" \
+                   'local arg_rebuild=' 'global_build_args+=("--rebuild"); arg_rebuild="yes"'
 
-  # args::new_command "all" empty "Build all" \
-  #                   'rdo_build_all'
-  # args::new_command "clean" empty "Clean all build images" \
-  #                   'rdo_build_clean'
-  # args::new_command "init" empty "Build all init images" \
-  #                   'rdo_build_init'
-  # args::new_command "compile" empty "Compile rtorrent images" \
-  #                   'rdo_build_compile'
+  args::new_command "all" empty "Build all" \
+                    'rdo_build_all'
+  args::new_command "clean" empty "Clean all build images" \
+                    'rdo_build_clean'
+  args::new_command "init" empty "Build all init images" \
+                    'rdo_build_init'
+  args::new_command "compile" empty "Compile rtorrent images" \
+                    'rdo_build_compile'
 
-  # args::new_command "test-libtorrent" empty "Create an container ready to test libtorrent" \
-  #                   'rdo_build_test_libtorrent'
-  # args::new_command "test-update-libtorrent" empty "Update source files in libtorrent test container" \
-  #                   'rdo_build_test_update_libtorrent'
+  args::new_command "variant" default "Compile rtorrent variant images" \
+                    'rdo_build_variant "${@}"'
 
-  # eval "$(args::process)"
+  args::new_command "test-libtorrent" empty "Create an container ready to test libtorrent" \
+                    'rdo_build_test_libtorrent'
+  args::new_command "test-update-libtorrent" empty "Update source files in libtorrent test container" \
+                    'rdo_build_test_update_libtorrent'
 
-  # start of generated bash args 'rdo build'
-
-  local global_build_args=()
-  local arg_rebuild=
-  local args__opt_value__compiler=
-
-  while true; do
-    case "${1}" in
-      --compiler|-c)
-        local args__1="${2:?Missing argument for '${1}'.}"
-        args__opt_value__compiler="${args__1}"
-        shift 2
-        global_build_args+=("--build-arg" "COMPILER=${args__1}")
-        ;;
-      --dry-run)
-        shift
-        global_build_args+=("--dry-run")
-        ;;
-      --rebuild)
-        shift
-        global_build_args+=("--rebuild"); arg_rebuild="yes"
-        ;;
-      --help|-h|'')
-        echo "Usage: rdo build"
-        echo
-        echo "Build project."
-        echo
-        echo "Options:"
-        echo "  -c, --compiler           Select the compiler to use"
-        echo "      --dry-run            Do not actually build the container"
-        echo "      --rebuild            Rebuild all base images"
-        echo
-        echo "Commands:"
-        echo "  all                      Build all"
-        echo "  clean                    Clean all build images"
-        echo "  init                     Build all init images"
-        echo "  compile                  Compile rtorrent images"
-        echo "  test-libtorrent          Create an container ready to test libtorrent"
-        echo "  test-update-libtorrent   Update source files in libtorrent test container"
-        echo
-        echo "Run 'rdo build COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  local args__root="rdo build"
-  local args__cmd="${1}"
-  shift || :
-
-  case "${args__cmd}" in
-    all)
-      args::verify_command_empty "${@}"
-      rdo_build_all
-      ;;
-    clean)
-      args::verify_command_empty "${@}"
-      rdo_build_clean
-      ;;
-    init)
-      args::verify_command_empty "${@}"
-      rdo_build_init
-      ;;
-    compile)
-      args::verify_command_empty "${@}"
-      rdo_build_compile
-      ;;
-    test-libtorrent)
-      args::verify_command_empty "${@}"
-      rdo_build_test_libtorrent
-      ;;
-    test-update-libtorrent)
-      args::verify_command_empty "${@}"
-      rdo_build_test_update_libtorrent
-      ;;
-    *)
-      print_error "rdo build: unknown command: ${args__cmd}"
-      exit 1
-      ;;
-  esac
-
-  # end of generated bash args 'rdo build'
+  eval "$(args::process)"
 }
 
 rdo_build_all() {
@@ -174,6 +86,32 @@ rdo_build_compile() {
 
   docker image tag "rdo/run/rtorrent:alpine-3" "rdo/run/rtorrent:default"
   # docker image tag "rdo/run/rtorrent:ubuntu-24.04" "rdo/run/rtorrent:default"
+}
+
+rdo_build_variant() {
+  rdo_init verify
+
+  while [[ "${#}" > 0 ]]; do
+    local variant="${1}"
+    shift
+
+    case "${variant}" in
+      "alpine-3")
+        rdo_build__context__empty --filename "build.rtorrent.alpine" --target "compiler"       "build/rtorrent/compiler:${variant}"
+        rdo_build__context__empty --filename "build.rtorrent.alpine" --target "run"            "build/rtorrent/run:${variant}"
+        rdo_build__context__rtorrent --filename "build.rtorrent"     --tag-append "${variant}" "run/rtorrent:${variant}"
+        ;;
+      "alpine-3-tinyxml2")
+        rdo_build__context__empty --filename "build.rtorrent.alpine" --target "compiler"       "build/rtorrent/compiler:${variant}"
+        rdo_build__context__empty --filename "build.rtorrent.alpine" --target "run"            "build/rtorrent/run:${variant}"
+        rdo_build__context__rtorrent --filename "build.rtorrent"     --tag-append "${variant}" --build-arg "RTORRENT_ARGS=--with-xmlrpc-tinyxml2" "run/rtorrent:${variant}"
+        ;;
+      *)
+        echo "Unknown variant: ${variant}"
+        return 1
+        ;;
+    esac
+  done
 }
 
 rdo_build_test_libtorrent() {

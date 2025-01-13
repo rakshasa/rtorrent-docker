@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+local VARIANTS=(
+  alpine-3
+  alpine-3-tinyxml2
+)
+
+# On error, print a message and exit
+trap 'echo "Failed to build variant: ${v}"' ERR
+
+for v in "${VARIANTS[@]}"; do
+  echo "---------------------------------"
+  echo "Building variant: ${v}"
+  echo "---------------------------------"
+  rdo_build_variant "${v}"
+done

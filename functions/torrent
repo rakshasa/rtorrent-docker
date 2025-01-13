@@ -21,77 +21,17 @@ rdo_torrent() {
 rdo_torrent_create() {
   rdo_torrent__init
 
-  # eval "$(args::init_options_string "rdo torrent create NAME" "name" "Create a torrent.")"
+  eval "$(args::init_options_string "rdo torrent create NAME" "name" "Create a torrent.")"
 
-  # args::new_option "domain" string "" "Tracker domain name" \
-  #                  'local url' 'url="http://${args__1}:6969/announce.php"'
-  # args::new_option "size-kb" string "" "Size in kilobytes" \
-  #                  'local torrent_size=$(( 1024 * 1024 ))' 'torrent_size=$(( args__1 * 1024 ))'
-  # args::new_option "size-mb" string "" "Size in megabytes" \
-  #                  '' 'torrent_size=$(( args__1 * 1024 * 1024 ))'
+  args::new_option "domain" string "" "Tracker domain name" \
+                   'local url' \
+                   'url="$(printf "http://%s:6969/announce.php," ${args__1/,/ })"; url="${url%,}"'
+  args::new_option "size-kb" string "" "Size in kilobytes" \
+                   'local torrent_size=$(( 1024 * 1024 ))' 'torrent_size=$(( args__1 * 1024 ))'
+  args::new_option "size-mb" string "" "Size in megabytes" \
+                   '' 'torrent_size=$(( args__1 * 1024 * 1024 ))'
 
-  # eval "$(args::process)"
-
-  # start of generated bash args 'rdo torrent create NAME'
-
-  local url
-  local torrent_size=$(( 1024 * 1024 ))
-
-  while true; do
-    case "${1}" in
-      --domain)
-        local args__1="${2:?Missing argument for '${1}'.}"
-        shift 2
-        url="http://${args__1}:6969/announce.php"
-        ;;
-      --size-kb)
-        local args__1="${2:?Missing argument for '${1}'.}"
-        shift 2
-        torrent_size=$(( args__1 * 1024 ))
-        ;;
-      --size-mb)
-        local args__1="${2:?Missing argument for '${1}'.}"
-        shift 2
-        torrent_size=$(( args__1 * 1024 * 1024 ))
-        ;;
-      --help|-h)
-        echo "Usage: rdo torrent create NAME"
-        echo
-        echo "Create a torrent."
-        echo
-        echo "Options:"
-        echo "      --domain    Tracker domain name"
-        echo "      --size-kb   Size in kilobytes"
-        echo "      --size-mb   Size in megabytes"
-        echo
-        echo "Run 'rdo torrent create NAME COMMAND --help' for more information on a command."
-        exit 0
-        ;;
-      *)
-        if [[ -n "${1}" ]] && [[ -z "${1##-*}" ]]; then
-          print_error "${args__root}: unknown flag: ${1}"
-          return 1
-        fi
-
-        break
-        ;;
-    esac
-  done
-
-  if (( ${#} > 1 )); then
-    print_error "rdo torrent create NAME: too many arguments"
-    exit 1
-  fi
-
-  if (( ${#} == 0 )) || [[ -z "${1}" ]]; then
-    print_error "rdo torrent create NAME: missing or empty argument"
-    exit 1
-  fi
-
-  local name="${1}"
-  shift
-
-  # end of generated bash args 'rdo torrent create NAME'
+  eval "$(args::process)"
 
   local self_path="./run/torrents/${name}"
 

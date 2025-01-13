@@ -277,6 +277,7 @@ rdo_stage_tracker() {
 
   local self_type="trackers"
   local image_name="rdo/run/opentracker:global"
+  local create_args=()
 
   create_args+=(
     # --publish 6969:6969/udp
