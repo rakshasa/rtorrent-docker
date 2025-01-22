@@ -24,8 +24,7 @@ rdo_torrent_create() {
   eval "$(args::init_options_string "rdo torrent create NAME" "name" "Create a torrent.")"
 
   args::new_option "domain" string "" "Tracker domain name" \
-                   'local url' \
-                   'url="$(printf "http://%s:6969/announce.php," ${args__1/,/ })"; url="${url%,}"'
+                   'local url' 'url="$(rdo_torrent__announce_url "${args__1}")"'
   args::new_option "size-kb" string "" "Size in kilobytes" \
                    'local torrent_size=$(( 1024 * 1024 ))' 'torrent_size=$(( args__1 * 1024 ))'
   args::new_option "size-mb" string "" "Size in megabytes" \
@@ -179,3 +178,41 @@ rdo_torrent__create_random_file() {
 
   docker exec -t "${RDO_MKTORRENT_CONTAINER_NAME}" bash -c "${cmd}"
 }
+
+rdo_torrent__announce_url() {
+  local arg="${1:?Missing argument.}"
+  local parts=()
+  local part
+  local url
+
+  IFS=',' read -r -a parts <<< "${arg}"
+
+  # parts are in format 'http:domain' or 'udp:domain'
+  for part in "${parts[@]}"; do
+    IFS=':' read -r -a part <<< "${part}"
+
+    if (( ${#part[@]} == 1 )); then
+      part=("http" "${part[0]}")
+    fi
+
+    if (( ${#part[@]} != 2 )); then
+      print_error "Invalid announce URL: ${part}"
+      return 1
+    fi
+
+    if [[ "${part[0]}" == "http" ]]; then
+      url+="http://${part[1]}:6969/announce.php,"
+    elif [[ "${part[0]}" == "udp" ]]; then
+      url+="udp://${part[1]}:6969,"
+    else
+      print_error "Unknown protocol: ${part[0]}"
+      return 1
+    fi
+  done
+
+  echo "${url%,}"
+}
+
+
+
+

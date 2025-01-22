@@ -80,6 +80,7 @@ rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global"
 rdo_torrent_node   --seeder "rt-seed-global-v4"    "torrent-global"
 rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global"
 
+# Fix v4/6only isolation/seeders/whatever.
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global-v4only"
 rdo_torrent_node   --seeder "rt-seed-global-v4"    "torrent-global-v4only"
 rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global-v4only"
@@ -88,14 +89,33 @@ rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global-v6only"
 rdo_torrent_node   --seeder "rt-seed-global-v4"    "torrent-global-v6only"
 rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global-v6only"
 
+rdo_torrent_create --domain "udp:rt-tracker-global.rt" "torrent-global-udp"
+rdo_torrent_node   --seeder "rt-seed-global-v4"        "torrent-global-udp"
+rdo_torrent_node   --seeder "rt-seed-global-v6"        "torrent-global-udp"
+
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
                  \
                  --hash-done     "rt-seed-global-v4:torrent-global" \
                  --seeding       "rt-seed-global-v4:torrent-global" \
                  \
-                 --hash-done     "rt-seed-global-v6:torrent-global" \
-                 --seeding       "rt-seed-global-v6:torrent-global"
+                 --hash-done     "rt-seed-global-v4:torrent-global-v4only" \
+                 --seeding       "rt-seed-global-v4:torrent-global-v4only" \
+                 \
+                 --hash-done     "rt-seed-global-v4:torrent-global-v6only" \
+                 --seeding       "rt-seed-global-v4:torrent-global-v6only" \
+                 \
+                 --hash-done     "rt-seed-global-v6:torrent-global-v4only" \
+                 --seeding       "rt-seed-global-v6:torrent-global-v4only" \
+                 \
+                 --hash-done     "rt-seed-global-v6:torrent-global-v6only" \
+                 --seeding       "rt-seed-global-v6:torrent-global-v6only" \
+                 \
+                 --hash-done     "rt-seed-global-v4:torrent-global-udp" \
+                 --seeding       "rt-seed-global-v4:torrent-global-udp" \
+                 \
+                 --hash-done     "rt-seed-global-v6:torrent-global-udp" \
+                 --seeding       "rt-seed-global-v6:torrent-global-udp"
 
 
 #
@@ -108,6 +128,12 @@ connected_clients=(
   "rt-connected-globalv4-v4only"
   "rt-connected-globalv6-v4v6"
   "rt-connected-globalv6-v6only"
+)
+
+connected_v4_clients=(
+  "rt-connected-global-v4v6"
+  "rt-connected-globalv4-v4v6"
+  "rt-connected-globalv4-v4only"
 )
 
 blocked_clients=(
@@ -160,11 +186,17 @@ rdo_torrent_node \
   "torrent-global"
 
 rdo_torrent_node \
+  $(printf -- " --leecher %s" "${connected_clients[@]}") \
+  "torrent-global-udp"
+
+rdo_torrent_node \
   --leecher "rt-blocked-globalv4-v6only" \
   "torrent-global-v6only"
 rdo_torrent_node \
   --leecher "rt-blocked-globalv6-v4only" \
   "torrent-global-v4only"
+
+# TODO: Fix udp6 trackers.
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
@@ -172,6 +204,10 @@ rdo_torrent_wait --print --wait-all \
                  $(printf -- " --hash-done %s:torrent-global" "${connected_clients[@]}") \
                  $(printf -- " --not-seeding %s:torrent-global" "${connected_clients[@]}") \
                  $(printf -- " --completed %s:torrent-global" "${connected_clients[@]}") \
+                 \
+                 $(printf -- " --hash-done %s:torrent-global-udp" "${connected_v4_clients[@]}") \
+                 $(printf -- " --not-seeding %s:torrent-global-udp" "${connected_v4_clients[@]}") \
+                 $(printf -- " --completed %s:torrent-global-udp" "${connected_v4_clients[@]}") \
                  \
                  $(printf -- " --hash-done %s:torrent-global-v4only" "rt-blocked-globalv6-v4only") \
                  $(printf -- " --not-seeding %s:torrent-global-v4only" "rt-blocked-globalv6-v4only") \
