@@ -7,6 +7,7 @@ local TESTS=(
   ci-low-diskspace
   ci-nat
   ci-throttle
+  ci-torrent
 )
 
 local SUCCESSFUL_TESTS=()
@@ -45,6 +46,8 @@ for t in "${FAILED_TESTS[@]}"; do
 done
 
 print_progress
+
+rdo_stage_clean
 
 if (( ${#FAILED_TESTS[@]} != 0 )); then
   return 1

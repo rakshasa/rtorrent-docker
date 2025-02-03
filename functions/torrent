@@ -7,12 +7,11 @@ RDO_MKTORRENT_CONTAINER_NAME="rt-global-utils-mktorrent"
 rdo_torrent() {
   eval "$(args::init_subcommand "rdo torrent" "Manage torrents.")"
 
-  args::new_command "create" default "Create a torrent" \
+  args::new_command 'create' default 'Create a torrent' \
                     'rdo_torrent_create "${@}"'
-  args::new_command "wait" default "Wait for a set of torrent events" \
+  args::new_command 'wait' default 'Wait for a set of torrent events' \
                     'rdo_torrent_wait "${@}"'
-
-  args::new_command "node" default "Add a torrent to a client node" \
+  args::new_command 'node' default 'Add a torrent to a client node' \
                     'rdo_torrent_node "${@}"'
 
   eval "$(args::process)"
@@ -23,32 +22,36 @@ rdo_torrent_create() {
 
   eval "$(args::init_options_string "rdo torrent create NAME" "name" "Create a torrent.")"
 
-  args::new_option "domain" string "" "Tracker domain name" \
+  args::new_option 'domain' string '' 'Tracker domain name' \
                    'local url' 'url="$(rdo_torrent__announce_url "${args__1}")"'
-  args::new_option "size-kb" string "" "Size in kilobytes" \
+  args::new_option 'multi-file' empty '' 'Multi-file torrent' \
+                   'local multi_file=no' 'multi_file=yes'
+  args::new_option 'size-kb' string '' 'Size in kilobytes' \
                    'local torrent_size=$(( 1024 * 1024 ))' 'torrent_size=$(( args__1 * 1024 ))'
-  args::new_option "size-mb" string "" "Size in megabytes" \
+  args::new_option 'size-mb' string '' 'Size in megabytes' \
                    '' 'torrent_size=$(( args__1 * 1024 * 1024 ))'
 
   eval "$(args::process)"
 
   local self_path="./run/torrents/${name}"
-
-  # TODO: Don't recreate.
-
   rm -rf "${self_path}"{,.torrent}
 
-  mkdir -p "${self_path}"
-  rdo_torrent__create_random_file "/torrents/${name}/file" "${torrent_size}"
-
   local create_args=(
-    #-a "http://example.com:1234/announce.php"
     -a "${url}"
     -n "${name}"
     -o "/torrents/${name}.torrent"
   )
 
-  create_args+=("/torrents/${name}")
+  if [[ "${multi_file}" == "yes" ]]; then
+    mkdir -p "${self_path}/directory"
+    rdo_torrent__create_random_file "/torrents/${name}/file1" "${torrent_size}"
+    rdo_torrent__create_random_file "/torrents/${name}/file2" "${torrent_size}"
+    rdo_torrent__create_random_file "/torrents/${name}/directory/file" "${torrent_size}"
+    create_args+=("/torrents/${name}")
+  else
+    rdo_torrent__create_random_file "/torrents/${name}" "${torrent_size}"
+    create_args+=("/torrents/${name}")
+  fi
 
   docker exec -t "${RDO_MKTORRENT_CONTAINER_NAME}" mktorrent "${create_args[@]}" > /dev/null
 

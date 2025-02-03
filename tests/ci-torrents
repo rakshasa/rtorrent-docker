@@ -30,18 +30,23 @@ default_client_args=(
 
 rdo_stage_rtorrent "${default_client_args[@]}" "rt-seed-global"
 
-rdo_torrent_create --domain "rt-tracker-global-1.rt" "torrent-single"
-rdo_torrent_create --domain "rt-tracker-global-1.rt,rt-tracker-global-2.rt" "torrent-multiple"
+rdo_torrent_create --domain "rt-tracker-global-1.rt"                        "torrent-single-tracker"
+rdo_torrent_create --domain "rt-tracker-global-1.rt,rt-tracker-global-2.rt" "torrent-multiple-trackers"
+rdo_torrent_create --domain "rt-tracker-global-1.rt" --multi-file           "torrent-multiple-files"
 
-rdo_torrent_node --seeder "rt-seed-global" "torrent-single"
-rdo_torrent_node --seeder "rt-seed-global" "torrent-multiple"
+# Single file torrents is still created using a directory, so fix torrent creation.
+rdo_torrent_node --seeder "rt-seed-global" "torrent-single-tracker"
+rdo_torrent_node --seeder "rt-seed-global" "torrent-multiple-trackers"
+rdo_torrent_node --seeder "rt-seed-global" "torrent-multiple-files"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
-                 --hash-done     "rt-seed-global:torrent-single" \
-                 --seeding       "rt-seed-global:torrent-single" \
-                 --hash-done     "rt-seed-global:torrent-multiple" \
-                 --seeding       "rt-seed-global:torrent-multiple"
+                 --hash-done     "rt-seed-global:torrent-single-tracker" \
+                 --seeding       "rt-seed-global:torrent-single-tracker" \
+                 --hash-done     "rt-seed-global:torrent-multiple-trackers" \
+                 --seeding       "rt-seed-global:torrent-multiple-trackers" \
+                 --hash-done     "rt-seed-global:torrent-multiple-files" \
+                 --seeding       "rt-seed-global:torrent-multiple-files"
 
 
 #
@@ -58,21 +63,30 @@ rdo_stage_rtorrent "${default_client_args[@]}" \
 
 rdo_torrent_node \
   $(printf -- " --leecher %s" "${default_clients[@]}") \
-  "torrent-single"
+  "torrent-single-tracker"
 
 rdo_torrent_node \
   $(printf -- " --leecher %s" "${default_clients[@]}") \
-  "torrent-multiple"
+  "torrent-multiple-trackers"
+
+rdo_torrent_node \
+  --leecher "rt-leech-global-1" \
+  "torrent-multiple-files"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
                  \
-                 $(printf -- " --hash-done %s:torrent-single" "${default_clients[@]}") \
-                 $(printf -- " --not-seeding %s:torrent-single" "${default_clients[@]}") \
-                 $(printf -- " --completed %s:torrent-single" "${default_clients[@]}") \
+                 $(printf -- " --hash-done %s:torrent-single-tracker" "${default_clients[@]}") \
+                 $(printf -- " --not-seeding %s:torrent-single-tracker" "${default_clients[@]}") \
+                 $(printf -- " --completed %s:torrent-single-tracker" "${default_clients[@]}") \
                  \
-                 $(printf -- " --hash-done %s:torrent-multiple" "${default_clients[@]}") \
-                 $(printf -- " --not-seeding %s:torrent-multiple" "${default_clients[@]}") \
-                 $(printf -- " --completed %s:torrent-multiple" "${default_clients[@]}")
+                 $(printf -- " --hash-done %s:torrent-multiple-trackers" "${default_clients[@]}") \
+                 $(printf -- " --not-seeding %s:torrent-multiple-trackers" "${default_clients[@]}") \
+                 $(printf -- " --completed %s:torrent-multiple-trackers" "${default_clients[@]}") \
+                 \
+                 $(printf -- " --hash-done %s:torrent-multiple-files" "rt-leech-global-1") \
+                 $(printf -- " --not-seeding %s:torrent-multiple-files" "rt-leech-global-1") \
+                 $(printf -- " --completed %s:torrent-multiple-files" "rt-leech-global-1")
+
 
 rdo_test_end

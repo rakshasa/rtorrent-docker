@@ -148,12 +148,10 @@ source ~/.bash_profile || source ~/.bashrc
 export PATH="${project_path}:${project_path}/misc:\${PATH}"
 export EXEC_PTY="$((command -v winpty) || (command -v console) || :)"
 
-if [[ -n "\${PROMPT_COMMAND}" ]]; then
-  if type -t __git_ps1 &> /dev/null; then
-    export PROMPT_COMMAND='__git_ps1 "\\\\h:" " \\[\\e[\\\$(if [[ \\\$? != 0 ]]; then echo 31m; elif [[ \\\${USER} = root ]]; then echo 32m; else echo 0m; fi)\\]\\\\W\\[\\e[0m\\]>"'
-  else
-    export PROMPT_COMMAND='PS1="\\\\h: \\[\\e[\$(if [[ \$? != "0" ]]; then echo 31m; elif [[ "\${USER}" = "root" ]]; then echo 32m; else echo 0m; fi)\\]\\\\W\\[\\e[0m\\]>"'
-  fi
+if type -t __git_ps1 &> /dev/null; then
+  export PROMPT_COMMAND='__git_ps1 "\\[\\033[01;32m\\]\\u@\\h\\[\\033[00m\\]:" " \\[\\033[01;\\\$(if [[ \\\$? != 0 ]]; then echo 31m; elif [[ \\\${USER} = root ]]; then echo 32m; else echo 34m; fi)\\]\\\\W\\[\\e[0m\\]>"'
+else
+  export PROMPT_COMMAND='PS1="\\[\\033[01;32m\\]\\u@\\h\\[\\033[00m\\]: \\[\\e[01;\$(if [[ \$? != "0" ]]; then echo 31m; elif [[ "\${USER}" = "root" ]]; then echo 32m; else echo 34m; fi)\\]\\\\W\\[\\e[0m\\]>"'
 fi
 
 export DOCKER_CONTEXT="default"
@@ -161,22 +159,10 @@ export DOCKER_CONTEXT="default"
 export RDO_BASH_SESSION="yes"
 export RDO_DOCKER_TYPE="${arg_docker_type}"
 export RDO_IPV6_ROUTING_PREFIX="fc97"
-EOF
 
-  if [[ -n "${arg_docker_machine}" ]]; then
-    cat >> "./data/env.bash" <<EOF
-export RDO_RUN_PATH="/rdo/run"
-export RDO_DOCKER_MACHINE="${arg_docker_machine}"
-
-export PROMPT_COMMAND="\${PROMPT_COMMAND}; PS1=\"<\\\${DOCKER_MACHINE_NAME}:\\\${DOCKER_CONTEXT}> \\\${PS1}\""
-EOF
-  else
-    cat >> "./data/env.bash" <<EOF
 export RDO_RUN_PATH="${project_path}/run"
 
-export PROMPT_COMMAND="\${PROMPT_COMMAND}; PS1=\"<\\\${DOCKER_CONTEXT}> \\\${PS1}\""
 EOF
-  fi
 
   if [[ -n "${arg_repository}" ]]; then
     cat >> "./data/env.bash" <<EOF
@@ -186,9 +172,7 @@ EOF
 
   cat >> "./data/env.bash" <<EOF
 
-source "${project_path}/data/env.engine"
 source "${project_path}/misc/docker.bash"
-source "${project_path}/misc/docker-machine.bash"
 source "${project_path}/misc/rtorrent-docker.bash"
 EOF
 }

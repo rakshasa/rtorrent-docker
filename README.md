@@ -52,6 +52,7 @@ automake --add-missing
 
 cd /data/rtorrent
 
+libtoolize
 aclocal -I scripts
 autoconf -i
 autoheader

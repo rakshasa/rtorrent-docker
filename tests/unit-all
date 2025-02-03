@@ -5,6 +5,7 @@ set -e
 local VARIANTS=(
   alpine-3
   alpine-3-tinyxml2
+  alpine-3-xmlrpc-c
 )
 
 # On error, print a message and exit
@@ -14,5 +15,6 @@ for v in "${VARIANTS[@]}"; do
   echo "---------------------------------"
   echo "Building variant: ${v}"
   echo "---------------------------------"
+
   rdo_build_variant "${v}"
 done

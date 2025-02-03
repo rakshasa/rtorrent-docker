@@ -9,23 +9,27 @@ cat - <<EOF
 log.open_file = "crash", /run/self/logs/crash.log
 try = ((log.add_output, "critical", "crash"))
 
-log.open_file = "rpc", /run/self/logs/rpc.log
-try = ((log.add_output, "rpc", "rpc"))
 
 log.open_file = "connection", /run/self/logs/connection.log
 log.open_file = "dht_all", /run/self/logs/dht_all.log
 log.open_file = "net", /run/self/logs/net.log
 log.open_file = "peer_list", /run/self/logs/peer_list.log
+log.open_file = "rpc", /run/self/logs/rpc.log
 log.open_file = "storage", /run/self/logs/storage.log
 log.open_file = "system", /run/self/logs/system.log
+log.open_file = "tracker_events", /run/self/logs/tracker_events.log
+log.open_file = "tracker_requests", /run/self/logs/tracker_requests.log
 
 try = ((log.add_output, "connection", "connection"))
 try = ((log.add_output, "dht_all", "dht_all"))
 try = ((log.add_output, "net_resolver", "net"))
 try = ((log.add_output, "peer_list_address", "peer_list"))
 try = ((log.add_output, "peer_list_events", "peer_list"))
+try = ((log.add_output, "rpc", "rpc"))
 try = ((log.add_output, "storage", "storage"))
 try = ((log.add_output, "system", "system"))
+try = ((log.add_output, "tracker_events", "tracker_events"))
+try = ((log.add_output, "tracker_requests", "tracker_requests"))
 
 
 # TODO: Refactor:

@@ -95,6 +95,8 @@ rdo_build_variant() {
     local variant="${1}"
     shift
 
+    # tag-append is automatically added to the __rtorrent build context, so we can remove it
+
     case "${variant}" in
       "alpine-3")
         rdo_build__context__empty --filename "build.rtorrent.alpine" --target "compiler"       "build/rtorrent/compiler:${variant}"
@@ -105,6 +107,11 @@ rdo_build_variant() {
         rdo_build__context__empty --filename "build.rtorrent.alpine" --target "compiler"       "build/rtorrent/compiler:${variant}"
         rdo_build__context__empty --filename "build.rtorrent.alpine" --target "run"            "build/rtorrent/run:${variant}"
         rdo_build__context__rtorrent --filename "build.rtorrent"     --tag-append "${variant}" --build-arg "RTORRENT_ARGS=--with-xmlrpc-tinyxml2" "run/rtorrent:${variant}"
+        ;;
+      "alpine-3-xmlrpc-c")
+        rdo_build__context__empty    --filename "build.rtorrent.alpine" --target "compiler"       --build-arg "ADD_PACKAGES=xmlrpc-c-dev"     "build/rtorrent/compiler:${variant}"
+        rdo_build__context__empty    --filename "build.rtorrent.alpine" --target "run"            --build-arg "ADD_PACKAGES=xmlrpc-c"         "build/rtorrent/run:${variant}"
+        rdo_build__context__rtorrent --filename "build.rtorrent"        --tag-append "${variant}" --build-arg "RTORRENT_ARGS=--with-xmlrpc-c" "run/rtorrent:${variant}"
         ;;
       *)
         echo "Unknown variant: ${variant}"
