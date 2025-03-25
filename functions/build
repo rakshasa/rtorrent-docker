@@ -57,6 +57,8 @@ rdo_build_init() {
 
   rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "build" --base-image "ubuntu:20.04" "ancestor/build:ubuntu-20.04"
   rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "run"   --base-image "ubuntu:20.04" "ancestor/run:ubuntu-20.04"
+  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "build" --base-image "ubuntu:22.04" "ancestor/build:ubuntu-22.04"
+  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "run"   --base-image "ubuntu:22.04" "ancestor/run:ubuntu-22.04"
   # rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "build" --base-image "ubuntu:24.04" "ancestor/build:ubuntu-24.04"
   # rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "run"   --base-image "ubuntu:24.04" "ancestor/run:ubuntu-24.04"
 
@@ -103,6 +105,11 @@ rdo_build_variant() {
         rdo_build__context__empty --filename "build.rtorrent.alpine" --target "run"            "build/rtorrent/run:${variant}"
         rdo_build__context__rtorrent --filename "build.rtorrent"     --tag-append "${variant}" "run/rtorrent:${variant}"
         ;;
+      "alpine-3-lua")
+        rdo_build__context__empty    --filename "build.rtorrent.alpine" --target "compiler"       --build-arg "ADD_PACKAGES=lua5.3-dev"  "build/rtorrent/compiler:${variant}"
+        rdo_build__context__empty    --filename "build.rtorrent.alpine" --target "run"            --build-arg "ADD_PACKAGES=lua5.3"      "build/rtorrent/run:${variant}"
+        rdo_build__context__rtorrent --filename "build.rtorrent"        --tag-append "${variant}" --build-arg "RTORRENT_ARGS=--with-lua" "run/rtorrent:${variant}"
+        ;;
       "alpine-3-tinyxml2")
         rdo_build__context__empty --filename "build.rtorrent.alpine" --target "compiler"       "build/rtorrent/compiler:${variant}"
         rdo_build__context__empty --filename "build.rtorrent.alpine" --target "run"            "build/rtorrent/run:${variant}"
@@ -112,6 +119,21 @@ rdo_build_variant() {
         rdo_build__context__empty    --filename "build.rtorrent.alpine" --target "compiler"       --build-arg "ADD_PACKAGES=xmlrpc-c-dev"     "build/rtorrent/compiler:${variant}"
         rdo_build__context__empty    --filename "build.rtorrent.alpine" --target "run"            --build-arg "ADD_PACKAGES=xmlrpc-c"         "build/rtorrent/run:${variant}"
         rdo_build__context__rtorrent --filename "build.rtorrent"        --tag-append "${variant}" --build-arg "RTORRENT_ARGS=--with-xmlrpc-c" "run/rtorrent:${variant}"
+        ;;
+      "alpine-3-lua-xmlrpc-c")
+        rdo_build__context__empty    --filename "build.rtorrent.alpine" --target "compiler"       --build-arg "ADD_PACKAGES=lua5.3-dev xmlrpc-c-dev"     "build/rtorrent/compiler:${variant}"
+        rdo_build__context__empty    --filename "build.rtorrent.alpine" --target "run"            --build-arg "ADD_PACKAGES=lua5.3 xmlrpc-c"             "build/rtorrent/run:${variant}"
+        rdo_build__context__rtorrent --filename "build.rtorrent"        --tag-append "${variant}" --build-arg "RTORRENT_ARGS=--with-xmlrpc-c --with-lua" "run/rtorrent:${variant}"
+        ;;
+      "ubuntu-20.04")
+        rdo_build__context__empty    --filename "build.rtorrent.ubuntu" --target "compiler"       --build-arg "DISTRO_VERSION=${variant}" "build/rtorrent/compiler:${variant}"
+        rdo_build__context__empty    --filename "build.rtorrent.ubuntu" --target "run"            --build-arg "DISTRO_VERSION=${variant}" "build/rtorrent/run:${variant}"
+        rdo_build__context__rtorrent --filename "build.rtorrent"        --tag-append "${variant}"                                         "run/rtorrent:${variant}"
+        ;;
+      "ubuntu-22.04")
+        rdo_build__context__empty    --filename "build.rtorrent.ubuntu" --target "compiler"       --build-arg "DISTRO_VERSION=${variant}" "build/rtorrent/compiler:${variant}"
+        rdo_build__context__empty    --filename "build.rtorrent.ubuntu" --target "run"            --build-arg "DISTRO_VERSION=${variant}" "build/rtorrent/run:${variant}"
+        rdo_build__context__rtorrent --filename "build.rtorrent"        --tag-append "${variant}"                                         "run/rtorrent:${variant}"
         ;;
       *)
         echo "Unknown variant: ${variant}"

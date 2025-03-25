@@ -54,7 +54,8 @@ RUN set -xe; \
     --enable-debug \
     --enable-extra-debug \
     --disable-execinfo \
-    --disable-pthread-setname-np; \
+    --disable-pthread-setname-np \
+    || cat config.log; \
   \
   rdo-find-move --replace "/build/libtorrent/output" "/deploy/libtorrent/output" \
     "( \
@@ -81,6 +82,7 @@ RUN set -xe; \
     --wildcards '*.am' \
     --wildcards '*.m4' \
     --wildcards '*.pc.in' \
+    --wildcards '*.c' \
     --wildcards '*.cc' \
     --wildcards '*.h' \
     --no-wildcards './configure.ac'; \
@@ -141,7 +143,8 @@ RUN set -xe; \
     --enable-debug \
     --enable-extra-debug \
     --disable-execinfo \
-    ${RTORRENT_ARGS}; \
+    ${RTORRENT_ARGS} \
+    || cat config.log; \
   \
   rdo-find-move --replace "/build/rtorrent/output" "/deploy/rtorrent/output" \
     "( \
@@ -168,6 +171,7 @@ RUN set -xe; \
     --directory '/stage/rtorrent/source' \
     --wildcards '*.am' \
     --wildcards '*.m4' \
+    --wildcards '*.c' \
     --wildcards '*.cc' \
     --wildcards '*.h' \
     --no-wildcards './configure.ac'; \

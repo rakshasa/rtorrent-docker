@@ -15,6 +15,7 @@ rsync -v -rlpgoD -muc -t --delete-after \
 --include '/configure.ac' \
 --include '/autogen.sh' \
 \
+--include '*.c' \
 --include '*.cc' \
 --include '*.h' \
 \

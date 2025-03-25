@@ -55,7 +55,7 @@ find ./ \
   )
 find ./ \
   ${FIND_ARGS} \
-  -exec echo '{}' \; | tr '\n' '\0' | xargs -r0 -I {} sh --noprofile --norc -c "
+  -exec echo '{}' \; | tr '\n' '\0' | xargs -r0 -I {} /bin/bash --noprofile --norc -c "
 set +x
 
 if [[ '${ARG_COPY}' == 'yes' ]]; then

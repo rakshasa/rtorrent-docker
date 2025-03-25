@@ -7,7 +7,7 @@ local TESTS=(
   ci-low-diskspace
   ci-nat
   ci-throttle
-  ci-torrent
+  ci-torrents
 )
 
 local SUCCESSFUL_TESTS=()

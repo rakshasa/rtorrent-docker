@@ -1,10 +1,9 @@
 # syntax=docker/dockerfile:experimental
 
+ARG DISTRO_VERSION
 ARG REPOSITORY
-ARG TAG_APPEND
 
-
-FROM "${REPOSITORY}/ancestor/build:ubuntu-20.04" AS compiler
+FROM "${REPOSITORY}/ancestor/build:${DISTRO_VERSION}" AS compiler
 
 ARG RDO_COMPILER="clang"
 ENV RDO_COMPILER="${RDO_COMPILER}"
@@ -65,7 +64,10 @@ RUN echo -e "\033[0;32msetting configure flags\033[0m"; set -eux; \
   echo "export CXXFLAGS=\"-Wno-exceptions -Wno-pessimizing-move\"" >> /env.configure
 
 
-FROM "${REPOSITORY}/ancestor/run:ubuntu-20.04" AS run
+FROM "${REPOSITORY}/ancestor/run:${DISTRO_VERSION}" AS run
+
+ARG DISTRO_VERSION
+ENV DISTRO_VERSION="${DISTRO_VERSION}"
 
 RUN chsh -s /bin/bash
 
@@ -83,8 +85,15 @@ RUN --mount=type=cache,id=rdo-ubuntu-apt-cache,sharing=locked,target=/var/lib/ap
     lldb \
     musl \
     ncurses-base \
-    libssl1.1 \
-    tcpdump
+    tcpdump; \
+  \
+  if [ "${DISTRO_VERSION}" = "ubuntu-20.04" ]; then \
+    apt-get install -y \
+      libssl1.1; \
+  elif [ "${DISTRO_VERSION}" = "ubuntu-22.04" ]; then \
+    apt-get install -y \
+      libssl3; \
+  fi;
 
 
 # Fake endpoint:
