@@ -171,7 +171,6 @@ RUN set -xe; \
     --directory '/stage/rtorrent/source' \
     --wildcards '*.am' \
     --wildcards '*.m4' \
-    --wildcards '*.c' \
     --wildcards '*.cc' \
     --wildcards '*.h' \
     --no-wildcards './configure.ac'; \

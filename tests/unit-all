@@ -3,12 +3,12 @@
 set -e
 
 local VARIANTS=(
-  # alpine-3
-  # alpine-3-lua
-  # alpine-3-tinyxml2
-  # alpine-3-xmlrpc-c
-  # alpine-3-lua-xmlrpc-c
-  ubuntu-20.04
+  alpine-3
+  #alpine-3-lua
+  alpine-3-tinyxml2
+  alpine-3-xmlrpc-c
+  alpine-3-lua-xmlrpc-c
+  #ubuntu-20.04
 )
 
 # On error, print a message and exit
