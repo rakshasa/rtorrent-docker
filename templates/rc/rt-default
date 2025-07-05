@@ -17,6 +17,7 @@ log.open_file = "peer_list", /run/self/logs/peer_list.log
 log.open_file = "rpc", /run/self/logs/rpc.log
 log.open_file = "storage", /run/self/logs/storage.log
 log.open_file = "system", /run/self/logs/system.log
+log.open_file = "tracker_dump", /run/self/logs/tracker_dump.log
 log.open_file = "tracker_events", /run/self/logs/tracker_events.log
 log.open_file = "tracker_requests", /run/self/logs/tracker_requests.log
 
@@ -28,6 +29,7 @@ try = ((log.add_output, "peer_list_events", "peer_list"))
 try = ((log.add_output, "rpc", "rpc"))
 try = ((log.add_output, "storage", "storage"))
 try = ((log.add_output, "system", "system"))
+try = ((log.add_output, "tracker_dump", "tracker_dump"))
 try = ((log.add_output, "tracker_events", "tracker_events"))
 try = ((log.add_output, "tracker_requests", "tracker_requests"))
 

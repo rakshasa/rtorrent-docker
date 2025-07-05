@@ -51,9 +51,9 @@ rdo_build_init() {
 
   rdo_docker_build --filename "entrypoint" --context "./entrypoint" "build/entrypoint:global"
 
-  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "build" --base-image "alpine:3.20" "ancestor/build:alpine-3"
-  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "run"   --base-image "alpine:3.20" "ancestor/run:alpine-3"
-  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "utils" --base-image "alpine:3.20" "ancestor/utils:alpine-3"
+  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "build" --base-image "alpine:3.21" "ancestor/build:alpine-3"
+  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "run"   --base-image "alpine:3.21" "ancestor/run:alpine-3"
+  rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "utils" --base-image "alpine:3.21" "ancestor/utils:alpine-3"
 
   rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "build" --base-image "ubuntu:20.04" "ancestor/build:ubuntu-20.04"
   rdo_build__context__ancestor --no-rebuild --filename "ancestor" --ancestor-project "run"   --base-image "ubuntu:20.04" "ancestor/run:ubuntu-20.04"

@@ -52,6 +52,10 @@ rdo_stage_rtorrent \
   --network "rt-global-v4" \
   "rt-seed-global-v4"
 
+rdo_stage_append_rc \
+  --node "rt-seed-global-v4" \
+  'network.block.ipv6.set = true'
+
 
 # Due to trackers not properly supporting both ipv4 and ipv6 properly,
 # we need two seeders.
@@ -74,7 +78,14 @@ rdo_stage_rtorrent \
 
 rdo_stage_append_rc \
   --node "rt-seed-global-v6" \
-  'network.prefer.ipv6.set = true'
+  'network.block.ipv4.set = true'
+
+#  'network.prefer.ipv6.set = true'
+
+rdo_stage_append_rc \
+  --node "rt-seed-global-v6" \
+  'network.block.ipv4in6.set = true'
+
 
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global"
 rdo_torrent_node   --seeder "rt-seed-global-v4"    "torrent-global"
@@ -83,10 +94,8 @@ rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global"
 # Fix v4/6only isolation/seeders/whatever.
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global-v4only"
 rdo_torrent_node   --seeder "rt-seed-global-v4"    "torrent-global-v4only"
-rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global-v4only"
 
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global-v6only"
-rdo_torrent_node   --seeder "rt-seed-global-v4"    "torrent-global-v6only"
 rdo_torrent_node   --seeder "rt-seed-global-v6"    "torrent-global-v6only"
 
 rdo_torrent_create --domain "udp:rt-tracker-global.rt" "torrent-global-udp"
@@ -101,12 +110,6 @@ rdo_torrent_wait --print --wait-all \
                  \
                  --hash-done     "rt-seed-global-v4:torrent-global-v4only" \
                  --seeding       "rt-seed-global-v4:torrent-global-v4only" \
-                 \
-                 --hash-done     "rt-seed-global-v4:torrent-global-v6only" \
-                 --seeding       "rt-seed-global-v4:torrent-global-v6only" \
-                 \
-                 --hash-done     "rt-seed-global-v6:torrent-global-v4only" \
-                 --seeding       "rt-seed-global-v6:torrent-global-v4only" \
                  \
                  --hash-done     "rt-seed-global-v6:torrent-global-v6only" \
                  --seeding       "rt-seed-global-v6:torrent-global-v6only" \
@@ -136,50 +139,137 @@ connected_v4_clients=(
   "rt-connected-globalv4-v4only"
 )
 
-blocked_clients=(
-  "rt-blocked-globalv4-v6only"
-  "rt-blocked-globalv6-v4only"
-)
+connected_v4only_clients=()
+connected_v6only_clients=()
 
-default_rtorrent_v4_args=(
+blocked_v6only_clients=()
+blocked_v4only_clients=()
+
+default_rtorrent_args=(
   --run-template "rt-default"
   --dns-inet "rt-dns-global:rt-global-seed"
 )
 
-default_rtorrent_v6_args=(
-  --run-template "rt-default"
-  --dns-inet6 "rt-dns-global:rt-global-seed"
-)
-
-rdo_stage_rtorrent "${default_rtorrent_v4_args[@]}" \
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
   --network "rt-global-seed" \
   "rt-connected-global-v4v6"
 
-rdo_stage_rtorrent "${default_rtorrent_v4_args[@]}" \
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
   --network "rt-global-v4" \
   "rt-connected-globalv4-v4v6" \
   "rt-connected-globalv4-v4only"
-rdo_stage_rtorrent "${default_rtorrent_v6_args[@]}" \
+
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
   --network "rt-global-v6" \
   "rt-connected-globalv6-v4v6" \
   "rt-connected-globalv6-v6only"
 
-rdo_stage_rtorrent "${default_rtorrent_v4_args[@]}" \
+rdo_stage_append_rc \
+  --node "rt-connected-globalv6-v6only" \
+  'network.block.ipv4.set = true'
+
+rdo_stage_append_rc \
+  --node "rt-connected-globalv4-v4only" \
+  'network.block.ipv6.set = true'
+
+
+#
+# Block ipv4/6 tests:
+#
+
+# TODO: Add option to block http tracker requests?
+
+connected_v4only_clients+=(
+  "rt-blocked-global-v4only"
+)
+
+connected_v6only_clients+=(
+  "rt-blocked-global-v6only"
+)
+
+blocked_v4only_clients+=(
+  "rt-blocked-global-v6only"
+  "rt-blocked-globalv4-v6only"
+  "rt-blocked-globalv6-v4only"
+)
+
+blocked_v6only_clients+=(
+  "rt-blocked-global-v4only"
+  "rt-blocked-globalv6-v4only"
+  "rt-blocked-globalv4-v6only"
+)
+
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
+  --network "rt-global-seed" \
+  "rt-blocked-global-v4only" \
+  "rt-blocked-global-v6only"
+
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
   --network "rt-global-v4-isolate" \
   "rt-blocked-globalv4-v6only"
-rdo_stage_rtorrent "${default_rtorrent_v6_args[@]}" \
+
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
   --network "rt-global-v6-isolate" \
   "rt-blocked-globalv6-v4only"
 
-# Also test 'prefer-ipv6.
 rdo_stage_append_rc \
-  --node "rt-connected-globalv6-v6only" \
+  --node "rt-blocked-global-v6only" \
   --node "rt-blocked-globalv4-v6only" \
   'network.block.ipv4.set = true'
+
 rdo_stage_append_rc \
-  --node "rt-connected-globalv4-v4only" \
+  --node "rt-blocked-global-v4only" \
   --node "rt-blocked-globalv6-v4only" \
   'network.block.ipv6.set = true'
+
+# TODO: Also test 'prefer-ipv6.
+
+#
+# Bind/Local address tests:
+#
+
+# connected_v4_clients+=(
+# )
+
+# rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
+#   --network "rt-global-seed" \
+#   "rt-bind-address-v4" \
+
+# # Add to blocked global
+
+# rdo_stage_append_rc \
+#   --node "rt-bind-address-v4" \
+#   'network.bind_address.set = 1.2.3.4'
+
+# rdo_stage_append_rc \
+#   --node "rt-unknown-bind-address-v6" \
+#   'network.bind_address.set = 2001:aaaa:bbbb::aaaa:bbbb'
+
+# rdo_stage_append_rc \
+#   --node "rt-unknown-local-address-v4" \
+#   'network.local_address.set = 1.2.3.4'
+
+# rdo_stage_append_rc \
+#   --node "rt-unknown-local-address-v4" \
+#   'network.local_address.set = 2001:aaaa:bbbb::aaaa:bbbb'
+
+
+#
+# Default options:
+#
+
+rdo_stage_append_rc \
+  $(printf -- " --node %s" "${connected_clients[@]}") \
+  $(printf -- " --node %s" "${connected_v4_clients[@]}") \
+  $(printf -- " --node %s" "${connected_v4only_clients[@]}") \
+  $(printf -- " --node %s" "${connected_v6only_clients[@]}") \
+  $(printf -- " --node %s" "${blocked_v4only_clients[@]}") \
+  $(printf -- " --node %s" "${blocked_v6only_clients[@]}") \
+  'protocol.pex.set = false'
+
+#
+# Add torrents:
+#
 
 rdo_torrent_node \
   $(printf -- " --leecher %s" "${connected_clients[@]}") \
@@ -190,11 +280,14 @@ rdo_torrent_node \
   "torrent-global-udp"
 
 rdo_torrent_node \
-  --leecher "rt-blocked-globalv4-v6only" \
-  "torrent-global-v6only"
-rdo_torrent_node \
-  --leecher "rt-blocked-globalv6-v4only" \
+  $(printf -- " --leecher %s" "${connected_v4only_clients[@]}") \
+  $(printf -- " --leecher %s" "${blocked_v4only_clients[@]}") \
   "torrent-global-v4only"
+
+rdo_torrent_node \
+  $(printf -- " --leecher %s" "${connected_v6only_clients[@]}") \
+  $(printf -- " --leecher %s" "${blocked_v6only_clients[@]}") \
+  "torrent-global-v6only"
 
 # TODO: Fix udp6 trackers.
 
@@ -209,12 +302,20 @@ rdo_torrent_wait --print --wait-all \
                  $(printf -- " --not-seeding %s:torrent-global-udp" "${connected_v4_clients[@]}") \
                  $(printf -- " --completed %s:torrent-global-udp" "${connected_v4_clients[@]}") \
                  \
-                 $(printf -- " --hash-done %s:torrent-global-v4only" "rt-blocked-globalv6-v4only") \
-                 $(printf -- " --not-seeding %s:torrent-global-v4only" "rt-blocked-globalv6-v4only") \
-                 $(printf -- " --not-completed %s:torrent-global-v4only" "rt-blocked-globalv6-v4only") \
+                 $(printf -- " --hash-done %s:torrent-global-v4only" "${connected_v4only_clients[@]}") \
+                 $(printf -- " --not-seeding %s:torrent-global-v4only" "${connected_v4only_clients[@]}") \
+                 $(printf -- " --completed %s:torrent-global-v4only" "${connected_v4only_clients[@]}") \
                  \
-                 $(printf -- " --hash-done %s:torrent-global-v6only" "rt-blocked-globalv4-v6only") \
-                 $(printf -- " --not-seeding %s:torrent-global-v6only" "rt-blocked-globalv4-v6only") \
-                 $(printf -- " --not-completed %s:torrent-global-v6only" "rt-blocked-globalv4-v6only")
+                 $(printf -- " --hash-done %s:torrent-global-v6only" "${connected_v6only_clients[@]}") \
+                 $(printf -- " --not-seeding %s:torrent-global-v6only" "${connected_v6only_clients[@]}") \
+                 $(printf -- " --completed %s:torrent-global-v6only" "${connected_v6only_clients[@]}") \
+                 \
+                 $(printf -- " --hash-done %s:torrent-global-v4only" "${blocked_v4only_clients[@]}") \
+                 $(printf -- " --not-seeding %s:torrent-global-v4only" "${blocked_v4only_clients[@]}") \
+                 $(printf -- " --not-completed %s:torrent-global-v4only" "${blocked_v4only_clients[@]}") \
+                 \
+                 $(printf -- " --hash-done %s:torrent-global-v6only" "${blocked_v6only_clients[@]}") \
+                 $(printf -- " --not-seeding %s:torrent-global-v6only" "${blocked_v6only_clients[@]}") \
+                 $(printf -- " --not-completed %s:torrent-global-v6only" "${blocked_v6only_clients[@]}")
 
 rdo_test_end
