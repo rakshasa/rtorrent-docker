@@ -108,6 +108,9 @@ rdo_torrent_wait --print --wait-all \
                  --hash-done     "rt-seed-global-v4:torrent-global" \
                  --seeding       "rt-seed-global-v4:torrent-global" \
                  \
+                 --hash-done     "rt-seed-global-v6:torrent-global" \
+                 --seeding       "rt-seed-global-v6:torrent-global" \
+                 \
                  --hash-done     "rt-seed-global-v4:torrent-global-v4only" \
                  --seeding       "rt-seed-global-v4:torrent-global-v4only" \
                  \
@@ -145,21 +148,26 @@ connected_v6only_clients=()
 blocked_v6only_clients=()
 blocked_v4only_clients=()
 
-default_rtorrent_args=(
+v4_rtorrent_args=(
   --run-template "rt-default"
   --dns-inet "rt-dns-global:rt-global-seed"
 )
 
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
+v6_rtorrent_args=(
+  --run-template "rt-default"
+  --dns-inet6 "rt-dns-global:rt-global-seed"
+)
+
+rdo_stage_rtorrent "${v4_rtorrent_args[@]}" \
   --network "rt-global-seed" \
   "rt-connected-global-v4v6"
 
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
+rdo_stage_rtorrent "${v4_rtorrent_args[@]}" \
   --network "rt-global-v4" \
   "rt-connected-globalv4-v4v6" \
   "rt-connected-globalv4-v4only"
 
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
+rdo_stage_rtorrent "${v6_rtorrent_args[@]}" \
   --network "rt-global-v6" \
   "rt-connected-globalv6-v4v6" \
   "rt-connected-globalv6-v6only"
@@ -176,6 +184,8 @@ rdo_stage_append_rc \
 #
 # Block ipv4/6 tests:
 #
+
+# TODO: Test numeric tracker urls.
 
 # TODO: Add option to block http tracker requests?
 
@@ -199,16 +209,16 @@ blocked_v6only_clients+=(
   "rt-blocked-globalv4-v6only"
 )
 
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
+rdo_stage_rtorrent "${v4_rtorrent_args[@]}" \
   --network "rt-global-seed" \
   "rt-blocked-global-v4only" \
   "rt-blocked-global-v6only"
 
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
+rdo_stage_rtorrent "${v4_rtorrent_args[@]}" \
   --network "rt-global-v4-isolate" \
   "rt-blocked-globalv4-v6only"
 
-rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
+rdo_stage_rtorrent "${v6_rtorrent_args[@]}" \
   --network "rt-global-v6-isolate" \
   "rt-blocked-globalv6-v4only"
 
@@ -231,7 +241,7 @@ rdo_stage_append_rc \
 # connected_v4_clients+=(
 # )
 
-# rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
+# rdo_stage_rtorrent "${v4_rtorrent_args[@]}" \
 #   --network "rt-global-seed" \
 #   "rt-bind-address-v4" \
 
