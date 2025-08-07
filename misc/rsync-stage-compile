@@ -19,6 +19,8 @@ rsync -v -rlpgoD -muc -t --delete-after \
 --include '*.cc' \
 --include '*.h' \
 \
+--include '*.lua' \
+\
 --include '*/' \
 --exclude '*' \
 \

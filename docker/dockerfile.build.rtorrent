@@ -173,6 +173,7 @@ RUN set -xe; \
     --wildcards '*.m4' \
     --wildcards '*.cc' \
     --wildcards '*.h' \
+    --wildcards '*.lua' \
     --no-wildcards './configure.ac'; \
   \
   rdo-find-move --replace "/stage/rtorrent/source" "/deploy/rtorrent/source" \
