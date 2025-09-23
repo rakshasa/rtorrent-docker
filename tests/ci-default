@@ -66,9 +66,9 @@ rdo_stage_append_rc \
   'network.block.ipv4.set = true'
 #  'network.prefer.ipv6.set = true'
 
-rdo_stage_append_rc \
-  --node "rt-seed-global-v6" \
-  'network.block.ipv4in6.set = true'
+# rdo_stage_append_rc \
+#   --node "rt-seed-global-v6" \
+#   'network.block.ipv4in6.set = true'
 
 
 rdo_torrent_create --domain "rt-tracker-global.rt" "torrent-global"

@@ -48,12 +48,46 @@ rdo_torrent_node   --seeder "rt-seed-global" "torrent-global"
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
                  \
-                 --hash-done     "rt-seed-global:torrent-global" \
-                 --seeding       "rt-seed-global:torrent-global"
+                 --hash-done "rt-seed-global:torrent-global" \
+                 --seeding   "rt-seed-global:torrent-global"
 
 
 #
-# Leechers:
+# Leecher with blocked outgoing connections:
+#
+
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
+  --network "rt-global-v4" \
+  "rt-leech-block-outgoing"
+
+rdo_stage_append_rc \
+  --node "rt-leech-block-outgoing" \
+  "network.block.outgoing.set = true"
+
+rdo_torrent_node --leecher "rt-leech-block-outgoing" "torrent-global"
+
+rdo_stage_deploy
+rdo_torrent_wait --print --wait-all \
+                 \
+                 --hash-done     "rt-leech-block-outgoing:torrent-global" \
+                 --not-completed "rt-leech-block-outgoing:torrent-global"
+
+
+#
+# Seeder for blocked outgoing connections leecher:
+#
+
+# TODO: Use different torrent.
+
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" \
+  --network "rt-global-v4" \
+  "rt-seed-for-blocked-outgoing"
+
+rdo_torrent_node --seeder "rt-seed-for-blocked-outgoing" "torrent-global"
+
+
+#
+# Leechers behind NAT:
 #
 
 test_clients=(
@@ -66,10 +100,17 @@ rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat-1" "rt-leech-
 rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat-2" "rt-leech-nat-2-1"
 rdo_stage_rtorrent "${default_rtorrent_args[@]}" --network "rt-nat-3" "rt-leech-nat-3-"{1..4}
 
-rdo_torrent_node $(printf -- " --leecher %s" "${test_clients[@]}") "torrent-global"
+rdo_torrent_node \
+  $(printf -- " --leecher %s" "${test_clients[@]}") \
+  "torrent-global"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
-                 $(printf -- " --completed %s:torrent-global" "${test_clients[@]}")
+                 \
+                 $(printf -- " --completed %s:torrent-global" "${test_clients[@]}") \
+                 \
+                 --seeding   "rt-seed-global:torrent-global" \
+                 --completed "rt-leech-block-outgoing:torrent-global"
+
 
 rdo_test_end

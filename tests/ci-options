@@ -18,7 +18,7 @@ rdo_stage_tracker --run-template "tracker-default" --network "rt-global" "rt-tra
 
 rdo_stage_deploy
 
-default_client_args=(
+default_rtorrent_args=(
   --run-template "rt-default"
   --network "rt-global"
   --dns-inet "rt-dns-global:rt-global"
@@ -29,12 +29,13 @@ default_client_args=(
 # Seeders:
 #
 
-rdo_stage_rtorrent "${default_client_args[@]}" "rt-seed-global"
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" "rt-seed-global"
 
 rdo_torrent_create --domain "rt-tracker-global.rt" --size-mb "1" "torrent-1m"
+rdo_torrent_node   --seeder "rt-seed-global" "torrent-1m"
+
 rdo_torrent_create --domain "rt-tracker-global.rt" --size-mb "5" "torrent-5m"
-rdo_torrent_node --seed --node "rt-seed-global" "torrent-1m"
-rdo_torrent_node --seed --node "rt-seed-global" "torrent-5m"
+rdo_torrent_node   --seeder "rt-seed-global" "torrent-5m"
 
 rdo_stage_deploy
 rdo_torrent_wait --print --wait-all \
@@ -50,18 +51,18 @@ rdo_torrent_wait --print --wait-all \
 #
 
 # Verify that all relevant torrents work.
-rdo_stage_rtorrent "${default_client_args[@]}" "rt-diskspace-verify-unlimited"
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" "rt-diskspace-verify-unlimited"
 rdo_torrent_node   --node "rt-diskspace-verify-unlimited" "torrent-1m"
 rdo_torrent_node   --node "rt-diskspace-verify-unlimited" "torrent-5m"
 
 # Verify that default disk space limit works. (not actually testing properly as the event is scheduled)
 # - Audit the 'Closed torrents due to low diskspace.' error.
 # - Consider test that don't rely on scheduled timers.
-rdo_stage_rtorrent "${default_client_args[@]}" --torrents-disksize "4m" "rt-diskspace-verify-5m-on-4m"
+rdo_stage_rtorrent "${default_rtorrent_args[@]}" --torrents-disksize "4m" "rt-diskspace-verify-5m-on-4m"
 rdo_torrent_node   --node "rt-diskspace-verify-5m-on-4m" "torrent-5m"
 
 # Verify no low disk space event leaves client running.
-# rdo_stage_rtorrent "${default_client_args[@]}" --torrents-disksize "4m" "rt-diskspace-verify-5m-on-4m"
+# rdo_stage_rtorrent "${default_rtorrent_args[@]}" --torrents-disksize "4m" "rt-diskspace-verify-5m-on-4m"
 # rdo_torrent_node   --node "rt-diskspace-verify-5m-on-4m" "torrent-5m"
 
 rdo_stage_deploy
